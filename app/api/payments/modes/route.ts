@@ -12,13 +12,13 @@ export async function GET() {
 
     const credentials = JSON.parse(credentialsCookie)
 
-    if (!credentials.base_url) {
-      return NextResponse.json({ message: "Missing base URL configuration", modes: [] }, { status: 400 })
+    if (!credentials.baseUrl || !credentials.apiKey || !credentials.apiSecret) {
+      return NextResponse.json({ message: "Missing authentication credentials", modes: [] }, { status: 400 })
     }
 
-    const authHeader = `token ${credentials.api_key}:${credentials.api_secret}`
+    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
 
-    const response = await fetch(`${credentials.base_url}/api/method/dukaplus.services.rest.get_mode_of_payments`, {
+    const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.rest.get_mode_of_payments`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

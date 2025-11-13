@@ -3,12 +3,16 @@
 import { useAuth } from "@/hooks/use-auth"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { InventoryOverview } from "@/components/inventory/inventory-overview"
+import { StockTransferManager } from "@/components/inventory/stock-transfer-manager"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 export default function InventoryPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState<"products" | "purchase-order" | "purchase-receipt" | "stock-transfer">(
+    "products",
+  )
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -28,7 +32,61 @@ export default function InventoryPage() {
           <p className="page-subtitle">Track and manage product stock levels</p>
         </div>
 
-        <InventoryOverview />
+        <div className="flex gap-2 border-b border-border">
+          <button
+            onClick={() => setActiveTab("products")}
+            className={`px-4 py-2 font-semibold transition-colors ${
+              activeTab === "products"
+                ? "text-warning border-b-2 border-warning"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Products
+          </button>
+          <button
+            onClick={() => setActiveTab("purchase-order")}
+            className={`px-4 py-2 font-semibold transition-colors ${
+              activeTab === "purchase-order"
+                ? "text-warning border-b-2 border-warning"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Purchase Orders
+          </button>
+          <button
+            onClick={() => setActiveTab("purchase-receipt")}
+            className={`px-4 py-2 font-semibold transition-colors ${
+              activeTab === "purchase-receipt"
+                ? "text-warning border-b-2 border-warning"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Purchase Receipts
+          </button>
+          <button
+            onClick={() => setActiveTab("stock-transfer")}
+            className={`px-4 py-2 font-semibold transition-colors ${
+              activeTab === "stock-transfer"
+                ? "text-warning border-b-2 border-warning"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Stock Transfer
+          </button>
+        </div>
+
+        {activeTab === "products" && <InventoryOverview />}
+        {activeTab === "purchase-order" && (
+          <div className="card-base p-6">
+            <p className="text-muted-foreground">Purchase Orders - Coming Soon</p>
+          </div>
+        )}
+        {activeTab === "purchase-receipt" && (
+          <div className="card-base p-6">
+            <p className="text-muted-foreground">Purchase Receipts - Coming Soon</p>
+          </div>
+        )}
+        {activeTab === "stock-transfer" && <StockTransferManager />}
       </div>
     </DashboardLayout>
   )

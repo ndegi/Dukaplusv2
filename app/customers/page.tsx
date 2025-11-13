@@ -1,130 +1,106 @@
-"use client";
+"use client"
 
-import type React from "react";
+import type React from "react"
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Plus,
-  Search,
-  ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
-  Edit2,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { useState, useEffect } from "react"
+import { useAuth } from "@/hooks/use-auth"
+import { DashboardLayout } from "@/components/layout/dashboard-layout"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Plus, Search, ArrowUpDown, ChevronLeft, ChevronRight, Edit2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
 interface Customer {
-  customer_id: string;
-  customer_name: string;
-  customer_group: string | null;
-  mobile_number: string;
+  customer_id: string
+  customer_name: string
+  customer_group: string | null
+  mobile_number: string
   paid_invoices: {
-    count: number;
-    total: number;
-  };
+    count: number
+    total: number
+  }
   unpaid_invoices: {
-    count: number;
-    total: number;
-  };
-  total_sales: number;
+    count: number
+    total: number
+  }
+  total_sales: number
 }
 
-type SortField = keyof Pick<
-  Customer,
-  "customer_name" | "total_sales" | "mobile_number"
->;
-type SortOrder = "asc" | "desc";
+type SortField = keyof Pick<Customer, "customer_name" | "total_sales" | "mobile_number">
+type SortOrder = "asc" | "desc"
 
 export default function CustomersPage() {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [pageLoading, setPageLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortField, setSortField] = useState<SortField>("customer_name");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
-  const [showForm, setShowForm] = useState(false);
-  const [groups, setGroups] = useState<string[]>([]);
+  const { user, isLoading } = useAuth()
+  const router = useRouter()
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [pageLoading, setPageLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [sortField, setSortField] = useState<SortField>("customer_name")
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc")
+  const [showForm, setShowForm] = useState(false)
+  const [groups, setGroups] = useState<string[]>([])
   const [formData, setFormData] = useState({
     customer_name: "",
     mobile_number: "",
     customer_group: "Individual",
     sales_person: "Sales Team",
-  });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const itemsPerPage = 10;
+  })
+  const [currentPage, setCurrentPage] = useState(1)
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
+  const itemsPerPage = 10
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push("/login");
+      router.push("/login")
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router])
 
   useEffect(() => {
-    fetchCustomers();
-    fetchGroups();
-  }, []);
+    fetchCustomers()
+    fetchGroups()
+  }, [])
 
   const fetchCustomers = async () => {
     try {
-      setPageLoading(true);
-      const res = await fetch("/api/customers/list");
-      const data = await res.json();
-      setCustomers(data.customers || []);
+      setPageLoading(true)
+      const res = await fetch("/api/customers/list")
+      const data = await res.json()
+      setCustomers(data.customers || [])
     } catch (error) {
-      console.error("[DukaPlus] Error fetching customers:", error);
+      console.error("[DukaPlus] Error fetching customers:", error)
     } finally {
-      setPageLoading(false);
+      setPageLoading(false)
     }
-  };
+  }
 
   const fetchGroups = async () => {
     try {
-      const res = await fetch("/api/customers/groups");
-      const data = await res.json();
-      console.log("[DukaPlus] Customer groups data:", data);
-      const groupsArray = data.message?.customer_groups || data.groups || [];
-      const parsedGroups = groupsArray
-        .map((g: any) => (typeof g === "string" ? g : g.customer_group))
-        .filter(Boolean);
-      console.log("[DukaPlus] Parsed groups:", parsedGroups);
-      setGroups(
-        parsedGroups.length > 0
-          ? parsedGroups
-          : ["Individual", "Corporate", "Government"]
-      );
+      const res = await fetch("/api/customers/groups")
+      const data = await res.json()
+      console.log("[DukaPlus] Customer groups data:", data)
+      const groupsArray = data.message?.customer_groups || data.groups || []
+      const parsedGroups = groupsArray.map((g: any) => (typeof g === "string" ? g : g.customer_group)).filter(Boolean)
+      console.log("[DukaPlus] Parsed groups:", parsedGroups)
+      setGroups(parsedGroups.length > 0 ? parsedGroups : ["Individual", "Corporate", "Government"])
     } catch (error) {
-      console.error("[DukaPlus] Error fetching groups:", error);
-      setGroups(["Individual", "Corporate", "Government"]);
+      console.error("[DukaPlus] Error fetching groups:", error)
+      setGroups(["Individual", "Corporate", "Government"])
     }
-  };
+  }
 
   const handleCreateCustomer = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
-      const endpoint = editingCustomer
-        ? `/api/customers/${editingCustomer.customer_id}`
-        : "/api/customers/create";
-      const method = editingCustomer ? "PUT" : "POST";
+      const endpoint = editingCustomer ? `/api/customers/${editingCustomer.customer_id}` : "/api/customers/create"
+      const method = editingCustomer ? "PUT" : "POST"
 
       const res = await fetch(endpoint, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-      });
+      })
 
       if (res.ok) {
         setFormData({
@@ -132,63 +108,58 @@ export default function CustomersPage() {
           mobile_number: "",
           customer_group: groups[0] || "Individual",
           sales_person: "Sales Team",
-        });
-        setShowForm(false);
-        setEditingCustomer(null);
-        fetchCustomers();
+        })
+        setShowForm(false)
+        setEditingCustomer(null)
+        fetchCustomers()
       }
     } catch (error) {
-      console.error("[DukaPlus] Error saving customer:", error);
+      console.error("[DukaPlus] Error saving customer:", error)
     }
-  };
+  }
 
   const handleEditCustomer = (customer: Customer) => {
-    setEditingCustomer(customer);
+    setEditingCustomer(customer)
     setFormData({
       customer_name: customer.customer_name,
       mobile_number: customer.mobile_number,
       customer_group: customer.customer_group || groups[0] || "Individual",
       sales_person: "Sales Team",
-    });
-    setShowForm(true);
-  };
+    })
+    setShowForm(true)
+  }
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
     } else {
-      setSortField(field);
-      setSortOrder("asc");
+      setSortField(field)
+      setSortOrder("asc")
     }
-  };
+  }
 
   const filteredAndSorted = customers
     .filter(
-      (c) =>
-        c.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.mobile_number.includes(searchQuery)
+      (c) => c.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) || c.mobile_number.includes(searchQuery),
     )
     .sort((a, b) => {
-      const aVal = a[sortField];
-      const bVal = b[sortField];
-      const comparison =
-        typeof aVal === "string"
-          ? aVal.localeCompare(bVal)
-          : (aVal as number) - (bVal as number);
-      return sortOrder === "asc" ? comparison : -comparison;
-    });
+      const aVal = a[sortField]
+      const bVal = b[sortField]
+      const comparison = typeof aVal === "string" ? aVal.localeCompare(bVal) : (aVal as number) - (bVal as number)
+      return sortOrder === "asc" ? comparison : -comparison
+    })
 
-  const totalPages = Math.ceil(filteredAndSorted.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedData = filteredAndSorted.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(filteredAndSorted.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedData = filteredAndSorted.slice(startIndex, endIndex)
 
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
+    setCurrentPage(1)
+  }, [searchQuery])
 
   if (isLoading || !user) {
-    return null;
+    return null
   }
 
   return (
@@ -197,20 +168,18 @@ export default function CustomersPage() {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
             <h1 className="page-title">Customers</h1>
-            <p className="page-subtitle">
-              Manage customer information and sales history
-            </p>
+            <p className="page-subtitle">Manage customer information and sales history</p>
           </div>
           <Button
             onClick={() => {
-              setEditingCustomer(null);
+              setEditingCustomer(null)
               setFormData({
                 customer_name: "",
                 mobile_number: "",
                 customer_group: groups[0] || "Individual",
                 sales_person: "Sales Team",
-              });
-              setShowForm(true);
+              })
+              setShowForm(true)
             }}
             className="btn-create w-full sm:w-auto justify-center"
           >
@@ -233,12 +202,7 @@ export default function CustomersPage() {
                   <Input
                     placeholder="Enter customer name"
                     value={formData.customer_name}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        customer_name: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
                     className="input-base"
                     required
                   />
@@ -248,12 +212,7 @@ export default function CustomersPage() {
                   <Input
                     placeholder="Enter phone number"
                     value={formData.mobile_number}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        mobile_number: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setFormData({ ...formData, mobile_number: e.target.value })}
                     className="input-base"
                   />
                 </div>
@@ -261,12 +220,7 @@ export default function CustomersPage() {
                   <label className="form-label">Customer Group</label>
                   <select
                     value={formData.customer_group}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        customer_group: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setFormData({ ...formData, customer_group: e.target.value })}
                     className="w-full input-base"
                   >
                     {groups.map((group) => (
@@ -281,9 +235,7 @@ export default function CustomersPage() {
                   <Input
                     placeholder="Sales person name"
                     value={formData.sales_person}
-                    onChange={(e) =>
-                      setFormData({ ...formData, sales_person: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, sales_person: e.target.value })}
                     className="input-base"
                   />
                 </div>
@@ -292,14 +244,14 @@ export default function CustomersPage() {
                 <Button
                   type="button"
                   onClick={() => {
-                    setShowForm(false);
-                    setEditingCustomer(null);
+                    setShowForm(false)
+                    setEditingCustomer(null)
                   }}
                   className="btn-cancel w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
-                <Button type="submit" className="btn-create w-full sm:w-auto">
+                <Button type="submit" className="btn-success w-full sm:w-auto">
                   {editingCustomer ? "Update" : "Create"}
                 </Button>
               </DialogFooter>
@@ -321,13 +273,9 @@ export default function CustomersPage() {
 
         <Card className="card-base overflow-hidden">
           {pageLoading ? (
-            <div className="p-6 text-secondary text-center">
-              Loading customers...
-            </div>
+            <div className="p-6 text-secondary text-center">Loading customers...</div>
           ) : filteredAndSorted.length === 0 ? (
-            <div className="p-6 text-secondary text-center">
-              No customers found
-            </div>
+            <div className="p-6 text-secondary text-center">No customers found</div>
           ) : (
             <>
               <div className="overflow-x-auto text-xs sm:text-sm">
@@ -343,10 +291,7 @@ export default function CustomersPage() {
                           {sortField === "customer_name" && (
                             <ArrowUpDown
                               className="w-4 h-4"
-                              style={{
-                                transform:
-                                  sortOrder === "desc" ? "scaleY(-1)" : "",
-                              }}
+                              style={{ transform: sortOrder === "desc" ? "scaleY(-1)" : "" }}
                             />
                           )}
                         </button>
@@ -362,10 +307,7 @@ export default function CustomersPage() {
                           {sortField === "total_sales" && (
                             <ArrowUpDown
                               className="w-4 h-4"
-                              style={{
-                                transform:
-                                  sortOrder === "desc" ? "scaleY(-1)" : "",
-                              }}
+                              style={{ transform: sortOrder === "desc" ? "scaleY(-1)" : "" }}
                             />
                           )}
                         </button>
@@ -378,15 +320,9 @@ export default function CustomersPage() {
                   <tbody>
                     {paginatedData.map((customer) => (
                       <tr key={customer.customer_id} className="table-row">
-                        <td className="table-cell font-medium">
-                          {customer.customer_name}
-                        </td>
-                        <td className="table-cell-secondary">
-                          {customer.mobile_number}
-                        </td>
-                        <td className="table-cell-secondary">
-                          {customer.customer_group || "-"}
-                        </td>
+                        <td className="table-cell font-medium">{customer.customer_name}</td>
+                        <td className="table-cell-secondary">{customer.mobile_number}</td>
+                        <td className="table-cell-secondary">{customer.customer_group || "-"}</td>
                         <td className="px-4 py-3 text-right text-warning font-semibold">
                           KES{" "}
                           {customer.total_sales.toLocaleString("en-US", {
@@ -394,12 +330,8 @@ export default function CustomersPage() {
                             maximumFractionDigits: 2,
                           })}
                         </td>
-                        <td className="table-cell-secondary text-right">
-                          {customer.paid_invoices.count}
-                        </td>
-                        <td className="table-cell-secondary text-right">
-                          {customer.unpaid_invoices.count}
-                        </td>
+                        <td className="table-cell-secondary text-right">{customer.paid_invoices.count}</td>
+                        <td className="table-cell-secondary text-right">{customer.unpaid_invoices.count}</td>
                         <td className="px-4 py-3">
                           <button
                             onClick={() => handleEditCustomer(customer)}
@@ -419,8 +351,7 @@ export default function CustomersPage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-border">
                   <div className="text-sm text-secondary">
-                    Showing {startIndex + 1} to{" "}
-                    {Math.min(endIndex, filteredAndSorted.length)} of{" "}
+                    Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSorted.length)} of{" "}
                     {filteredAndSorted.length} customers
                   </div>
                   <div className="flex gap-2">
@@ -434,30 +365,20 @@ export default function CustomersPage() {
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                        (page) => (
-                          <Button
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            variant={
-                              currentPage === page ? "default" : "outline"
-                            }
-                            size="sm"
-                            className={
-                              currentPage === page
-                                ? "btn-warning"
-                                : "border-border"
-                            }
-                          >
-                            {page}
-                          </Button>
-                        )
-                      )}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <Button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          className={currentPage === page ? "btn-warning" : "border-border"}
+                        >
+                          {page}
+                        </Button>
+                      ))}
                     </div>
                     <Button
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(totalPages, p + 1))
-                      }
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
                       variant="outline"
                       size="sm"
@@ -473,5 +394,5 @@ export default function CustomersPage() {
         </Card>
       </div>
     </DashboardLayout>
-  );
+  )
 }

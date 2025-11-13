@@ -11,33 +11,35 @@ export async function POST(request: NextRequest) {
     }
 
     const credentials = JSON.parse(credentialsCookie)
-    const { phone, amount, tillNumber } = await request.json()
 
-    const authHeader = `token ${credentials.api_key}:${credentials.api_secret}`
+    const body = await request.json()
+    const { mobile_number, payment_details } = body
 
-    const response = await fetch(`${credentials.base_url}/api/method/dukaplus.services.rest.initiate_mpesa_stk_push`, {
+    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
+
+    const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.payment.make_payment`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: authHeader,
       },
       body: JSON.stringify({
-        phone_number: phone,
-        amount: amount,
-        till_number: tillNumber,
+        mobile_number: mobile_number,
+        payment_details: payment_details || [],
       }),
     })
 
     if (!response.ok) {
       const errorData = await response.json()
-      return NextResponse.json({ message: errorData.message || "STK push failed" }, { status: response.status })
+      console.error("[DukaPlus] STK push error:", errorData)
+      return NextResponse.json({ message: errorData.message || "Payment failed" }, { status: response.status })
     }
 
     const data = await response.json()
     return NextResponse.json({
       success: true,
-      checkoutRequestId: data.message?.checkout_request_id,
-      message: "STK push initiated successfully",
+      amount_paid: data.message?.amount_paid,
+      message: data.message?.message || "Payment successful",
     })
   } catch (error) {
     console.error("[DukaPlus] STK push error:", error)

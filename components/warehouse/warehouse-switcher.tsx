@@ -1,47 +1,35 @@
-"use client";
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBuilding,
-  faExclamationCircle,
-} from "@fortawesome/free-solid-svg-icons";
+"use client"
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faBuilding, faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
 
 interface Warehouse {
-  id: string;
-  warehouse_name: string;
+  id: string
+  warehouse_name: string
 }
 
 interface WarehouseSwitcherProps {
-  onSuccess: (warehouse: string) => void;
-  onCancel: () => void;
+  onSuccess: (warehouse: string) => void
+  onCancel: () => void
 }
 
-export function WarehouseSwitcher({
-  onSuccess,
-  onCancel,
-}: WarehouseSwitcherProps) {
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [selectedWarehouse, setSelectedWarehouse] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function WarehouseSwitcher({ onSuccess, onCancel }: WarehouseSwitcherProps) {
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([])
+  const [selectedWarehouse, setSelectedWarehouse] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchWarehouses();
-  }, []);
+    fetchWarehouses()
+  }, [])
 
   const fetchWarehouses = async () => {
     try {
-      setIsLoading(true);
-      const credentialsStr = sessionStorage.getItem("tenant_credentials");
-      const credentials = credentialsStr ? JSON.parse(credentialsStr) : null;
+      setIsLoading(true)
+      const credentialsStr = sessionStorage.getItem("tenant_credentials")
+      const credentials = credentialsStr ? JSON.parse(credentialsStr) : null
 
       const response = await fetch("/api/warehouses", {
         headers: credentials
@@ -51,40 +39,38 @@ export function WarehouseSwitcher({
               "X-Base-URL": credentials.base_url,
             }
           : {},
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (response.ok && data.message?.warehouses) {
-        setWarehouses(data.message.warehouses);
-        const current = sessionStorage.getItem("selected_warehouse");
+        setWarehouses(data.message.warehouses)
+        const current = sessionStorage.getItem("selected_warehouse")
         if (current) {
-          setSelectedWarehouse(current);
+          setSelectedWarehouse(current)
         }
       } else {
-        setError("Failed to fetch warehouses");
+        setError("Failed to fetch warehouses")
       }
     } catch (err) {
-      setError("Error loading warehouses");
-      console.error(err);
+      setError("Error loading warehouses")
+      console.error(err)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleSwitchWarehouse = () => {
     if (!selectedWarehouse) {
-      setError("Please select a warehouse");
-      return;
+      setError("Please select a warehouse")
+      return
     }
 
-    sessionStorage.setItem("selected_warehouse", selectedWarehouse);
-    window.dispatchEvent(
-      new CustomEvent("warehouseChanged", { detail: selectedWarehouse })
-    );
+    sessionStorage.setItem("selected_warehouse", selectedWarehouse)
+    window.dispatchEvent(new CustomEvent("warehouseChanged", { detail: selectedWarehouse }))
 
-    onSuccess(selectedWarehouse);
-  };
+    onSuccess(selectedWarehouse)
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -106,18 +92,13 @@ export function WarehouseSwitcher({
 
         <div className="space-y-3">
           {isLoading ? (
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Loading warehouses...
-            </p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Loading warehouses...</p>
           ) : (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Select Warehouse
               </label>
-              <Select
-                value={selectedWarehouse}
-                onValueChange={setSelectedWarehouse}
-              >
+              <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
                 <SelectTrigger className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm">
                   <SelectValue placeholder="Choose warehouse" />
                 </SelectTrigger>
@@ -140,15 +121,12 @@ export function WarehouseSwitcher({
             >
               {isLoading ? "Loading..." : "Switch"}
             </Button>
-            <Button
-              onClick={onCancel}
-              className="flex-1 btn-cancel h-9 text-sm"
-            >
+            <Button onClick={onCancel} className="flex-1 btn-cancel h-9 text-sm">
               Cancel
             </Button>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }
