@@ -10,13 +10,13 @@ import {
   faShoppingCart,
   faBox,
   faUsers,
+  faFileInvoice,
   faFileAlt,
   faChartBar,
   faUser,
   faExchange,
   faBuilding,
   faCog,
-  faFileInvoice,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
@@ -99,7 +99,7 @@ export function DashboardLayout({
         );
       }
     } catch (error) {
-      console.error("[DukaPlus] Failed to fetch customers:", error);
+      console.error("[v0] Failed to fetch customers:", error);
     }
   };
 

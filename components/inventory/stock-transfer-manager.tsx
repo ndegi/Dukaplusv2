@@ -44,6 +44,8 @@ export function StockTransferManager() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [warehouses, setWarehouses] = useState<Warehouse[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "submitted" | "cancelled">("all")
 
   useEffect(() => {
     fetchTransfers()
@@ -64,7 +66,7 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error fetching stock transfers" })
-      console.error("[DukaPlus] Error fetching stock transfers:", error)
+      console.error("[v0] Error fetching stock transfers:", error)
     } finally {
       setIsLoading(false)
     }
@@ -85,7 +87,7 @@ export function StockTransferManager() {
         }
       }
     } catch (error) {
-      console.error("[DukaPlus] Error fetching warehouses:", error)
+      console.error("[v0] Error fetching warehouses:", error)
     }
   }
 
@@ -99,7 +101,7 @@ export function StockTransferManager() {
         setProducts(data.products)
       }
     } catch (error) {
-      console.error("[DukaPlus] Error fetching products:", error)
+      console.error("[v0] Error fetching products:", error)
     }
   }
 
@@ -143,7 +145,7 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error creating stock transfer" })
-      console.error("[DukaPlus] Error creating stock transfer:", error)
+      console.error("[v0] Error creating stock transfer:", error)
     } finally {
       setIsSubmitting(false)
     }
@@ -169,7 +171,7 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error submitting stock transfer" })
-      console.error("[DukaPlus] Error submitting stock transfer:", error)
+      console.error("[v0] Error submitting stock transfer:", error)
     }
   }
 
@@ -193,7 +195,7 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error cancelling stock transfer" })
-      console.error("[DukaPlus] Error cancelling stock transfer:", error)
+      console.error("[v0] Error cancelling stock transfer:", error)
     }
   }
 
@@ -224,6 +226,21 @@ export function StockTransferManager() {
     }
   }
 
+  const filteredTransfers = transfers.filter((transfer) => {
+    const matchesSearch =
+      transfer.material_transfer_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transfer.from_warehouse?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transfer.to_warehouse?.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "draft" && transfer.docstatus === 0) ||
+      (statusFilter === "submitted" && transfer.docstatus === 1) ||
+      (statusFilter === "cancelled" && transfer.docstatus === 2)
+
+    return matchesSearch && matchesStatus
+  })
+
   return (
     <div className="space-y-6">
       {message && (
@@ -251,6 +268,26 @@ export function StockTransferManager() {
             <Plus className="w-4 h-4 mr-2" />
             {showCreateForm ? "Cancel" : "New Transfer"}
           </Button>
+        </div>
+
+        <div className="flex gap-3 mb-4">
+          <input
+            type="text"
+            placeholder="Search transfers..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="input-base flex-1 px-3 py-2 text-sm"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="input-base px-3 py-2 text-sm"
+          >
+            <option value="all">All Status</option>
+            <option value="draft">Draft</option>
+            <option value="submitted">Submitted</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
         </div>
 
         {showCreateForm && (
@@ -350,8 +387,10 @@ export function StockTransferManager() {
 
         {isLoading ? (
           <p className="text-muted-foreground">Loading stock transfers...</p>
-        ) : transfers.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">No stock transfers found</p>
+        ) : filteredTransfers.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8">
+            {searchTerm || statusFilter !== "all" ? "No transfers match your filters" : "No stock transfers found"}
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -366,7 +405,7 @@ export function StockTransferManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {transfers.map((transfer) => (
+                {filteredTransfers.map((transfer) => (
                   <tr key={transfer.material_transfer_id} className="table-row">
                     <td className="px-4 py-3 font-mono text-warning text-sm">{transfer.material_transfer_id}</td>
                     <td className="px-4 py-3 text-foreground">{transfer.from_warehouse || "N/A"}</td>

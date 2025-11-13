@@ -87,7 +87,7 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
       }
     } catch (err) {
       setError("An error occurred while fetching products")
-      console.error("[DukaPlus] Error fetching products:", err)
+      console.error("[v0] Error fetching products:", err)
     } finally {
       setIsLoading(false)
     }

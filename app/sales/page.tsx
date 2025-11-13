@@ -83,7 +83,7 @@ export default function SalesPage() {
       }
     } catch (err) {
       setError("Error fetching sales receipts")
-      console.error("[DukaPlus] Error fetching sales receipts:", err)
+      console.error("[v0] Error fetching sales receipts:", err)
     } finally {
       setIsLoadingReceipts(false)
     }
@@ -104,7 +104,7 @@ export default function SalesPage() {
         setInvoices(data.message.sales_data)
       }
     } catch (err) {
-      console.error("[DukaPlus] Error fetching sales invoices:", err)
+      console.error("[v0] Error fetching sales invoices:", err)
     }
   }
 
@@ -148,9 +148,16 @@ export default function SalesPage() {
     window.open(url, "_blank")
   }
 
-  const handleCompletePayment = (invoice: SalesInvoice) => {
-    // Store invoice data in sessionStorage for POS to load
-    sessionStorage.setItem("pending_invoice_payment", JSON.stringify(invoice))
+  const handleCompletePayment = async (invoice: SalesInvoice) => {
+    sessionStorage.setItem(
+      "pending_invoice_payment",
+      JSON.stringify({
+        sales_id: invoice.sales_id,
+        outstanding_amount: invoice.outstanding_amount,
+        customer_name: invoice.customer_name,
+        mobile_number: invoice.mobile_number,
+      }),
+    )
     router.push("/pos")
   }
 
@@ -175,7 +182,7 @@ export default function SalesPage() {
       }
     } catch (err) {
       setError("Error cancelling invoice")
-      console.error("[DukaPlus] Error cancelling invoice:", err)
+      console.error("[v0] Error cancelling invoice:", err)
     } finally {
       setIsCancelling(false)
     }

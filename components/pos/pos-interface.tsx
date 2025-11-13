@@ -1,31 +1,34 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { ProductBrowser } from "./product-browser"
-import { CartSummary } from "./cart-summary"
-import { PaymentModal } from "./payment-modal"
-import { offlineStore } from "@/lib/db/offline-store"
+import { useState, useEffect } from "react";
+import { ProductBrowser } from "./product-browser";
+import { CartSummary } from "./cart-summary";
+import { PaymentModal } from "./payment-modal";
+import { offlineStore } from "@/lib/db/offline-store";
 
 interface User {
-  id: string
-  name: string
-  warehouse: string
+  id: string;
+  name: string;
+  warehouse: string;
 }
 
 interface CartItem {
-  id: string
-  name: string
-  sku: string
-  price: number
-  quantity: number
-  subtotal: number
-  unit_of_measure?: string
-  sellingPrices?: Array<{ unit_of_measure: string; unit_selling_price: number }>
+  id: string;
+  name: string;
+  sku: string;
+  price: number;
+  quantity: number;
+  subtotal: number;
+  unit_of_measure?: string;
+  sellingPrices?: Array<{
+    unit_of_measure: string;
+    unit_selling_price: number;
+  }>;
 }
 
 interface Customer {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 export function POSInterface({
@@ -34,98 +37,103 @@ export function POSInterface({
   quantity,
   selectedCustomer,
 }: {
-  user: User
-  searchTerm: string
-  quantity: number
-  selectedCustomer: string
+  user: User;
+  searchTerm: string;
+  quantity: number;
+  selectedCustomer: string;
 }) {
-  const [cart, setCart] = useState<CartItem[]>([])
-  const [showPayment, setShowPayment] = useState(false)
-  const [totalAmount, setTotalAmount] = useState(0)
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [selectedCustomerId, setSelectedCustomerId] = useState(selectedCustomer)
-  const [customerName, setCustomerName] = useState("Walk In")
-  const [mobileNumber, setMobileNumber] = useState("")
-  const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null)
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [showPayment, setShowPayment] = useState(false);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] =
+    useState(selectedCustomer);
+  const [customerName, setCustomerName] = useState("Walk In");
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null);
+  const [invoiceOutstandingAmount, setInvoiceOutstandingAmount] = useState<
+    number | null
+  >(null);
 
   useEffect(() => {
     const initCart = async () => {
-      const savedCart = await offlineStore.getCart()
+      const savedCart = await offlineStore.getCart();
       if (savedCart.length > 0) {
-        setCart(savedCart)
+        setCart(savedCart);
       }
-    }
-    initCart()
-  }, [])
+    };
+    initCart();
+  }, []);
 
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await fetch("/api/customers/list")
-        if (!response.ok) throw new Error("Failed to fetch customers")
+        const response = await fetch("/api/customers/list");
+        if (!response.ok) throw new Error("Failed to fetch customers");
 
-        const data = await response.json()
-        setCustomers(data.customers || [])
+        const data = await response.json();
+        setCustomers(data.customers || []);
       } catch (error) {
-        console.error("[DukaPlus] Failed to fetch customers:", error)
+        console.error("[v0] Failed to fetch customers:", error);
       }
-    }
+    };
 
-    fetchCustomers()
-  }, [])
+    fetchCustomers();
+  }, []);
 
   useEffect(() => {
     offlineStore.saveCart(cart).catch((error) => {
-      console.error("[DukaPlus] Failed to save cart:", error)
-    })
-  }, [cart])
+      console.error("[v0] Failed to save cart:", error);
+    });
+  }, [cart]);
 
   useEffect(() => {
-    const total = cart.reduce((sum, item) => sum + item.subtotal, 0)
-    setTotalAmount(total)
-  }, [cart])
+    const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
+    setTotalAmount(total);
+  }, [cart]);
 
   useEffect(() => {
     const updateCustomerInfo = async () => {
       if (selectedCustomer === "Walk In" || selectedCustomer === "walk-in") {
-        setCustomerName("Walk In")
-        setMobileNumber("")
-        return
+        setCustomerName("Walk In");
+        setMobileNumber("");
+        return;
       }
 
-      const customer = customers.find((c) => c.id === selectedCustomer)
+      const customer = customers.find((c) => c.id === selectedCustomer);
       if (customer) {
-        setCustomerName(customer.name)
+        setCustomerName(customer.name);
         try {
-          const response = await fetch(`/api/customers/list`)
+          const response = await fetch(`/api/customers/list`);
           if (response.ok) {
-            const data = await response.json()
+            const data = await response.json();
             const fullCustomer = data.customers?.find(
-              (c: any) => (c.customer_id || c.customer_name) === selectedCustomer,
-            )
+              (c: any) =>
+                (c.customer_id || c.customer_name) === selectedCustomer
+            );
             if (fullCustomer) {
-              setMobileNumber(fullCustomer.mobile_number || "")
+              setMobileNumber(fullCustomer.mobile_number || "");
             }
           }
         } catch (error) {
-          console.error("[DukaPlus] Failed to fetch customer details:", error)
+          console.error("[v0] Failed to fetch customer details:", error);
         }
       } else {
-        setCustomerName(selectedCustomer)
+        setCustomerName(selectedCustomer);
       }
-    }
+    };
 
-    updateCustomerInfo()
-  }, [selectedCustomer, customers])
+    updateCustomerInfo();
+  }, [selectedCustomer, customers]);
 
   useEffect(() => {
     const handleLoadDraftItems = (event: any) => {
-      const { items, customer, mobile } = event.detail
+      const { items, customer, mobile } = event.detail;
 
-      setCart([])
+      setCart([]);
 
-      if (customer) setCustomerName(customer)
-      if (mobile) setMobileNumber(mobile)
+      if (customer) setCustomerName(customer);
+      if (mobile) setMobileNumber(mobile);
 
       items.forEach((item: any) => {
         const cartItem: CartItem = {
@@ -136,36 +144,44 @@ export function POSInterface({
           quantity: item.qty,
           subtotal: item.amount,
           unit_of_measure: "Each",
-        }
-        setCart((prev) => [...prev, cartItem])
-      })
-    }
+        };
+        setCart((prev) => [...prev, cartItem]);
+      });
+    };
 
-    window.addEventListener("loadDraftItems", handleLoadDraftItems)
-    return () => window.removeEventListener("loadDraftItems", handleLoadDraftItems)
-  }, [])
+    window.addEventListener("loadDraftItems", handleLoadDraftItems);
+    return () =>
+      window.removeEventListener("loadDraftItems", handleLoadDraftItems);
+  }, []);
 
   useEffect(() => {
-    const pendingInvoice = sessionStorage.getItem("pending_invoice_payment")
+    const pendingInvoice = sessionStorage.getItem("pending_invoice_payment");
     if (pendingInvoice) {
       try {
-        const invoice = JSON.parse(pendingInvoice)
-        setCustomerName(invoice.customer_name || "Walk In")
-        setMobileNumber(invoice.mobile_number || "")
-        setPendingInvoiceId(invoice.sales_id)
-        setShowPayment(true)
-        sessionStorage.removeItem("pending_invoice_payment")
+        const invoice = JSON.parse(pendingInvoice);
+        console.log("[v0] Loading pending invoice payment:", invoice);
+        setCustomerName(invoice.customer_name || "Walk In");
+        setMobileNumber(invoice.mobile_number || "");
+        setPendingInvoiceId(invoice.sales_id);
+        setInvoiceOutstandingAmount(invoice.outstanding_amount || 0);
+        setShowPayment(true);
+        sessionStorage.removeItem("pending_invoice_payment");
       } catch (err) {
-        console.error("[DukaPlus] Failed to load pending invoice:", err)
+        console.error("[v0] Failed to load pending invoice:", err);
       }
     }
-  }, [])
+  }, []);
 
   const addToCart = (product: any) => {
-    console.log("[DukaPlus] Adding product to cart:", product.name, "all_selling_prices:", product.all_selling_prices)
+    console.log(
+      "[v0] Adding product to cart:",
+      product.name,
+      "all_selling_prices:",
+      product.all_selling_prices
+    );
 
     setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id)
+      const existingItem = prevCart.find((item) => item.id === product.id);
 
       if (existingItem) {
         return prevCart.map((item) =>
@@ -175,13 +191,14 @@ export function POSInterface({
                 quantity: item.quantity + 1,
                 subtotal: (item.quantity + 1) * item.price,
               }
-            : item,
-        )
+            : item
+        );
       }
 
-      const prices = product.all_selling_prices || []
-      const defaultPrice = prices.length > 0 ? prices[0].unit_selling_price : product.price
-      const defaultUom = prices.length > 0 ? prices[0].unit_of_measure : "Each"
+      const prices = product.all_selling_prices || [];
+      const defaultPrice =
+        prices.length > 0 ? prices[0].unit_selling_price : product.price;
+      const defaultUom = prices.length > 0 ? prices[0].unit_of_measure : "Each";
 
       const newItem = {
         id: product.id,
@@ -193,17 +210,22 @@ export function POSInterface({
         unit_of_measure: defaultUom,
         sellingPrices: prices,
         all_selling_prices: prices,
-      }
+      };
 
-      console.log("[DukaPlus] New cart item:", newItem)
-      return [...prevCart, newItem]
-    })
-  }
+      console.log("[v0] New cart item:", newItem);
+      return [...prevCart, newItem];
+    });
+  };
 
-  const updateCartItem = (id: string, quantity: number, price?: number, unit?: string) => {
+  const updateCartItem = (
+    id: string,
+    quantity: number,
+    price?: number,
+    unit?: string
+  ) => {
     if (quantity <= 0) {
-      removeFromCart(id)
-      return
+      removeFromCart(id);
+      return;
     }
 
     setCart((prevCart) =>
@@ -216,23 +238,24 @@ export function POSInterface({
               price: price !== undefined ? price : item.price,
               subtotal: quantity * (price !== undefined ? price : item.price),
             }
-          : item,
-      ),
-    )
-  }
+          : item
+      )
+    );
+  };
 
   const removeFromCart = (id: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id))
-  }
+    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
+  };
 
   const clearCart = () => {
-    setCart([])
+    setCart([]);
     offlineStore.clearCart().catch((error) => {
-      console.error("[DukaPlus] Failed to clear cart:", error)
-    })
-    setShowPayment(false)
-    setPendingInvoiceId(null)
-  }
+      console.error("[v0] Failed to clear cart:", error);
+    });
+    setShowPayment(false);
+    setPendingInvoiceId(null);
+    setInvoiceOutstandingAmount(null);
+  };
 
   return (
     <div className="flex flex-col lg:flex-row h-full gap-0 lg:gap-0 bg-gray-50 dark:bg-gray-900">
@@ -257,17 +280,23 @@ export function POSInterface({
 
       {showPayment && (
         <PaymentModal
-          totalAmount={totalAmount}
+          totalAmount={
+            invoiceOutstandingAmount !== null
+              ? invoiceOutstandingAmount
+              : cart.reduce((sum, item) => sum + item.subtotal, 0)
+          }
           itemCount={cart.length}
           cartItems={cart}
           onClose={() => {
-            setShowPayment(false)
-            setPendingInvoiceId(null)
+            setShowPayment(false);
+            setPendingInvoiceId(null);
+            setInvoiceOutstandingAmount(null);
           }}
           onSuccess={() => {
-            clearCart()
-            setShowPayment(false)
-            setPendingInvoiceId(null)
+            clearCart();
+            setShowPayment(false);
+            setPendingInvoiceId(null);
+            setInvoiceOutstandingAmount(null);
           }}
           customerName={customerName}
           mobileNumber={mobileNumber}
@@ -276,5 +305,5 @@ export function POSInterface({
         />
       )}
     </div>
-  )
+  );
 }
