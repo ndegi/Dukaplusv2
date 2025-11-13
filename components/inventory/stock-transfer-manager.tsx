@@ -64,7 +64,7 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error fetching stock transfers" })
-      console.error("[v0] Error fetching stock transfers:", error)
+      console.error("[DukaPlus] Error fetching stock transfers:", error)
     } finally {
       setIsLoading(false)
     }
@@ -85,7 +85,7 @@ export function StockTransferManager() {
         }
       }
     } catch (error) {
-      console.error("[v0] Error fetching warehouses:", error)
+      console.error("[DukaPlus] Error fetching warehouses:", error)
     }
   }
 
@@ -99,7 +99,7 @@ export function StockTransferManager() {
         setProducts(data.products)
       }
     } catch (error) {
-      console.error("[v0] Error fetching products:", error)
+      console.error("[DukaPlus] Error fetching products:", error)
     }
   }
 
@@ -143,7 +143,7 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error creating stock transfer" })
-      console.error("[v0] Error creating stock transfer:", error)
+      console.error("[DukaPlus] Error creating stock transfer:", error)
     } finally {
       setIsSubmitting(false)
     }
@@ -169,7 +169,7 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error submitting stock transfer" })
-      console.error("[v0] Error submitting stock transfer:", error)
+      console.error("[DukaPlus] Error submitting stock transfer:", error)
     }
   }
 
@@ -193,7 +193,7 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error cancelling stock transfer" })
-      console.error("[v0] Error cancelling stock transfer:", error)
+      console.error("[DukaPlus] Error cancelling stock transfer:", error)
     }
   }
 

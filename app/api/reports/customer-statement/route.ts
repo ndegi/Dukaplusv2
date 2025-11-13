@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json()
     return NextResponse.json({ customers: data.message?.data || [] })
   } catch (error) {
-    console.error("[v0] Customer statement error:", error)
+    console.error("[DukaPlus] Customer statement error:", error)
     return NextResponse.json({ error: "Failed to fetch customer statement" }, { status: 500 })
   }
 }

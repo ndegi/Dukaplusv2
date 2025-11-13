@@ -13,7 +13,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "DukaPlus POS",
   description: "Modern Point of Sale System",
-  generator: "v0.app",
+  generator: "DukaPlus.app",
   icons: {
     icon: "/favicon.png",
     apple: "/icon.png",

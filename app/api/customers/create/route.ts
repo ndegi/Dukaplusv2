@@ -25,13 +25,13 @@ export async function POST(req: NextRequest) {
     const data = await response.json()
 
     if (!response.ok) {
-      console.error("[v0] Create customer error:", data)
+      console.error("[DukaPlus] Create customer error:", data)
       return NextResponse.json({ error: "Failed to create customer" }, { status: 500 })
     }
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[v0] Create customer error:", error)
+    console.error("[DukaPlus] Create customer error:", error)
     return NextResponse.json({ error: "Failed to create customer" }, { status: 500 })
   }
 }

@@ -78,11 +78,11 @@ export function CartSummary({
         setDraftReceipts(data.message.sales_data)
         setQueuedCount(data.message.sales_data.length)
       } else {
-        console.error("[v0] Failed to fetch drafts:", data)
+        console.error("[DukaPlus] Failed to fetch drafts:", data)
         setQueuedCount(0)
       }
     } catch (err) {
-      console.error("[v0] Error fetching draft receipts:", err)
+      console.error("[DukaPlus] Error fetching draft receipts:", err)
       setQueuedCount(0)
     }
   }
