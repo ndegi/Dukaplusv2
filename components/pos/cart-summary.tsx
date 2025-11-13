@@ -47,6 +47,9 @@ export function CartSummary({
   const [queuedCount, setQueuedCount] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [draftReceipts, setDraftReceipts] = useState<any[]>([])
+  const [showQueueModal, setShowQueueModal] = useState(false)
+  const [onLoadDraft, setOnLoadDraft] = useState<((items: any[]) => void) | null>(null)
 
   useEffect(() => {
     const handleWarehouseChange = () => {
@@ -59,6 +62,30 @@ export function CartSummary({
     window.addEventListener("warehouseChanged", handleWarehouseChange)
     return () => window.removeEventListener("warehouseChanged", handleWarehouseChange)
   }, [cart.length, onClearCart])
+
+  useEffect(() => {
+    fetchDraftReceipts()
+  }, [warehouse])
+
+  const fetchDraftReceipts = async () => {
+    if (!warehouse) return
+
+    try {
+      const response = await fetch(`/api/sales/draft?warehouse_id=${encodeURIComponent(warehouse)}`)
+      const data = await response.json()
+
+      if (response.ok && data.message?.sales_data) {
+        setDraftReceipts(data.message.sales_data)
+        setQueuedCount(data.message.sales_data.length)
+      } else {
+        console.error("[v0] Failed to fetch drafts:", data)
+        setQueuedCount(0)
+      }
+    } catch (err) {
+      console.error("[v0] Error fetching draft receipts:", err)
+      setQueuedCount(0)
+    }
+  }
 
   const handleQueueCart = async () => {
     if (cart.length === 0) return
@@ -94,7 +121,7 @@ export function CartSummary({
       const data = await response.json()
 
       if (response.ok) {
-        setQueuedCount((prev) => prev + 1)
+        await fetchDraftReceipts()
         onClearCart()
       } else {
         setError(data.message?.message || "Failed to queue invoice")
@@ -105,6 +132,29 @@ export function CartSummary({
     } finally {
       setIsProcessing(false)
     }
+  }
+
+  const handleLoadDraft = (draft: any) => {
+    onClearCart()
+
+    if (draft.items && Array.isArray(draft.items)) {
+      const loadEvent = new CustomEvent("loadDraftItems", {
+        detail: {
+          items: draft.items.map((item: any) => ({
+            item_code: item.item_code,
+            item_name: item.item_name,
+            qty: item.qty,
+            rate: item.rate,
+            amount: item.amount,
+          })),
+          customer: draft.customer || "Walk In",
+          mobile: draft.store_mobile_number || "",
+        },
+      })
+      window.dispatchEvent(loadEvent)
+    }
+
+    setShowQueueModal(false)
   }
 
   const handleUnitChange = (itemId: string, newUnit: string) => {
@@ -248,11 +298,55 @@ export function CartSummary({
           >
             {isProcessing ? "Processing..." : "QUEUE"}
           </Button>
-          <Button disabled className="btn-disabled h-12 text-base uppercase rounded-lg">
+          <Button
+            onClick={() => setShowQueueModal(true)}
+            disabled={queuedCount === 0}
+            className="btn-disabled h-12 text-base uppercase rounded-lg"
+          >
             QUEUED ({queuedCount})
           </Button>
         </div>
       </div>
+
+      {showQueueModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-border">
+              <h2 className="text-xl font-bold text-foreground">Queued Receipts</h2>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {draftReceipts.map((draft) => (
+                <div
+                  key={draft.sales_id}
+                  className="card-base p-4 hover:bg-muted cursor-pointer"
+                  onClick={() => handleLoadDraft(draft)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-mono text-sm text-warning">{draft.sales_id}</p>
+                      <p className="text-foreground font-medium">{draft.customer}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {draft.date} {draft.time}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">{draft.items?.length || 0} items</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-success">
+                        KES {draft.total_amount?.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t border-border">
+              <Button onClick={() => setShowQueueModal(false)} className="w-full btn-cancel">
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

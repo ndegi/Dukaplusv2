@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json()
     return NextResponse.json({ stock: data.message?.data || [] })
   } catch (error) {
-    console.error("[DukaPlus] Stock balance error:", error)
+    console.error("[v0] Stock balance error:", error)
     return NextResponse.json({ error: "Failed to fetch stock balance" }, { status: 500 })
   }
 }

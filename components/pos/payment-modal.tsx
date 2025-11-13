@@ -18,6 +18,8 @@ interface PaymentModalProps {
   onSuccess: () => void
   customerName?: string
   mobileNumber?: string
+  invoiceId?: string
+  isInvoicePayment?: boolean
 }
 
 interface PaymentSplit {
@@ -37,6 +39,8 @@ export function PaymentModal({
   onSuccess,
   customerName: initialCustomerName = "Walk In",
   mobileNumber: initialMobileNumber = "",
+  invoiceId,
+  isInvoicePayment = false,
 }: PaymentModalProps) {
   const [paymentModes, setPaymentModes] = useState<PaymentMode[]>([])
   const [splitPayments, setSplitPayments] = useState<PaymentSplit[]>([
@@ -72,7 +76,7 @@ export function PaymentModal({
         }
       }
     } catch (error) {
-      console.error("[DukaPlus] Failed to fetch payment modes:", error)
+      console.error("[v0] Failed to fetch payment modes:", error)
       setPaymentModes([
         { mode_of_payment: "Cash" },
         { mode_of_payment: "Mpesa" },
@@ -158,7 +162,7 @@ export function PaymentModal({
         setMessage({ type: "error", text: data.message || "STK Push failed" })
       }
     } catch (error) {
-      console.error("[DukaPlus] STK Push error:", error)
+      console.error("[v0] STK Push error:", error)
       setMessage({ type: "error", text: "Failed to initiate STK Push" })
     } finally {
       setIsProcessing(false)
@@ -171,6 +175,41 @@ export function PaymentModal({
         setMessage({ type: "error", text: `Payment incomplete. Remaining: KES ${remaining.toFixed(2)}` })
       } else {
         setMessage({ type: "error", text: "Please complete all M-PESA/Till payments before finishing" })
+      }
+      return
+    }
+
+    if (isInvoicePayment && invoiceId) {
+      setIsProcessing(true)
+      setMessage(null)
+
+      try {
+        const response = await fetch("/api/sales/invoice/payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sales_id: invoiceId,
+            payment_details: splitPayments.map((payment) => ({
+              mode_of_payment: payment.mode,
+              amount: payment.amount,
+            })),
+          }),
+        })
+
+        const data = await response.json()
+        if (response.ok) {
+          setMessage({ type: "success", text: "Payment processed successfully" })
+          setTimeout(() => {
+            onSuccess()
+          }, 1500)
+        } else {
+          setMessage({ type: "error", text: data.message?.message || "Payment failed" })
+        }
+      } catch (error) {
+        console.error("[v0] Payment error:", error)
+        setMessage({ type: "error", text: "An error occurred while processing payment" })
+      } finally {
+        setIsProcessing(false)
       }
       return
     }
@@ -228,7 +267,7 @@ export function PaymentModal({
         setMessage({ type: "error", text: data.message || "Payment failed" })
       }
     } catch (error) {
-      console.error("[DukaPlus] Payment error:", error)
+      console.error("[v0] Payment error:", error)
       setMessage({ type: "error", text: "An error occurred while processing payment" })
     } finally {
       setIsProcessing(false)

@@ -44,6 +44,9 @@ export default function SalesPage() {
   const itemsPerPage = 10
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState<"receipts" | "invoices">("receipts")
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [itemToCancel, setItemToCancel] = useState<{ id: string; type: "receipt" | "invoice" } | null>(null)
+  const [isCancelling, setIsCancelling] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -80,7 +83,7 @@ export default function SalesPage() {
       }
     } catch (err) {
       setError("Error fetching sales receipts")
-      console.error("[DukaPlus] Error fetching sales receipts:", err)
+      console.error("[v0] Error fetching sales receipts:", err)
     } finally {
       setIsLoadingReceipts(false)
     }
@@ -101,7 +104,7 @@ export default function SalesPage() {
         setInvoices(data.message.sales_data)
       }
     } catch (err) {
-      console.error("[DukaPlus] Error fetching sales invoices:", err)
+      console.error("[v0] Error fetching sales invoices:", err)
     }
   }
 
@@ -143,6 +146,44 @@ export default function SalesPage() {
 
   const handleViewReceipt = (url: string) => {
     window.open(url, "_blank")
+  }
+
+  const handleCompletePayment = (invoice: SalesInvoice) => {
+    // Store invoice data in sessionStorage for POS to load
+    sessionStorage.setItem("pending_invoice_payment", JSON.stringify(invoice))
+    router.push("/pos")
+  }
+
+  const handleCancelInvoice = async (salesId: string) => {
+    try {
+      setIsCancelling(true)
+      const response = await fetch("/api/sales/invoice/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sales_invoice_id: salesId }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setShowCancelConfirm(false)
+        setItemToCancel(null)
+        fetchSalesReceipts()
+        fetchSalesInvoices()
+      } else {
+        setError(data.message?.message || "Failed to cancel invoice")
+      }
+    } catch (err) {
+      setError("Error cancelling invoice")
+      console.error("[v0] Error cancelling invoice:", err)
+    } finally {
+      setIsCancelling(false)
+    }
+  }
+
+  const handleShowCancelConfirm = (salesId: string, type: "receipt" | "invoice") => {
+    setItemToCancel({ id: salesId, type })
+    setShowCancelConfirm(true)
   }
 
   if (isLoading || !user) {
@@ -298,6 +339,13 @@ export default function SalesPage() {
                               >
                                 <Download className="w-4 h-4" />
                               </button>
+                              <button
+                                onClick={() => handleShowCancelConfirm(receipt.sales_id, "receipt")}
+                                className="btn-cancel p-2 rounded text-xs"
+                                title="Cancel Receipt"
+                              >
+                                Cancel
+                              </button>
                             </td>
                           </tr>
                         )
@@ -355,6 +403,22 @@ export default function SalesPage() {
                                 title="Download Invoice"
                               >
                                 <Download className="w-4 h-4" />
+                              </button>
+                              {invoice.outstanding_amount > 0 && (
+                                <button
+                                  onClick={() => handleCompletePayment(invoice)}
+                                  className="btn-warning p-2 rounded text-xs"
+                                  title="Complete Payment"
+                                >
+                                  Pay
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleShowCancelConfirm(invoice.sales_id, "invoice")}
+                                className="btn-cancel p-2 rounded text-xs"
+                                title="Cancel Invoice"
+                              >
+                                Cancel
                               </button>
                             </td>
                           </tr>
@@ -420,6 +484,46 @@ export default function SalesPage() {
           )}
         </div>
       </div>
+
+      {showCancelConfirm && itemToCancel && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg w-full max-w-md">
+            <div className="p-6 border-b border-border">
+              <h2 className="text-xl font-bold text-foreground">
+                Cancel {itemToCancel.type === "receipt" ? "Receipt" : "Invoice"}
+              </h2>
+            </div>
+
+            <div className="p-6">
+              <p className="text-foreground">
+                Are you sure you want to cancel {itemToCancel.type === "receipt" ? "receipt" : "invoice"}{" "}
+                <span className="font-mono font-semibold text-warning">{itemToCancel.id}</span>?
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">This action cannot be undone.</p>
+            </div>
+
+            <div className="p-6 border-t border-border flex gap-2">
+              <button
+                onClick={() => {
+                  setShowCancelConfirm(false)
+                  setItemToCancel(null)
+                }}
+                className="btn-secondary flex-1"
+                disabled={isCancelling}
+              >
+                No, Keep It
+              </button>
+              <button
+                onClick={() => handleCancelInvoice(itemToCancel.id)}
+                className="btn-cancel flex-1"
+                disabled={isCancelling}
+              >
+                {isCancelling ? "Cancelling..." : "Yes, Cancel"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   )
 }
