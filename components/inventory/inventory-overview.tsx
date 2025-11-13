@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Plus, ChevronLeft, ChevronRight, Pencil } from "lucide-react"
+import { Search, Plus, ChevronLeft, ChevronRight, Pencil } from 'lucide-react'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
 import { ProductForm } from "./product-form"
@@ -20,6 +20,7 @@ interface Product {
   barcode: string | null
   colorCode: string
   description: string
+  img?: string // Added image field
   lastUpdated: string
   status: "in_stock" | "low_stock" | "out_of_stock"
 }
