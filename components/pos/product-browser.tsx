@@ -105,7 +105,7 @@ export function ProductBrowser({
       }
     } catch (err) {
       setError("An error occurred while fetching products");
-      console.error("[v0] Error fetching products:", err);
+      console.error("[DukaPlus] Error fetching products:", err);
     } finally {
       setIsLoading(false);
     }
@@ -175,17 +175,14 @@ export function ProductBrowser({
               in_stock: {
                 color:
                   "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-                label: "In Stock",
               },
               low_stock: {
                 color:
                   "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-                label: "Low Stock",
               },
               out_of_stock: {
                 color:
                   "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-                label: "Out of Stock",
               },
             };
             const currentStatus = statusConfig[stockStatus];
@@ -221,7 +218,7 @@ export function ProductBrowser({
                     <span
                       className={`text-xs font-semibold px-2 py-0.5 rounded-full ${currentStatus.color}`}
                     >
-                      {currentStatus.label}
+                      {product.quantity} available
                     </span>
                   </div>
                 </div>
@@ -230,14 +227,6 @@ export function ProductBrowser({
                     <h3 className="font-semibold text-foreground text-xs line-clamp-2">
                       {product.name}
                     </h3>
-                    <p
-                      className={`text-xs mt-0.5 font-medium ${
-                        isOutOfStock ? "text-red-600" : "text-foreground"
-                      }`}
-                    >
-                      <FontAwesomeIcon icon={faBox} /> {product.quantity}{" "}
-                      available
-                    </p>
                   </div>
                   <div className="mt-2 flex items-center justify-between">
                     <div className="flex-1 min-w-0">

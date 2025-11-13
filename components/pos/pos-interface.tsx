@@ -74,7 +74,7 @@ export function POSInterface({
         const data = await response.json();
         setCustomers(data.customers || []);
       } catch (error) {
-        console.error("[v0] Failed to fetch customers:", error);
+        console.error("[DukaPlus] Failed to fetch customers:", error);
       }
     };
 
@@ -83,7 +83,7 @@ export function POSInterface({
 
   useEffect(() => {
     offlineStore.saveCart(cart).catch((error) => {
-      console.error("[v0] Failed to save cart:", error);
+      console.error("[DukaPlus] Failed to save cart:", error);
     });
   }, [cart]);
 
@@ -116,7 +116,7 @@ export function POSInterface({
             }
           }
         } catch (error) {
-          console.error("[v0] Failed to fetch customer details:", error);
+          console.error("[DukaPlus] Failed to fetch customer details:", error);
         }
       } else {
         setCustomerName(selectedCustomer);
@@ -159,7 +159,7 @@ export function POSInterface({
     if (pendingInvoice) {
       try {
         const invoice = JSON.parse(pendingInvoice);
-        console.log("[v0] Loading pending invoice payment:", invoice);
+        console.log("[DukaPlus] Loading pending invoice payment:", invoice);
         setCustomerName(invoice.customer_name || "Walk In");
         setMobileNumber(invoice.mobile_number || "");
         setPendingInvoiceId(invoice.sales_id);
@@ -167,14 +167,14 @@ export function POSInterface({
         setShowPayment(true);
         sessionStorage.removeItem("pending_invoice_payment");
       } catch (err) {
-        console.error("[v0] Failed to load pending invoice:", err);
+        console.error("[DukaPlus] Failed to load pending invoice:", err);
       }
     }
   }, []);
 
   const addToCart = (product: any) => {
     console.log(
-      "[v0] Adding product to cart:",
+      "[DukaPlus] Adding product to cart:",
       product.name,
       "all_selling_prices:",
       product.all_selling_prices
@@ -212,7 +212,7 @@ export function POSInterface({
         all_selling_prices: prices,
       };
 
-      console.log("[v0] New cart item:", newItem);
+      console.log("[DukaPlus] New cart item:", newItem);
       return [...prevCart, newItem];
     });
   };
@@ -250,7 +250,7 @@ export function POSInterface({
   const clearCart = () => {
     setCart([]);
     offlineStore.clearCart().catch((error) => {
-      console.error("[v0] Failed to clear cart:", error);
+      console.error("[DukaPlus] Failed to clear cart:", error);
     });
     setShowPayment(false);
     setPendingInvoiceId(null);
