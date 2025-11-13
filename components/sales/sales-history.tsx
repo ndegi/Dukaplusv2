@@ -1,0 +1,175 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { Input } from "@/components/ui/input"
+import { AlertCircle, Search, Calendar } from "lucide-react"
+
+interface Transaction {
+  id: string
+  date: string
+  amount: number
+  items: number
+  paymentMethod: string
+  reference?: string
+  user: string
+}
+
+export function SalesHistory() {
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [totalSales, setTotalSales] = useState(0)
+
+  useEffect(() => {
+    fetchTransactions()
+  }, [])
+
+  useEffect(() => {
+    const filtered = transactions.filter(
+      (transaction) =>
+        transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.paymentMethod.toLowerCase().includes(searchTerm.toLowerCase()),
+    )
+    setFilteredTransactions(filtered)
+  }, [searchTerm, transactions])
+
+  const fetchTransactions = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch("/api/sales/transactions")
+
+      if (response.ok) {
+        const data = await response.json()
+        const transactionsList = (data.transactions || []).map((item: any) => ({
+          id: item.name,
+          date: item.creation || new Date().toISOString(),
+          amount: item.total || 0,
+          items: item.items_count || 0,
+          paymentMethod: item.payment_method || "cash",
+          reference: item.payment_reference,
+          user: item.owner || "System",
+        }))
+        setTransactions(transactionsList)
+
+        const total = transactionsList.reduce((sum: number, t: Transaction) => sum + t.amount, 0)
+        setTotalSales(total)
+
+        setError(null)
+      } else {
+        setError("Failed to fetch transactions")
+      }
+    } catch (err) {
+      setError("An error occurred while fetching transactions")
+      console.error(err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+          <p className="text-red-200 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+          <p className="text-slate-400 text-sm mb-1">Total Transactions</p>
+          <p className="text-3xl font-bold text-white">{transactions.length}</p>
+        </div>
+
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+          <p className="text-slate-400 text-sm mb-1">Total Sales</p>
+          <p className="text-3xl font-bold text-orange-400">KES {totalSales.toFixed(2)}</p>
+        </div>
+
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+          <p className="text-slate-400 text-sm mb-1">Average Transaction</p>
+          <p className="text-3xl font-bold text-green-400">
+            KES {(transactions.length > 0 ? totalSales / transactions.length : 0).toFixed(2)}
+          </p>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+        <Input
+          placeholder="Search by transaction ID or payment method..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 bg-slate-700 border-slate-600 text-white"
+        />
+      </div>
+
+      {/* Transactions Table */}
+      <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 text-center text-slate-400">Loading transactions...</div>
+        ) : filteredTransactions.length === 0 ? (
+          <div className="p-8 text-center text-slate-400">No transactions found</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-700 border-b border-slate-600">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                    Transaction ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                    Date & Time
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                    Items
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                    Method
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                    User
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700">
+                {filteredTransactions.map((transaction) => (
+                  <tr key={transaction.id} className="hover:bg-slate-700/50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-medium text-white font-mono">{transaction.id}</td>
+                    <td className="px-6 py-4 text-sm text-slate-400">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        {new Date(transaction.date).toLocaleString()}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-400">{transaction.items}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-orange-400">
+                      KES{" "}
+                      {transaction.amount.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className="px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/50 text-blue-300 text-xs font-medium">
+                        {transaction.paymentMethod}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-400">{transaction.user}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

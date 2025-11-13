@@ -1,0 +1,552 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Card } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Plus, Edit2, Trash2, Check, ChevronLeft, ChevronRight } from "lucide-react"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
+
+interface Expense {
+  expense_name: string
+  expense_category: string
+  expense_amount: number
+  date: string
+  expense_description: string
+  mode_of_payment: string
+  status: number
+}
+
+interface ExpenseCategory {
+  expense_category: string
+}
+
+export function ExpensesOverview() {
+  const [expenses, setExpenses] = useState<Expense[]>([])
+  const [categories, setCategories] = useState<ExpenseCategory[]>([])
+  const [showDialog, setShowDialog] = useState(false)
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null)
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false)
+  const [submittingExpense, setSubmittingExpense] = useState<Expense | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  const [formData, setFormData] = useState({
+    expense_category: "",
+    expense_amount: "",
+    date: new Date().toISOString().split("T")[0],
+    expense_description: "",
+    mode_of_payment: "Cash",
+    warehouse_id: "",
+  })
+
+  const [newCategory, setNewCategory] = useState("")
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false)
+
+  useEffect(() => {
+    fetchExpenses()
+    fetchCategories()
+  }, [])
+
+  const fetchExpenses = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      const warehouse = sessionStorage.getItem("selected_warehouse") || ""
+
+      if (!warehouse) {
+        setError("Please select a warehouse first")
+        setIsLoading(false)
+        return
+      }
+
+      const response = await fetch(`/api/expenses/list?warehouse_id=${encodeURIComponent(warehouse)}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        setExpenses(data.expenses || [])
+      } else {
+        setError("Failed to fetch expenses")
+      }
+    } catch (error) {
+      console.error("Failed to fetch expenses:", error)
+      setError("An error occurred while fetching expenses")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const fetchCategories = async () => {
+    try {
+      const warehouse = sessionStorage.getItem("selected_warehouse") || ""
+
+      if (!warehouse) return
+
+      const response = await fetch(`/api/expenses/categories?warehouse_id=${encodeURIComponent(warehouse)}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data.categories || [])
+      }
+    } catch (error) {
+      console.error("Failed to fetch categories:", error)
+    }
+  }
+
+  const handleSaveExpense = async () => {
+    if (!formData.expense_category || !formData.expense_amount) {
+      alert("Please fill in all required fields")
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      const method = editingExpense ? "PUT" : "POST"
+      const endpoint = editingExpense ? `/api/expenses/${editingExpense.expense_name}` : "/api/expenses/create"
+
+      const warehouse = sessionStorage.getItem("selected_warehouse") || ""
+
+      const payload = {
+        warehouse_id: warehouse,
+        expense_category: formData.expense_category,
+        expense_amount: Number(formData.expense_amount),
+        date: formData.date,
+        expense_description: formData.expense_description,
+        mode_of_payment: formData.mode_of_payment,
+      }
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      if (response.ok) {
+        await fetchExpenses()
+        resetForm()
+        setShowDialog(false)
+      }
+    } catch (error) {
+      console.error("Failed to save expense:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDeleteExpense = async () => {
+    if (!deletingExpense) return
+
+    try {
+      const response = await fetch(`/api/expenses/${deletingExpense.expense_name}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        await fetchExpenses()
+        setShowDeleteDialog(false)
+        setDeletingExpense(null)
+      }
+    } catch (error) {
+      console.error("Failed to delete expense:", error)
+    }
+  }
+
+  const handleSubmitExpense = async () => {
+    if (!submittingExpense) return
+
+    try {
+      const response = await fetch(`/api/expenses/${submittingExpense.expense_name}/submit`, {
+        method: "POST",
+      })
+
+      if (response.ok) {
+        await fetchExpenses()
+        setShowSubmitDialog(false)
+        setSubmittingExpense(null)
+      }
+    } catch (error) {
+      console.error("Failed to submit expense:", error)
+    }
+  }
+
+  const resetForm = () => {
+    setFormData({
+      expense_category: "",
+      expense_amount: "",
+      date: new Date().toISOString().split("T")[0],
+      expense_description: "",
+      mode_of_payment: "Cash",
+      warehouse_id: "",
+    })
+    setEditingExpense(null)
+  }
+
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpense(expense)
+    setFormData({
+      expense_category: expense.expense_category,
+      expense_amount: expense.expense_amount.toString(),
+      date: expense.date,
+      expense_description: expense.expense_description,
+      mode_of_payment: expense.mode_of_payment,
+      warehouse_id: "",
+    })
+    setShowDialog(true)
+  }
+
+  const handleCreateCategory = async () => {
+    if (!newCategory) return
+
+    try {
+      const warehouse = sessionStorage.getItem("selected_warehouse") || ""
+      const response = await fetch("/api/expenses/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          warehouse_id: warehouse,
+          expense_category: newCategory,
+        }),
+      })
+
+      if (response.ok) {
+        await fetchCategories()
+        setNewCategory("")
+        setShowCategoryDialog(false)
+      }
+    } catch (error) {
+      console.error("Failed to create category:", error)
+    }
+  }
+
+  const totalPages = Math.ceil(expenses.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedExpenses = expenses.slice(startIndex, endIndex)
+
+  return (
+    <div className="space-y-4">
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-start gap-3">
+          <FontAwesomeIcon
+            icon={faExclamationCircle}
+            className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+          />
+          <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div className="flex gap-2 flex-col sm:flex-row">
+          <Button
+            onClick={() => {
+              resetForm()
+              setShowDialog(true)
+            }}
+            className="btn-create gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            New Expense
+          </Button>
+          <Button onClick={() => setShowCategoryDialog(true)} variant="outline" className="gap-2">
+            <Plus className="w-4 h-4" />
+            New Category
+          </Button>
+        </div>
+      </div>
+
+      <Card className="card-base">
+        {isLoading ? (
+          <div className="p-6 text-center text-muted-foreground text-sm">Loading expenses...</div>
+        ) : (
+          <>
+            <div className="overflow-x-auto text-xs sm:text-sm">
+              <table className="w-full">
+                <thead className="table-header">
+                  <tr>
+                    <th className="table-header-cell">Expense ID</th>
+                    <th className="table-header-cell">Category</th>
+                    <th className="table-header-cell">Amount</th>
+                    <th className="table-header-cell">Date</th>
+                    <th className="table-header-cell">Payment Mode</th>
+                    <th className="table-header-cell">Status</th>
+                    <th className="table-header-cell">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {expenses.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                        No expenses found. Create one to get started.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedExpenses.map((expense) => (
+                      <tr key={expense.expense_name} className="table-row">
+                        <td className="table-cell">{expense.expense_name}</td>
+                        <td className="table-cell">{expense.expense_category}</td>
+                        <td className="table-cell text-warning font-semibold">
+                          KES{" "}
+                          {expense.expense_amount.toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </td>
+                        <td className="table-cell-secondary">{expense.date}</td>
+                        <td className="table-cell-secondary">{expense.mode_of_payment}</td>
+                        <td className="table-cell">
+                          <span className={expense.status === 1 ? "badge-success" : "badge-warning"}>
+                            {expense.status === 1 ? "Submitted" : "Draft"}
+                          </span>
+                        </td>
+                        <td className="table-cell flex gap-2">
+                          {expense.status === 0 && (
+                            <>
+                              <button
+                                onClick={() => handleEditExpense(expense)}
+                                className="action-btn-edit"
+                                title="Edit"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setDeletingExpense(expense)
+                                  setShowDeleteDialog(true)
+                                }}
+                                className="action-btn-delete"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSubmittingExpense(expense)
+                                  setShowSubmitDialog(true)
+                                }}
+                                className="action-btn-submit"
+                                title="Submit"
+                              >
+                                <Check className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                <div className="text-sm text-muted-foreground">
+                  Showing {startIndex + 1} to {Math.min(endIndex, expenses.length)} of {expenses.length} expenses
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        className={currentPage === page ? "bg-orange-500 hover:bg-orange-600" : ""}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  </div>
+                  <Button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </Card>
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="dialog-content">
+          <DialogHeader>
+            <DialogTitle className="dialog-title">{editingExpense ? "Edit Expense" : "Create New Expense"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="form-label">Category</Label>
+              <Select
+                value={formData.expense_category}
+                onValueChange={(value) => setFormData({ ...formData, expense_category: value })}
+              >
+                <SelectTrigger className="input-base">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent className="dialog-content">
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.expense_category} value={cat.expense_category}>
+                      {cat.expense_category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="form-label">Amount (KES)</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.expense_amount}
+                onChange={(e) => setFormData({ ...formData, expense_amount: e.target.value })}
+                className="input-base"
+                placeholder="0.00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="form-label">Date</Label>
+              <Input
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                className="input-base"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="form-label">Payment Mode</Label>
+              <Select
+                value={formData.mode_of_payment}
+                onValueChange={(value) => setFormData({ ...formData, mode_of_payment: value })}
+              >
+                <SelectTrigger className="input-base">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="dialog-content">
+                  <SelectItem value="Cash">Cash</SelectItem>
+                  <SelectItem value="Mpesa">M-Pesa</SelectItem>
+                  <SelectItem value="Paid to Pochi">Paid to Pochi</SelectItem>
+                  <SelectItem value="Paid to Till">Paid to Till</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="form-label">Description</Label>
+              <Textarea
+                value={formData.expense_description}
+                onChange={(e) => setFormData({ ...formData, expense_description: e.target.value })}
+                className="input-base"
+                placeholder="Expense details..."
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={handleSaveExpense} disabled={isLoading} className="flex-1 btn-create">
+                {isLoading ? "Saving..." : editingExpense ? "Update Expense" : "Save Expense"}
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowDialog(false)
+                  resetForm()
+                }}
+                className="flex-1 btn-cancel"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+        <DialogContent className="dialog-content">
+          <DialogHeader>
+            <DialogTitle className="dialog-title">Create New Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="form-label">Category Name</Label>
+              <Input
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                className="input-base"
+                placeholder="e.g., Transport, Utilities"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleCreateCategory} className="flex-1 btn-create">
+                Create Category
+              </Button>
+              <Button onClick={() => setShowCategoryDialog(false)} className="flex-1 btn-cancel">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="dialog-content">
+          <AlertDialogTitle className="dialog-title">Delete Expense?</AlertDialogTitle>
+          <AlertDialogDescription className="dialog-description">
+            This action cannot be undone. The expense {deletingExpense?.expense_name} will be permanently deleted.
+          </AlertDialogDescription>
+          <div className="flex gap-2">
+            <AlertDialogCancel className="btn-cancel">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteExpense} className="btn-danger">
+              Delete
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+        <AlertDialogContent className="dialog-content">
+          <AlertDialogTitle className="dialog-title">Submit Expense?</AlertDialogTitle>
+          <AlertDialogDescription className="dialog-description">
+            Are you sure you want to submit expense {submittingExpense?.expense_name}? This action cannot be undone.
+          </AlertDialogDescription>
+          <div className="flex gap-2">
+            <AlertDialogCancel className="btn-cancel">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSubmitExpense} className="btn-success">
+              Submit
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
+}
