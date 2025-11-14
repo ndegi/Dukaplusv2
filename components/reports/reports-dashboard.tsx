@@ -7,7 +7,7 @@ import { TopProducts } from "./top-products"
 import { PaymentMethodBreakdown } from "./payment-breakdown"
 import { DateRangeFilter } from "./date-range-filter"
 import { ExportButton } from "./export-button"
-import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -32,11 +32,15 @@ interface SalesReportItem {
   posting_time: string
   status: string
   customer: string
+  location: string
   grand_total: number
   outstanding_amount: number
   cost_of_goods_sold: number
-  cash: number
   mpesa: number
+  cash: number
+  paid_to_pochi: number
+  paid_to_till: number
+  total_amount_paid: number
 }
 
 interface CustomerStatement {
@@ -44,7 +48,10 @@ interface CustomerStatement {
   warehouse: string
   status: string
   posting_date: string
+  posting_time: string
+  customer_id: string
   customer_name: string
+  location: string
   invoice_amount: number
   paid_amount: number
   outstanding_amount: number
@@ -83,12 +90,8 @@ export function ReportsDashboard({ user }: { user: User }) {
 
       const [analyticsRes, salesRes, customerRes, stockRes] = await Promise.all([
         fetch(`/api/reports/analytics?from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}`),
-        fetch(
-          `/api/reports/sales?from=${dateRange.from.toISOString().split("T")[0]}&to=${dateRange.to.toISOString().split("T")[0]}`,
-        ),
-        fetch(
-          `/api/reports/customer-statement?from=${dateRange.from.toISOString().split("T")[0]}&to=${dateRange.to.toISOString().split("T")[0]}`,
-        ),
+        fetch(`/api/reports/sales`),
+        fetch(`/api/reports/customer-statement`),
         fetch(`/api/reports/stock-balance`),
       ])
 
@@ -355,8 +358,8 @@ function SalesReportTable({ data, isLoading }: { data: SalesReportItem[]; isLoad
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Customer</th>
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Warehouse</th>
               <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Amount</th>
-              <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">COGS</th>
-              <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Profit</th>
+              <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Cash</th>
+              <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">M-Pesa</th>
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Status</th>
             </tr>
           </thead>
@@ -374,10 +377,10 @@ function SalesReportTable({ data, isLoading }: { data: SalesReportItem[]; isLoad
                   KES {row.grand_total.toFixed(2)}
                 </td>
                 <td className="p-3 text-right text-gray-600 dark:text-gray-400">
-                  KES {row.cost_of_goods_sold.toFixed(2)}
+                  KES {row.cash.toFixed(2)}
                 </td>
-                <td className="p-3 text-right text-green-600 dark:text-green-400 font-semibold">
-                  KES {(row.grand_total - row.cost_of_goods_sold).toFixed(2)}
+                <td className="p-3 text-right text-gray-600 dark:text-gray-400">
+                  KES {row.mpesa.toFixed(2)}
                 </td>
                 <td className="p-3">
                   <span

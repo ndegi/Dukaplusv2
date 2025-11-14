@@ -17,7 +17,7 @@ interface Product {
   reorderLevel: number;
   price: number;
   cost: number;
-  barcode?: string;
+  barcode: string | null;
   colorCode: string;
   description: string;
   img?: string; // Added image field

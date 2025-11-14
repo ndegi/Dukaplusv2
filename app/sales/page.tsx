@@ -2,9 +2,9 @@
 
 import { useAuth } from "@/hooks/use-auth"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from "react"
-import { AlertCircle, Download, Eye, ChevronLeft, ChevronRight } from "lucide-react"
+import { AlertCircle, Download, Eye, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 
 interface SalesReceipt {
@@ -16,6 +16,13 @@ interface SalesReceipt {
   discount_amount: number
   receipt_url: string
   sales_owner: string
+  receipt_items?: Array<{
+    item_code: string
+    item_name: string
+    quantity: number
+    rate: number
+    amount: number
+  }>
 }
 
 interface SalesInvoice {
@@ -29,6 +36,13 @@ interface SalesInvoice {
   status: string
   mobile_number: string
   invoice_url: string
+  invoice_items?: Array<{
+    item_code: string
+    item_name: string
+    quantity: number
+    rate: number
+    amount: number
+  }>
 }
 
 export default function SalesPage() {
@@ -47,6 +61,7 @@ export default function SalesPage() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [itemToCancel, setItemToCancel] = useState<{ id: string; type: "receipt" | "invoice" } | null>(null)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -193,6 +208,18 @@ export default function SalesPage() {
     setShowCancelConfirm(true)
   }
 
+  const toggleRowExpansion = (id: string) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(id)) {
+        newSet.delete(id)
+      } else {
+        newSet.add(id)
+      }
+      return newSet
+    })
+  }
+
   if (isLoading || !user) {
     return null
   }
@@ -285,6 +312,7 @@ export default function SalesPage() {
                 <table className="w-full">
                   <thead className="table-header">
                     <tr>
+                      <th className="px-2 sm:px-4 py-3 text-left font-semibold w-10"></th>
                       <th className="px-2 sm:px-4 py-3 text-left font-semibold">
                         {activeTab === "receipts" ? "Receipt ID" : "Invoice ID"}
                       </th>
@@ -305,130 +333,234 @@ export default function SalesPage() {
                     {paginatedData.map((item) => {
                       if (activeTab === "receipts") {
                         const receipt = item as SalesReceipt
+                        const isExpanded = expandedRows.has(receipt.sales_id)
                         return (
-                          <tr key={receipt.sales_id} className="table-row">
-                            <td className="px-2 sm:px-4 py-3 font-mono text-warning">{receipt.sales_id}</td>
-                            <td className="px-2 sm:px-4 py-3 text-foreground text-xs sm:text-sm">
-                              {receipt.date} {receipt.time}
-                            </td>
-                            <td className="px-2 sm:px-4 py-3 text-foreground">{receipt.customer}</td>
-                            <td className="px-2 sm:px-4 py-3 text-right text-foreground font-semibold">
-                              KES{" "}
-                              {receipt.total_amount.toLocaleString("en-KE", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                            </td>
-                            <td className="px-2 sm:px-4 py-3 text-right text-muted-foreground">
-                              KES{" "}
-                              {receipt.discount_amount.toLocaleString("en-KE", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                            </td>
-                            <td className="px-2 sm:px-4 py-3 text-center flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => handleViewReceipt(receipt.receipt_url)}
-                                className="action-btn-view p-2"
-                                title="View Receipt"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  const link = document.createElement("a")
-                                  link.href = receipt.receipt_url
-                                  link.download = `receipt-${receipt.sales_id}.pdf`
-                                  link.click()
-                                }}
-                                className="btn-success p-2 rounded"
-                                title="Download Receipt"
-                              >
-                                <Download className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleShowCancelConfirm(receipt.sales_id, "receipt")}
-                                className="btn-cancel p-2 rounded text-xs"
-                                title="Cancel Receipt"
-                              >
-                                Cancel
-                              </button>
-                            </td>
-                          </tr>
+                          <>
+                            <tr key={receipt.sales_id} className="table-row">
+                              {receipt.receipt_items && receipt.receipt_items.length > 0 && (
+                                <td className="px-2 sm:px-4 py-3">
+                                  <button
+                                    onClick={() => toggleRowExpansion(receipt.sales_id)}
+                                    className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronUp className="w-4 h-4" />
+                                    ) : (
+                                      <ChevronDown className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                </td>
+                              )}
+                              <td className="px-2 sm:px-4 py-3 font-mono text-warning">{receipt.sales_id}</td>
+                              <td className="px-2 sm:px-4 py-3 text-foreground text-xs sm:text-sm">
+                                {receipt.date} {receipt.time}
+                              </td>
+                              <td className="px-2 sm:px-4 py-3 text-foreground">{receipt.customer}</td>
+                              <td className="px-2 sm:px-4 py-3 text-right text-foreground font-semibold">
+                                KES{" "}
+                                {receipt.total_amount.toLocaleString("en-KE", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </td>
+                              <td className="px-2 sm:px-4 py-3 text-right text-muted-foreground">
+                                KES{" "}
+                                {receipt.discount_amount.toLocaleString("en-KE", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </td>
+                              <td className="px-2 sm:px-4 py-3 text-center flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => handleViewReceipt(receipt.receipt_url)}
+                                  className="action-btn-view p-2"
+                                  title="View Receipt"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const link = document.createElement("a")
+                                    link.href = receipt.receipt_url
+                                    link.download = `receipt-${receipt.sales_id}.pdf`
+                                    link.click()
+                                  }}
+                                  className="btn-success p-2 rounded"
+                                  title="Download Receipt"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleShowCancelConfirm(receipt.sales_id, "receipt")}
+                                  className="btn-cancel p-2 rounded text-xs"
+                                  title="Cancel Receipt"
+                                >
+                                  Cancel
+                                </button>
+                              </td>
+                            </tr>
+                            {isExpanded && receipt.receipt_items && receipt.receipt_items.length > 0 && (
+                              <tr>
+                                <td colSpan={7} className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50">
+                                  <div className="p-4">
+                                    <h4 className="font-semibold text-sm mb-2 text-foreground">Items:</h4>
+                                    <table className="w-full text-xs">
+                                      <thead className="bg-slate-100 dark:bg-slate-800">
+                                        <tr>
+                                          <th className="text-left p-2 font-semibold">Item Code</th>
+                                          <th className="text-left p-2 font-semibold">Item Name</th>
+                                          <th className="text-right p-2 font-semibold">Quantity</th>
+                                          <th className="text-right p-2 font-semibold">Rate</th>
+                                          <th className="text-right p-2 font-semibold">Amount</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {receipt.receipt_items.map((lineItem, idx) => (
+                                          <tr key={idx} className="border-b border-slate-200 dark:border-slate-700">
+                                            <td className="p-2 font-mono text-muted-foreground">{lineItem.item_code}</td>
+                                            <td className="p-2 text-foreground">{lineItem.item_name}</td>
+                                            <td className="p-2 text-right text-foreground">{lineItem.quantity}</td>
+                                            <td className="p-2 text-right text-muted-foreground">
+                                              KES {lineItem.rate.toFixed(2)}
+                                            </td>
+                                            <td className="p-2 text-right font-semibold text-foreground">
+                                              KES {lineItem.amount.toFixed(2)}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </>
                         )
                       } else {
                         const invoice = item as SalesInvoice
+                        const isExpanded = expandedRows.has(invoice.sales_id)
                         return (
-                          <tr key={invoice.sales_id} className="table-row">
-                            <td className="px-2 sm:px-4 py-3 font-mono text-warning">{invoice.sales_id}</td>
-                            <td className="px-2 sm:px-4 py-3 text-foreground text-xs sm:text-sm">
-                              {invoice.date} {invoice.time}
-                            </td>
-                            <td className="px-2 sm:px-4 py-3 text-foreground">{invoice.customer_name}</td>
-                            <td className="px-2 sm:px-4 py-3 text-right text-foreground font-semibold">
-                              KES{" "}
-                              {invoice.total_amount.toLocaleString("en-KE", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                            </td>
-                            <td className="px-2 sm:px-4 py-3 text-right text-red-600 dark:text-red-400 font-semibold">
-                              KES{" "}
-                              {invoice.outstanding_amount.toLocaleString("en-KE", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                            </td>
-                            <td className="px-2 sm:px-4 py-3 text-right text-muted-foreground">
-                              KES{" "}
-                              {invoice.discount_amount.toLocaleString("en-KE", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                            </td>
-                            <td className="px-2 sm:px-4 py-3 text-center">
-                              <span className="px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
-                                {invoice.status}
-                              </span>
-                            </td>
-                            <td className="px-2 sm:px-4 py-3 text-center flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => handleViewReceipt(invoice.invoice_url)}
-                                className="action-btn-view p-2"
-                                title="View Invoice"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  const link = document.createElement("a")
-                                  link.href = invoice.invoice_url
-                                  link.download = `invoice-${invoice.sales_id}.pdf`
-                                  link.click()
-                                }}
-                                className="btn-success p-2 rounded"
-                                title="Download Invoice"
-                              >
-                                <Download className="w-4 h-4" />
-                              </button>
-                              {invoice.outstanding_amount > 0 && (
-                                <button
-                                  onClick={() => handleCompletePayment(invoice)}
-                                  className="btn-warning p-2 rounded text-xs"
-                                  title="Complete Payment"
-                                >
-                                  Pay
-                                </button>
+                          <>
+                            <tr key={invoice.sales_id} className="table-row">
+                              {invoice.invoice_items && invoice.invoice_items.length > 0 && (
+                                <td className="px-2 sm:px-4 py-3">
+                                  <button
+                                    onClick={() => toggleRowExpansion(invoice.sales_id)}
+                                    className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronUp className="w-4 h-4" />
+                                    ) : (
+                                      <ChevronDown className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                </td>
                               )}
-                              <button
-                                onClick={() => handleShowCancelConfirm(invoice.sales_id, "invoice")}
-                                className="btn-cancel p-2 rounded text-xs"
-                                title="Cancel Invoice"
-                              >
-                                Cancel
-                              </button>
-                            </td>
-                          </tr>
+                              <td className="px-2 sm:px-4 py-3 font-mono text-warning">{invoice.sales_id}</td>
+                              <td className="px-2 sm:px-4 py-3 text-foreground text-xs sm:text-sm">
+                                {invoice.date} {invoice.time}
+                              </td>
+                              <td className="px-2 sm:px-4 py-3 text-foreground">{invoice.customer_name}</td>
+                              <td className="px-2 sm:px-4 py-3 text-right text-foreground font-semibold">
+                                KES{" "}
+                                {invoice.total_amount.toLocaleString("en-KE", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </td>
+                              <td className="px-2 sm:px-4 py-3 text-right text-red-600 dark:text-red-400 font-semibold">
+                                KES{" "}
+                                {invoice.outstanding_amount.toLocaleString("en-KE", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </td>
+                              <td className="px-2 sm:px-4 py-3 text-right text-muted-foreground">
+                                KES{" "}
+                                {invoice.discount_amount.toLocaleString("en-KE", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </td>
+                              <td className="px-2 sm:px-4 py-3 text-center">
+                                <span className="px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
+                                  {invoice.status}
+                                </span>
+                              </td>
+                              <td className="px-2 sm:px-4 py-3 text-center flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => handleViewReceipt(invoice.invoice_url)}
+                                  className="action-btn-view p-2"
+                                  title="View Invoice"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const link = document.createElement("a")
+                                    link.href = invoice.invoice_url
+                                    link.download = `invoice-${invoice.sales_id}.pdf`
+                                    link.click()
+                                  }}
+                                  className="btn-success p-2 rounded"
+                                  title="Download Invoice"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </button>
+                                {invoice.outstanding_amount > 0 && (
+                                  <button
+                                    onClick={() => handleCompletePayment(invoice)}
+                                    className="btn-warning p-2 rounded text-xs"
+                                    title="Complete Payment"
+                                  >
+                                    Pay
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleShowCancelConfirm(invoice.sales_id, "invoice")}
+                                  className="btn-cancel p-2 rounded text-xs"
+                                  title="Cancel Invoice"
+                                >
+                                  Cancel
+                                </button>
+                              </td>
+                            </tr>
+                            {isExpanded && invoice.invoice_items && invoice.invoice_items.length > 0 && (
+                              <tr>
+                                <td colSpan={9} className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50">
+                                  <div className="p-4">
+                                    <h4 className="font-semibold text-sm mb-2 text-foreground">Items:</h4>
+                                    <table className="w-full text-xs">
+                                      <thead className="bg-slate-100 dark:bg-slate-800">
+                                        <tr>
+                                          <th className="text-left p-2 font-semibold">Item Code</th>
+                                          <th className="text-left p-2 font-semibold">Item Name</th>
+                                          <th className="text-right p-2 font-semibold">Quantity</th>
+                                          <th className="text-right p-2 font-semibold">Rate</th>
+                                          <th className="text-right p-2 font-semibold">Amount</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {invoice.invoice_items.map((lineItem, idx) => (
+                                          <tr key={idx} className="border-b border-slate-200 dark:border-slate-700">
+                                            <td className="p-2 font-mono text-muted-foreground">{lineItem.item_code}</td>
+                                            <td className="p-2 text-foreground">{lineItem.item_name}</td>
+                                            <td className="p-2 text-right text-foreground">{lineItem.quantity}</td>
+                                            <td className="p-2 text-right text-muted-foreground">
+                                              KES {lineItem.rate.toFixed(2)}
+                                            </td>
+                                            <td className="p-2 text-right font-semibold text-foreground">
+                                              KES {lineItem.amount.toFixed(2)}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </>
                         )
                       }
                     })}

@@ -4,25 +4,19 @@ import { cookies } from "next/headers"
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies()
-    const tenantCreds = cookieStore.get("tenant_credentials")?.value
-    if (!tenantCreds) {
+    const authCookie = cookieStore.get("auth_token")
+    if (!authCookie) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const creds = JSON.parse(tenantCreds)
-    const from = request.nextUrl.searchParams.get("from")
-    const to = request.nextUrl.searchParams.get("to")
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/method/dukaplus.services.rest.get_sales_report_data`
 
-    const response = await fetch(`${creds.base_url}/api/method/dukaplus.services.rest.get_sales_report_data`, {
-      method: "POST",
+    const response = await fetch(apiUrl, {
+      method: "GET",
       headers: {
+        Cookie: `sid=${authCookie.value}`,
         "Content-Type": "application/json",
-        Authorization: `token ${creds.api_key}:${creds.api_secret}`,
       },
-      body: JSON.stringify({
-        from_date: from,
-        to_date: to,
-      }),
     })
 
     const data = await response.json()

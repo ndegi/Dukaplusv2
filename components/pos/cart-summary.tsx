@@ -1,55 +1,35 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faTrashAlt,
-  faExclamationCircle,
-} from "@fortawesome/free-solid-svg-icons";
-import { formatCurrency, formatNumber } from "@/lib/utils/format";
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faTrashAlt, faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
+import { formatCurrency, formatNumber } from "@/lib/utils/format"
 
 interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  subtotal: number;
-  unit_of_measure?: string;
-  sellingPrices?: Array<{
-    unit_of_measure: string;
-    unit_selling_price: number;
-  }>;
-  all_selling_prices?: Array<{
-    unit_of_measure: string;
-    unit_selling_price: number;
-  }>;
+  id: string
+  name: string
+  price: number
+  quantity: number
+  subtotal: number
+  unit_of_measure?: string
+  sellingPrices?: Array<{ unit_of_measure: string; unit_selling_price: number }>
+  all_selling_prices?: Array<{ unit_of_measure: string; unit_selling_price: number }>
 }
 
 interface CartSummaryProps {
-  cart: CartItem[];
-  totalAmount: number;
-  onUpdateQuantity: (
-    id: string,
-    quantity: number,
-    price?: number,
-    unit?: string
-  ) => void;
-  onRemoveItem: (id: string) => void;
-  onCheckout: () => void;
-  onClearCart: () => void;
-  warehouse?: string;
-  user?: string;
-  customerName?: string;
-  mobileNumber?: string;
+  cart: CartItem[]
+  totalAmount: number
+  onUpdateQuantity: (id: string, quantity: number, price?: number, unit?: string) => void
+  onRemoveItem: (id: string) => void
+  onCheckout: () => void
+  onClearCart: () => void
+  warehouse?: string
+  user?: string
+  customerName?: string
+  mobileNumber?: string
 }
 
 export function CartSummary({
@@ -64,90 +44,77 @@ export function CartSummary({
   customerName = "Walk In",
   mobileNumber = "",
 }: CartSummaryProps) {
-  const [queuedCount, setQueuedCount] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [draftReceipts, setDraftReceipts] = useState<any[]>([]);
-  const [showQueueModal, setShowQueueModal] = useState(false);
-  const [actualWarehouse, setActualWarehouse] = useState("");
+  const [queuedCount, setQueuedCount] = useState(0)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [draftReceipts, setDraftReceipts] = useState<any[]>([])
+  const [showQueueModal, setShowQueueModal] = useState(false)
+  const [actualWarehouse, setActualWarehouse] = useState("")
 
   useEffect(() => {
-    const storedWarehouse = sessionStorage.getItem("selected_warehouse");
+    const storedWarehouse = sessionStorage.getItem("selected_warehouse")
     if (storedWarehouse) {
-      setActualWarehouse(storedWarehouse);
+      setActualWarehouse(storedWarehouse)
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
     const handleWarehouseChange = () => {
       if (cart.length > 0) {
-        onClearCart();
-        setQueuedCount(0);
+        onClearCart()
+        setQueuedCount(0)
       }
-    };
+    }
 
-    window.addEventListener("warehouseChanged", handleWarehouseChange);
-    return () =>
-      window.removeEventListener("warehouseChanged", handleWarehouseChange);
-  }, [cart.length, onClearCart]);
+    window.addEventListener("warehouseChanged", handleWarehouseChange)
+    return () => window.removeEventListener("warehouseChanged", handleWarehouseChange)
+  }, [cart.length, onClearCart])
 
   useEffect(() => {
-    fetchDraftReceipts();
-  }, [actualWarehouse]);
+    fetchDraftReceipts()
+  }, [actualWarehouse])
 
   const fetchDraftReceipts = async () => {
     if (!actualWarehouse) {
-      console.log("[DukaPlus] No warehouse selected, skipping draft fetch");
-      return;
+      console.log("[DukaPlus] No warehouse selected, skipping draft fetch")
+      return
     }
 
     try {
-      console.log("[DukaPlus] Fetching drafts for warehouse:", actualWarehouse);
-      const response = await fetch(
-        `/api/sales/draft?warehouse_id=${encodeURIComponent(actualWarehouse)}`
-      );
-      const data = await response.json();
+      console.log("[DukaPlus] Fetching drafts for warehouse:", actualWarehouse)
+      const response = await fetch(`/api/sales/draft?warehouse_id=${encodeURIComponent(actualWarehouse)}`)
+      const data = await response.json()
 
-      console.log("[DukaPlus] Draft receipts response:", data);
+      console.log("[DukaPlus] Draft receipts response:", data)
 
       if (response.ok) {
-        if (
-          data.message?.sales_data &&
-          Array.isArray(data.message.sales_data)
-        ) {
-          setDraftReceipts(data.message.sales_data);
-          setQueuedCount(data.message.sales_data.length);
-          console.log(
-            "[DukaPlus] Successfully loaded",
-            data.message.sales_data.length,
-            "draft receipts"
-          );
+        if (data.message?.sales_data && Array.isArray(data.message.sales_data)) {
+          setDraftReceipts(data.message.sales_data)
+          setQueuedCount(data.message.sales_data.length)
+          console.log("[DukaPlus] Successfully loaded", data.message.sales_data.length, "draft receipts")
         } else {
-          console.log("[DukaPlus] No draft receipts found");
-          setDraftReceipts([]);
-          setQueuedCount(0);
+          console.log("[DukaPlus] No draft receipts found")
+          setDraftReceipts([])
+          setQueuedCount(0)
         }
       } else {
-        console.error(
-          "[DukaPlus] API error fetching drafts:",
-          data.message?.message || data.message || "Unknown error"
-        );
-        setDraftReceipts([]);
-        setQueuedCount(0);
+        console.error("[DukaPlus] API error fetching drafts:", data.message?.message || data.message || "Unknown error")
+        setDraftReceipts([])
+        setQueuedCount(0)
       }
     } catch (err) {
-      console.error("[DukaPlus] Error fetching draft receipts:", err);
-      setDraftReceipts([]);
-      setQueuedCount(0);
+      console.error("[DukaPlus] Error fetching draft receipts:", err)
+      setDraftReceipts([])
+      setQueuedCount(0)
     }
-  };
+  }
 
   const handleQueueCart = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0) return
 
     try {
-      setIsProcessing(true);
-      setError(null);
+      setIsProcessing(true)
+      setError(null)
 
       const invoiceItems = cart.map((item) => ({
         product_id: item.id,
@@ -155,7 +122,7 @@ export function CartSummary({
         product_name: item.name,
         product_price: item.price,
         unit_of_measure: item.unit_of_measure || "Each",
-      }));
+      }))
 
       const response = await fetch("/api/sales/draft", {
         method: "POST",
@@ -171,26 +138,26 @@ export function CartSummary({
           location: "",
           sales_id: "",
         }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (response.ok) {
-        await fetchDraftReceipts();
-        onClearCart();
+        await fetchDraftReceipts()
+        onClearCart()
       } else {
-        setError(data.message?.message || "Failed to queue invoice");
+        setError(data.message?.message || "Failed to queue invoice")
       }
     } catch (err) {
-      setError("Error queueing invoice");
-      console.error(err);
+      setError("Error queueing invoice")
+      console.error(err)
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
 
   const handleLoadDraft = (draft: any) => {
-    onClearCart();
+    onClearCart()
 
     if (draft.items && Array.isArray(draft.items)) {
       const loadEvent = new CustomEvent("loadDraftItems", {
@@ -205,45 +172,37 @@ export function CartSummary({
           customer: draft.customer || "Walk In",
           mobile: draft.store_mobile_number || "",
         },
-      });
-      window.dispatchEvent(loadEvent);
+      })
+      window.dispatchEvent(loadEvent)
     }
 
-    setShowQueueModal(false);
-  };
+    setShowQueueModal(false)
+  }
 
   const handleUnitChange = (itemId: string, newUnit: string) => {
-    const item = cart.find((i) => i.id === itemId);
-    const prices = item?.sellingPrices || item?.all_selling_prices;
+    const item = cart.find((i) => i.id === itemId)
+    const prices = item?.sellingPrices || item?.all_selling_prices
     if (prices) {
-      const selectedPrice = prices.find((p) => p.unit_of_measure === newUnit);
+      const selectedPrice = prices.find((p) => p.unit_of_measure === newUnit)
       if (selectedPrice) {
-        onUpdateQuantity(
-          itemId,
-          item.quantity,
-          selectedPrice.unit_selling_price,
-          newUnit
-        );
+        onUpdateQuantity(itemId, item.quantity, selectedPrice.unit_selling_price, newUnit)
       }
     }
-  };
+  }
 
   const handlePriceChange = (itemId: string, newPrice: number) => {
-    const item = cart.find((i) => i.id === itemId);
+    const item = cart.find((i) => i.id === itemId)
     if (item) {
-      onUpdateQuantity(itemId, item.quantity, newPrice, item.unit_of_measure);
+      onUpdateQuantity(itemId, item.quantity, newPrice, item.unit_of_measure)
     }
-  };
+  }
 
   return (
     <div className="flex flex-col h-full bg-card">
       {/* Error message */}
       {error && (
         <div className="mx-4 mt-3 alert-error flex items-start gap-2">
-          <FontAwesomeIcon
-            icon={faExclamationCircle}
-            className="w-4 h-4 text-danger flex-shrink-0 mt-0.5"
-          />
+          <FontAwesomeIcon icon={faExclamationCircle} className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" />
           <p className="text-danger text-xs">{error}</p>
         </div>
       )}
@@ -268,11 +227,9 @@ export function CartSummary({
           </div>
         ) : (
           cart.map((item) => {
-            const prices = item.all_selling_prices || item.sellingPrices || [];
-            const hasMultiplePrices = prices.length > 1;
-            const currentUom =
-              item.unit_of_measure ||
-              (prices.length > 0 ? prices[0]?.unit_of_measure : "Each");
+            const prices = item.all_selling_prices || item.sellingPrices || []
+            const hasMultiplePrices = prices.length > 1
+            const currentUom = item.unit_of_measure || (prices.length > 0 ? prices[0]?.unit_of_measure : "Each")
 
             return (
               <div
@@ -287,10 +244,7 @@ export function CartSummary({
                   >
                     <FontAwesomeIcon icon={faTrashAlt} className="text-xs" />
                   </button>
-                  <span
-                    className="text-xs font-medium text-foreground truncate"
-                    title={item.name}
-                  >
+                  <span className="text-xs font-medium text-foreground truncate" title={item.name}>
                     {item.name}
                   </span>
                 </div>
@@ -299,18 +253,13 @@ export function CartSummary({
                     type="number"
                     min="1"
                     value={item.quantity}
-                    onChange={(e) =>
-                      onUpdateQuantity(item.id, Number(e.target.value) || 1)
-                    }
+                    onChange={(e) => onUpdateQuantity(item.id, Number(e.target.value) || 1)}
                     className="h-7 input-base text-center text-xs"
                   />
                 </div>
                 <div>
                   {hasMultiplePrices ? (
-                    <Select
-                      value={currentUom}
-                      onValueChange={(val) => handleUnitChange(item.id, val)}
-                    >
+                    <Select value={currentUom} onValueChange={(val) => handleUnitChange(item.id, val)}>
                       <SelectTrigger className="h-7 input-base text-xs">
                         <SelectValue placeholder={currentUom} />
                       </SelectTrigger>
@@ -321,16 +270,13 @@ export function CartSummary({
                             value={sp.unit_of_measure}
                             className="text-foreground text-xs"
                           >
-                            {sp.unit_of_measure} (
-                            {formatNumber(sp.unit_selling_price)})
+                            {sp.unit_of_measure} ({formatNumber(sp.unit_selling_price)})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   ) : (
-                    <span className="text-foreground text-xs pl-2 block leading-7">
-                      {currentUom}
-                    </span>
+                    <span className="text-foreground text-xs pl-2 block leading-7">{currentUom}</span>
                   )}
                 </div>
                 <div>
@@ -339,9 +285,7 @@ export function CartSummary({
                     min="0"
                     step="0.01"
                     value={item.price}
-                    onChange={(e) =>
-                      handlePriceChange(item.id, Number(e.target.value) || 0)
-                    }
+                    onChange={(e) => handlePriceChange(item.id, Number(e.target.value) || 0)}
                     className="h-7 input-base text-center text-xs"
                   />
                 </div>
@@ -349,19 +293,15 @@ export function CartSummary({
                   {formatNumber(item.quantity * item.price)}
                 </div>
               </div>
-            );
+            )
           })
         )}
       </div>
 
       <div className="border-t border-border px-4 py-3 space-y-2 bg-card">
         <div className="flex justify-between items-center mb-3">
-          <span className="text-sm font-semibold text-foreground">
-            Total: ({cart.length} items)
-          </span>
-          <span className="text-lg font-bold text-success">
-            {formatCurrency(totalAmount)}
-          </span>
+          <span className="text-sm font-semibold text-foreground">Total: ({cart.length} items)</span>
+          <span className="text-lg font-bold text-success">{formatCurrency(totalAmount)}</span>
         </div>
 
         <Button
@@ -394,9 +334,7 @@ export function CartSummary({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card rounded-lg w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="p-4 border-b border-border">
-              <h2 className="text-xl font-bold text-foreground">
-                Queued Receipts
-              </h2>
+              <h2 className="text-xl font-bold text-foreground">Queued Receipts</h2>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {draftReceipts.map((draft) => (
@@ -407,25 +345,16 @@ export function CartSummary({
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-mono text-sm text-warning">
-                        {draft.sales_id}
-                      </p>
-                      <p className="text-foreground font-medium">
-                        {draft.customer}
-                      </p>
+                      <p className="font-mono text-sm text-warning">{draft.sales_id}</p>
+                      <p className="text-foreground font-medium">{draft.customer}</p>
                       <p className="text-xs text-muted-foreground">
                         {draft.date} {draft.time}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {draft.items?.length || 0} items
-                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">{draft.items?.length || 0} items</p>
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-success">
-                        KES{" "}
-                        {draft.total_amount?.toLocaleString("en-KE", {
-                          minimumFractionDigits: 2,
-                        })}
+                        KES {draft.total_amount?.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
                       </p>
                     </div>
                   </div>
@@ -433,10 +362,7 @@ export function CartSummary({
               ))}
             </div>
             <div className="p-4 border-t border-border">
-              <Button
-                onClick={() => setShowQueueModal(false)}
-                className="w-full btn-cancel"
-              >
+              <Button onClick={() => setShowQueueModal(false)} className="w-full btn-cancel">
                 Close
               </Button>
             </div>
@@ -444,5 +370,5 @@ export function CartSummary({
         </div>
       )}
     </div>
-  );
+  )
 }

@@ -13,16 +13,14 @@ export async function GET(request: NextRequest) {
     const from = request.nextUrl.searchParams.get("from")
     const to = request.nextUrl.searchParams.get("to")
 
-    const response = await fetch(`${creds.base_url}/api/method/dukaplus.services.rest.get_customer_statement`, {
-      method: "POST",
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/method/dukaplus.services.rest.get_customer_statement`
+
+    const response = await fetch(apiUrl, {
+      method: "GET",
       headers: {
+        Cookie: `sid=${tenantCreds}`,
         "Content-Type": "application/json",
-        Authorization: `token ${creds.api_key}:${creds.api_secret}`,
       },
-      body: JSON.stringify({
-        from_date: from,
-        to_date: to,
-      }),
     })
 
     const data = await response.json()
