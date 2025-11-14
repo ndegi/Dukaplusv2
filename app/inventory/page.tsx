@@ -4,7 +4,8 @@ import { useAuth } from "@/hooks/use-auth"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { InventoryOverview } from "@/components/inventory/inventory-overview"
 import { StockTransferManager } from "@/components/inventory/stock-transfer-manager"
-import { useRouter } from "next/navigation"
+import { PurchaseOrdersManager } from "@/components/inventory/purchase-orders-manager"
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from "react"
 
 export default function InventoryPage() {
@@ -76,11 +77,7 @@ export default function InventoryPage() {
         </div>
 
         {activeTab === "products" && <InventoryOverview />}
-        {activeTab === "purchase-order" && (
-          <div className="card-base p-6">
-            <p className="text-muted-foreground">Purchase Orders - Coming Soon</p>
-          </div>
-        )}
+        {activeTab === "purchase-order" && <PurchaseOrdersManager />}
         {activeTab === "purchase-receipt" && (
           <div className="card-base p-6">
             <p className="text-muted-foreground">Purchase Receipts - Coming Soon</p>

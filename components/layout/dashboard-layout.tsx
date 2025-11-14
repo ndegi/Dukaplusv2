@@ -130,7 +130,6 @@ export function DashboardLayout({
     { label: "Inventory", icon: faBox, href: "/inventory" },
     { label: "Customers", icon: faUsers, href: "/customers" },
     { label: "Sales", icon: faFileInvoice, href: "/sales" },
-    { label: "Purchase Orders", icon: faFileAlt, href: "/purchase-orders" }, // Added Purchase Orders navigation item
     { label: "Expenses", icon: faFileAlt, href: "/expenses" },
     { label: "Reports", icon: faChartBar, href: "/reports" },
     { label: "Settings", icon: faCog, href: "/profile" },
