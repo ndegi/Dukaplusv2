@@ -76,34 +76,34 @@ export function CartSummary({
 
   const fetchDraftReceipts = async () => {
     if (!actualWarehouse) {
-      console.log("[v0] No warehouse selected, skipping draft fetch")
+      console.log("[DukaPlus] No warehouse selected, skipping draft fetch")
       return
     }
 
     try {
-      console.log("[v0] Fetching drafts for warehouse:", actualWarehouse)
+      console.log("[DukaPlus] Fetching drafts for warehouse:", actualWarehouse)
       const response = await fetch(`/api/sales/draft?warehouse_id=${encodeURIComponent(actualWarehouse)}`)
       const data = await response.json()
 
-      console.log("[v0] Draft receipts response:", data)
+      console.log("[DukaPlus] Draft receipts response:", data)
 
       if (response.ok) {
         if (data.message?.sales_data && Array.isArray(data.message.sales_data)) {
           setDraftReceipts(data.message.sales_data)
           setQueuedCount(data.message.sales_data.length)
-          console.log("[v0] Successfully loaded", data.message.sales_data.length, "draft receipts")
+          console.log("[DukaPlus] Successfully loaded", data.message.sales_data.length, "draft receipts")
         } else {
-          console.log("[v0] No draft receipts found")
+          console.log("[DukaPlus] No draft receipts found")
           setDraftReceipts([])
           setQueuedCount(0)
         }
       } else {
-        console.error("[v0] API error fetching drafts:", data.message?.message || data.message || "Unknown error")
+        console.error("[DukaPlus] API error fetching drafts:", data.message?.message || data.message || "Unknown error")
         setDraftReceipts([])
         setQueuedCount(0)
       }
     } catch (err) {
-      console.error("[v0] Error fetching draft receipts:", err)
+      console.error("[DukaPlus] Error fetching draft receipts:", err)
       setDraftReceipts([])
       setQueuedCount(0)
     }

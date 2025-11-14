@@ -1,21 +1,27 @@
 import { NextRequest, NextResponse } from "next/server"
+import { cookies } from "next/headers"
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    const authCookie = request.cookies.get("auth_token")
-    if (!authCookie) {
+    const cookieStore = await cookies()
+    const credentialsCookie = cookieStore.get("tenant_credentials")?.value
+
+    if (!credentialsCookie) {
       return NextResponse.json({ message: { message: "Not authenticated", status: 401 } }, { status: 401 })
     }
 
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/method/dukaplus.services.rest.place_order`
+    const credentials = JSON.parse(credentialsCookie)
+    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
+
+    const apiUrl = `${credentials.baseUrl}/api/method/dukaplus.services.rest.place_order`
 
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
-        Cookie: `sid=${authCookie.value}`,
         "Content-Type": "application/json",
+        Authorization: authHeader,
       },
       body: JSON.stringify(body),
     })

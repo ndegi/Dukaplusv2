@@ -1,18 +1,27 @@
 import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const apiKey = process.env.DUKAPLUS_API_KEY || ""
-    const apiSecret = process.env.DUKAPLUS_API_SECRET || ""
+
+    const cookieStore = await cookies()
+    const credentialsCookie = cookieStore.get("tenant_credentials")?.value
+
+    if (!credentialsCookie) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
+
+    const credentials = JSON.parse(credentialsCookie)
+    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/method/dukaplus.services.rest.submit_material_transfer`,
+      `${credentials.baseUrl}/api/method/dukaplus.services.rest.submit_material_transfer`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `token ${apiKey}:${apiSecret}`,
+          Authorization: authHeader,
         },
         body: JSON.stringify(body),
       },

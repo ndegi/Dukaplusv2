@@ -182,7 +182,7 @@ function SalesReportTable({ data, isLoading }: { data: SalesReportItem[]; isLoad
   const itemsPerPage = 10
 
   if (isLoading) {
-    return <div className="text-gray-600 dark:text-gray-400">Loading sales report...</div>
+    return <div className="text-foreground p-6 text-center">Loading sales report...</div>
   }
 
   const filteredData = data.filter((item) =>
@@ -323,7 +323,7 @@ function CustomerStatementTable({ data, isLoading }: { data: CustomerStatement[]
   const itemsPerPage = 10
 
   if (isLoading) {
-    return <div className="text-gray-600 dark:text-gray-400">Loading customer statements...</div>
+    return <div className="text-foreground p-6 text-center">Loading customer statements...</div>
   }
 
   const filteredData = data.filter((item) =>
@@ -463,7 +463,7 @@ function StockBalanceTable({ data, isLoading }: { data: StockBalanceItem[]; isLo
   const itemsPerPage = 10
 
   if (isLoading) {
-    return <div className="text-gray-600 dark:text-gray-400">Loading stock balance...</div>
+    return <div className="text-foreground p-6 text-center">Loading stock balance...</div>
   }
 
   const filteredData = data.filter((item) =>

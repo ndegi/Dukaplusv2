@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { AlertCircle, CheckCircle, Plus, Trash2, ArrowRightLeft } from "lucide-react"
+import { AlertCircle, CheckCircle, Plus, Trash2, ArrowRightLeft } from 'lucide-react'
 
 interface StockTransfer {
   material_transfer_id: string
@@ -66,7 +66,7 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error fetching stock transfers" })
-      console.error("[v0] Error fetching stock transfers:", error)
+      console.error("[DukaPlus] Error fetching stock transfers:", error)
     } finally {
       setIsLoading(false)
     }
@@ -87,7 +87,7 @@ export function StockTransferManager() {
         }
       }
     } catch (error) {
-      console.error("[v0] Error fetching warehouses:", error)
+      console.error("[DukaPlus] Error fetching warehouses:", error)
     }
   }
 
@@ -101,7 +101,7 @@ export function StockTransferManager() {
         setProducts(data.products)
       }
     } catch (error) {
-      console.error("[v0] Error fetching products:", error)
+      console.error("[DukaPlus] Error fetching products:", error)
     }
   }
 
@@ -115,6 +115,12 @@ export function StockTransferManager() {
       setMessage({ type: "error", text: "Please fill all item details correctly" })
       return
     }
+
+    const confirmed = window.confirm(
+      `Create stock transfer?\n\nFrom: ${sourceWarehouse}\nTo: ${targetWarehouse}\nItems: ${transferItems.length}`
+    )
+    
+    if (!confirmed) return
 
     setIsSubmitting(true)
     setMessage(null)
@@ -145,14 +151,18 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error creating stock transfer" })
-      console.error("[v0] Error creating stock transfer:", error)
+      console.error("[DukaPlus] Error creating stock transfer:", error)
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleSubmitTransfer = async (transferId: string) => {
-    if (!confirm("Are you sure you want to submit this transfer?")) return
+    const confirmed = window.confirm(
+      `Submit stock transfer ${transferId}?\n\nThis will move the items between warehouses.\nThis action cannot be undone.`
+    )
+    
+    if (!confirmed) return
 
     try {
       const response = await fetch("/api/inventory/stock-transfer/submit", {
@@ -171,12 +181,16 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error submitting stock transfer" })
-      console.error("[v0] Error submitting stock transfer:", error)
+      console.error("[DukaPlus] Error submitting stock transfer:", error)
     }
   }
 
   const handleCancelTransfer = async (transferId: string) => {
-    if (!confirm("Are you sure you want to cancel this transfer?")) return
+    const confirmed = window.confirm(
+      `Cancel stock transfer ${transferId}?\n\nThis action cannot be undone.`
+    )
+    
+    if (!confirmed) return
 
     try {
       const response = await fetch("/api/inventory/stock-transfer/cancel", {
@@ -195,7 +209,7 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error cancelling stock transfer" })
-      console.error("[v0] Error cancelling stock transfer:", error)
+      console.error("[DukaPlus] Error cancelling stock transfer:", error)
     }
   }
 
@@ -386,9 +400,9 @@ export function StockTransferManager() {
         )}
 
         {isLoading ? (
-          <p className="text-muted-foreground">Loading stock transfers...</p>
+          <p className="text-foreground p-6 text-center">Loading stock transfers...</p>
         ) : filteredTransfers.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">
+          <p className="text-foreground text-center py-8">
             {searchTerm || statusFilter !== "all" ? "No transfers match your filters" : "No stock transfers found"}
           </p>
         ) : (
@@ -426,7 +440,7 @@ export function StockTransferManager() {
                             <Button
                               onClick={() => handleCancelTransfer(transfer.material_transfer_id)}
                               size="sm"
-                              className="action-btn-delete text-xs px-3"
+                              className="btn-danger text-xs px-3"
                             >
                               Cancel
                             </Button>
@@ -436,12 +450,12 @@ export function StockTransferManager() {
                           <Button
                             onClick={() => handleCancelTransfer(transfer.material_transfer_id)}
                             size="sm"
-                            className="action-btn-delete text-xs px-3"
+                            className="btn-danger text-xs px-3"
                           >
                             Cancel
                           </Button>
                         )}
-                        {transfer.docstatus === 2 && <span className="text-muted-foreground text-sm">Cancelled</span>}
+                        {transfer.docstatus === 2 && <span className="text-foreground text-sm">Cancelled</span>}
                       </div>
                     </td>
                   </tr>
