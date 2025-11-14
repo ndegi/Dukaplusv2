@@ -1,25 +1,25 @@
-import type { TenantCredentials } from "@/lib/types/auth"
+import type { TenantCredentials } from "@/lib/types/auth";
 
-let tenantCredentials: TenantCredentials | null = null
+let tenantCredentials: TenantCredentials | null = null;
 
 export function setTenantCredentials(credentials: TenantCredentials) {
-  tenantCredentials = credentials
+  tenantCredentials = credentials;
 }
 
 export function getTenantCredentials(): TenantCredentials | null {
-  return tenantCredentials
+  return tenantCredentials;
 }
 
 export function clearTenantCredentials() {
-  tenantCredentials = null
+  tenantCredentials = null;
 }
 
 export function getAuthHeader(): string | null {
-  if (!tenantCredentials) return null
-  const credentials = `${tenantCredentials.apiKey}:${tenantCredentials.apiSecret}`
-  return `Basic ${Buffer.from(credentials).toString("base64")}`
+  if (!tenantCredentials) return null;
+  const credentials = `${tenantCredentials.apiKey}:${tenantCredentials.apiSecret}`;
+  return `Basic ${Buffer.from(credentials).toString("base64")}`;
 }
 
 export function getTenantBaseUrl(): string | null {
-  return tenantCredentials?.baseUrl || null
+  return tenantCredentials?.baseUrl || null;
 }
