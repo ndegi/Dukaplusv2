@@ -73,7 +73,7 @@ export default function PurchaseOrdersPage() {
       }
     } catch (err) {
       setError("Error fetching purchase orders")
-      console.error("[DukaPlus] Error fetching purchase orders:", err)
+      console.error("[v0] Error fetching purchase orders:", err)
     } finally {
       setIsLoadingOrders(false)
     }
@@ -307,7 +307,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
       }
     } catch (err) {
       setError("Error creating purchase order")
-      console.error("[DukaPlus] Error:", err)
+      console.error("[v0] Error:", err)
     } finally {
       setIsSaving(false)
     }
@@ -451,7 +451,7 @@ function NewSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
       }
     } catch (err) {
       setError("Error creating supplier")
-      console.error("[DukaPlus] Error:", err)
+      console.error("[v0] Error:", err)
     } finally {
       setIsSaving(false)
     }

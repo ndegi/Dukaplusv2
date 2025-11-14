@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { AlertCircle, Plus, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
+import { AlertCircle, Plus, ChevronDown, ChevronUp, Trash2, Search } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 
 interface PurchaseOrder {
@@ -17,6 +17,12 @@ interface PurchaseOrder {
   grand_total: number
   status: string
   docstatus: number
+}
+
+interface Supplier {
+  supplier_name: string
+  supplier_id?: string
+  mobile_number?: string
 }
 
 export function PurchaseOrdersManager() {
@@ -53,7 +59,7 @@ export function PurchaseOrdersManager() {
       }
     } catch (err) {
       setError("Error fetching purchase orders")
-      console.error("[DukaPlus] Error fetching purchase orders:", err)
+      console.error("[v0] Error fetching purchase orders:", err)
     } finally {
       setIsLoadingOrders(false)
     }
@@ -89,7 +95,7 @@ export function PurchaseOrdersManager() {
       }
     } catch (err) {
       alert("Error canceling order")
-      console.error("[DukaPlus] Error:", err)
+      console.error("[v0] Error:", err)
     }
   }
 
@@ -240,22 +246,85 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
     { product_id: "", product_name: "", quantity: 1, buying_price: 0 }
   ])
   const [supplier, setSupplier] = useState("")
+  const [supplierSearch, setSupplierSearch] = useState("")
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [showSupplierDropdown, setShowSupplierDropdown] = useState(false)
+  const [products, setProducts] = useState<any[]>([])
+  const [productSearches, setProductSearches] = useState<string[]>([""])
+  const [showProductDropdowns, setShowProductDropdowns] = useState<boolean[]>([false])
   const [requiredBy, setRequiredBy] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    fetchSuppliers()
+    fetchProducts()
+  }, [])
+
+  const fetchSuppliers = async () => {
+    try {
+      const response = await fetch("/api/suppliers")
+      if (response.ok) {
+        const data = await response.json()
+        setSuppliers(data.suppliers || [])
+      }
+    } catch (err) {
+      console.error("[v0] Error fetching suppliers:", err)
+    }
+  }
+
+  const fetchProducts = async () => {
+    try {
+      const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
+      const response = await fetch(`/api/inventory/products?warehouse_id=${encodeURIComponent(warehouseId)}`)
+      if (response.ok) {
+        const data = await response.json()
+        setProducts(data.products || [])
+      }
+    } catch (err) {
+      console.error("[v0] Error fetching products:", err)
+    }
+  }
+
+  const filteredSuppliers = suppliers.filter(s => 
+    s.supplier_name.toLowerCase().includes(supplierSearch.toLowerCase())
+  )
+
+  const getFilteredProducts = (search: string) => {
+    return products.filter(p => 
+      p.name.toLowerCase().includes(search.toLowerCase()) || 
+      p.id.toLowerCase().includes(search.toLowerCase())
+    )
+  }
+
   const addItem = () => {
     setItems([...items, { product_id: "", product_name: "", quantity: 1, buying_price: 0 }])
+    setProductSearches([...productSearches, ""])
+    setShowProductDropdowns([...showProductDropdowns, false])
   }
 
   const removeItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index))
+    setProductSearches(productSearches.filter((_, i) => i !== index))
+    setShowProductDropdowns(showProductDropdowns.filter((_, i) => i !== index))
   }
 
   const updateItem = (index: number, field: string, value: any) => {
     const newItems = [...items]
     newItems[index] = { ...newItems[index], [field]: value }
     setItems(newItems)
+  }
+
+  const selectProduct = (index: number, product: any) => {
+    updateItem(index, "product_id", product.id)
+    updateItem(index, "product_name", product.name)
+    updateItem(index, "buying_price", product.cost || 0)
+    const newSearches = [...productSearches]
+    newSearches[index] = product.name
+    setProductSearches(newSearches)
+    const newDropdowns = [...showProductDropdowns]
+    newDropdowns[index] = false
+    setShowProductDropdowns(newDropdowns)
   }
 
   const handleSubmit = async () => {
@@ -284,7 +353,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
       }
     } catch (err) {
       setError("Error creating purchase order")
-      console.error("[DukaPlus] Error:", err)
+      console.error("[v0] Error:", err)
     } finally {
       setIsSaving(false)
     }
@@ -304,15 +373,43 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Supplier</label>
-            <input
-              type="text"
-              value={supplier}
-              onChange={(e) => setSupplier(e.target.value)}
-              className="input-base w-full"
-              placeholder="Enter supplier name"
-            />
+          <div className="relative">
+            <label className="block text-sm font-medium mb-2">Supplier *</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={supplierSearch}
+                onChange={(e) => {
+                  setSupplierSearch(e.target.value)
+                  setShowSupplierDropdown(true)
+                }}
+                onFocus={() => setShowSupplierDropdown(true)}
+                className="input-base w-full pr-10"
+                placeholder="Search supplier..."
+              />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            </div>
+            {showSupplierDropdown && filteredSuppliers.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {filteredSuppliers.map((s, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setSupplier(s.supplier_name)
+                      setSupplierSearch(s.supplier_name)
+                      setShowSupplierDropdown(false)
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 flex flex-col"
+                  >
+                    <span className="font-medium">{s.supplier_name}</span>
+                    {s.mobile_number && (
+                      <span className="text-xs text-secondary">{s.mobile_number}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
@@ -336,21 +433,45 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
 
             <div className="space-y-2">
               {items.map((item, index) => (
-                <div key={index} className="flex gap-2 items-start p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                  <input
-                    type="text"
-                    value={item.product_id}
-                    onChange={(e) => updateItem(index, "product_id", e.target.value)}
-                    className="input-base flex-1"
-                    placeholder="Product ID"
-                  />
-                  <input
-                    type="text"
-                    value={item.product_name}
-                    onChange={(e) => updateItem(index, "product_name", e.target.value)}
-                    className="input-base flex-1"
-                    placeholder="Product Name"
-                  />
+                <div key={index} className="flex gap-2 items-start p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg relative">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={productSearches[index] || ""}
+                      onChange={(e) => {
+                        const newSearches = [...productSearches]
+                        newSearches[index] = e.target.value
+                        setProductSearches(newSearches)
+                        const newDropdowns = [...showProductDropdowns]
+                        newDropdowns[index] = true
+                        setShowProductDropdowns(newDropdowns)
+                      }}
+                      onFocus={() => {
+                        const newDropdowns = [...showProductDropdowns]
+                        newDropdowns[index] = true
+                        setShowProductDropdowns(newDropdowns)
+                      }}
+                      className="input-base w-full"
+                      placeholder="Search product..."
+                    />
+                    {showProductDropdowns[index] && getFilteredProducts(productSearches[index] || "").length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {getFilteredProducts(productSearches[index] || "").slice(0, 10).map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => selectProduct(index, p)}
+                            className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm"
+                          >
+                            <div className="font-medium">{p.name}</div>
+                            <div className="text-xs text-secondary">
+                              {p.id} • Cost: KES {p.cost?.toFixed(2)} • Stock: {p.quantity}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <input
                     type="number"
                     value={item.quantity}
@@ -389,7 +510,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
           <button
             onClick={handleSubmit}
             className="btn-primary flex-1"
-            disabled={isSaving || !supplier || items.length === 0}
+            disabled={isSaving || !supplier || items.length === 0 || items.some(i => !i.product_id)}
           >
             {isSaving ? "Creating..." : "Create Order"}
           </button>
@@ -428,7 +549,7 @@ function NewSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
       }
     } catch (err) {
       setError("Error creating supplier")
-      console.error("[DukaPlus] Error:", err)
+      console.error("[v0] Error:", err)
     } finally {
       setIsSaving(false)
     }

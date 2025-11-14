@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       message: "Transaction created successfully",
     })
   } catch (error) {
-    console.error("[DukaPlus] Transaction error:", error)
+    console.error("[v0] Transaction error:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json()
     return NextResponse.json({ transactions: data.message?.data || [] })
   } catch (error) {
-    console.error("[DukaPlus] Transactions fetch error:", error)
+    console.error("[v0] Transactions fetch error:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

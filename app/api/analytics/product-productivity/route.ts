@@ -32,14 +32,14 @@ export async function POST(request: NextRequest) {
     })
 
     if (!response.ok) {
-      console.error("[DukaPlus] DukaPlus API error:", response.status, await response.text())
+      console.error("[v0] DukaPlus API error:", response.status, await response.text())
       return NextResponse.json({ message: "Failed to fetch product productivity" }, { status: response.status })
     }
 
     const data = await response.json()
     return NextResponse.json(data.message || {})
   } catch (error) {
-    console.error("[DukaPlus] Product productivity fetch error:", error)
+    console.error("[v0] Product productivity fetch error:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

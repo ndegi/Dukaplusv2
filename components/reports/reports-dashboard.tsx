@@ -184,17 +184,29 @@ export function ReportsDashboard({ user }: { user: User }) {
 
       {/* Tabbed Reports */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-slate-800 border border-slate-700">
-          <TabsTrigger value="overview" className="text-gray-900 dark:text-white data-[state=active]:text-orange-400">
+        <TabsList className="grid w-full grid-cols-4 bg-slate-800 dark:bg-slate-800 border border-slate-700">
+          <TabsTrigger 
+            value="overview" 
+            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+          >
             Overview
           </TabsTrigger>
-          <TabsTrigger value="sales" className="text-gray-900 dark:text-white data-[state=active]:text-orange-400">
+          <TabsTrigger 
+            value="sales" 
+            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+          >
             Sales Report
           </TabsTrigger>
-          <TabsTrigger value="customers" className="text-gray-900 dark:text-white data-[state=active]:text-orange-400">
+          <TabsTrigger 
+            value="customers" 
+            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+          >
             Customers
           </TabsTrigger>
-          <TabsTrigger value="stock" className="text-gray-900 dark:text-white data-[state=active]:text-orange-400">
+          <TabsTrigger 
+            value="stock" 
+            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+          >
             Stock Balance
           </TabsTrigger>
         </TabsList>

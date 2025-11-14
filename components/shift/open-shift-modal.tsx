@@ -39,7 +39,7 @@ export function OpenShiftModal({ onClose, onSuccess }: { onClose: () => void; on
         }
       }
     } catch (error) {
-      console.error("[DukaPlus] Failed to fetch payment modes:", error)
+      console.error("[v0] Failed to fetch payment modes:", error)
     } finally {
       setIsLoadingModes(false)
     }
@@ -74,7 +74,7 @@ export function OpenShiftModal({ onClose, onSuccess }: { onClose: () => void; on
         setMessage({ type: "error", text: data.message || "Failed to open shift" })
       }
     } catch (error) {
-      console.error("[DukaPlus] Error opening shift:", error)
+      console.error("[v0] Error opening shift:", error)
       setMessage({ type: "error", text: "An error occurred while opening shift" })
     } finally {
       setIsLoading(false)

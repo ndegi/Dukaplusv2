@@ -25,13 +25,13 @@ export async function GET(req: NextRequest) {
     const data = await response.json()
 
     if (!response.ok) {
-      console.error("[DukaPlus] Get customers error:", data)
+      console.error("[v0] Get customers error:", data)
       return NextResponse.json({ error: "Failed to fetch customers" }, { status: 500 })
     }
 
     return NextResponse.json({ customers: data.message?.customers || [] })
   } catch (error) {
-    console.error("[DukaPlus] Get customers error:", error)
+    console.error("[v0] Get customers error:", error)
     return NextResponse.json({ error: "Failed to fetch customers" }, { status: 500 })
   }
 }
