@@ -31,7 +31,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     return NextResponse.json({ message: "Customer updated successfully", customer: data.message })
   } catch (error) {
-    console.error("[v0] Update Customer API Error:", error)
+    console.error("[DukaPlus] Update Customer API Error:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

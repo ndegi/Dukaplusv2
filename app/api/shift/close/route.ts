@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const { baseUrl, apiKey, apiSecret } = JSON.parse(creds)
     const body = await req.json()
 
-    const response = await fetch(`${baseUrl}/api/method/dukaplus.services.rest.create_customer`, {
+    const response = await fetch(`${baseUrl}/api/method/dukaplus.services.rest.close_shift`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -25,13 +25,13 @@ export async function POST(req: NextRequest) {
     const data = await response.json()
 
     if (!response.ok) {
-      console.error("[DukaPlus] Create customer error:", data)
-      return NextResponse.json({ error: "Failed to create customer" }, { status: 500 })
+      console.error("[DukaPlus] Close shift error:", data)
+      return NextResponse.json({ error: "Failed to close shift" }, { status: 500 })
     }
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[DukaPlus] Create customer error:", error)
-    return NextResponse.json({ error: "Failed to create customer" }, { status: 500 })
+    console.error("[DukaPlus] Close shift error:", error)
+    return NextResponse.json({ error: "Failed to close shift" }, { status: 500 })
   }
 }

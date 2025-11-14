@@ -72,7 +72,7 @@ export function PurchaseOrdersManager() {
       }
     } catch (err) {
       setError("Error fetching purchase orders")
-      console.error("[v0] Error fetching purchase orders:", err)
+      console.error("[DukaPlus] Error fetching purchase orders:", err)
     } finally {
       setIsLoadingOrders(false)
     }
@@ -111,7 +111,7 @@ export function PurchaseOrdersManager() {
           }
         } catch (err) {
           alert("Error canceling order")
-          console.error("[v0] Error:", err)
+          console.error("[DukaPlus] Error:", err)
         }
       },
     })
@@ -295,7 +295,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
         setSuppliers(data.suppliers || [])
       }
     } catch (err) {
-      console.error("[v0] Error fetching suppliers:", err)
+      console.error("[DukaPlus] Error fetching suppliers:", err)
     }
   }
 
@@ -308,7 +308,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
         setProducts(data.products || [])
       }
     } catch (err) {
-      console.error("[v0] Error fetching products:", err)
+      console.error("[DukaPlus] Error fetching products:", err)
     }
   }
 
@@ -390,7 +390,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
       }
     } catch (err) {
       setError("Error creating purchase order")
-      console.error("[v0] Error:", err)
+      console.error("[DukaPlus] Error:", err)
     } finally {
       setIsSaving(false)
     }
@@ -595,7 +595,7 @@ function NewSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
       }
     } catch (err) {
       setError("Error creating supplier")
-      console.error("[v0] Error:", err)
+      console.error("[DukaPlus] Error:", err)
     } finally {
       setIsSaving(false)
     }

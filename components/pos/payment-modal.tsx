@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { AlertCircle, CheckCircle, Plus, Trash2, Calendar, Smartphone } from "lucide-react"
+import { AlertCircle, CheckCircle, Plus, Trash2, Calendar, Smartphone } from 'lucide-react'
 
 interface PaymentMode {
   mode_of_payment: string
@@ -51,11 +51,45 @@ export function PaymentModal({
   const [salesDate, setSalesDate] = useState(new Date().toISOString().split("T")[0])
   const [customerName, setCustomerName] = useState(initialCustomerName)
   const [mobileNumber, setMobileNumber] = useState(initialMobileNumber)
+  const [shiftCheckComplete, setShiftCheckComplete] = useState(false)
+  const [hasActiveShift, setHasActiveShift] = useState(false)
 
   useEffect(() => {
     setCustomerName(initialCustomerName)
     setMobileNumber(initialMobileNumber)
   }, [initialCustomerName, initialMobileNumber])
+
+  useEffect(() => {
+    checkShiftStatus()
+  }, [])
+
+  const checkShiftStatus = async () => {
+    const warehouse = sessionStorage.getItem("selected_warehouse")
+    if (!warehouse) {
+      setShiftCheckComplete(true)
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/shift/status?warehouse_id=${encodeURIComponent(warehouse)}`)
+      if (response.ok) {
+        const data = await response.json()
+        const isOpen = data.message?.message === 1 || data.message === 1
+        setHasActiveShift(isOpen)
+        
+        if (!isOpen) {
+          setMessage({ 
+            type: "error", 
+            text: "No active shift found. Please open a shift before making sales." 
+          })
+        }
+      }
+    } catch (error) {
+      console.error("[DukaPlus] Failed to check shift status:", error)
+    } finally {
+      setShiftCheckComplete(true)
+    }
+  }
 
   useEffect(() => {
     fetchPaymentModes()
@@ -76,7 +110,7 @@ export function PaymentModal({
         }
       }
     } catch (error) {
-      console.error("[v0] Failed to fetch payment modes:", error)
+      console.error("[DukaPlus] Failed to fetch payment modes:", error)
       setPaymentModes([
         { mode_of_payment: "Cash" },
         { mode_of_payment: "Mpesa" },
@@ -162,7 +196,7 @@ export function PaymentModal({
         setMessage({ type: "error", text: data.message || "STK Push failed" })
       }
     } catch (error) {
-      console.error("[v0] STK Push error:", error)
+      console.error("[DukaPlus] STK Push error:", error)
       setMessage({ type: "error", text: "Failed to initiate STK Push" })
     } finally {
       setIsProcessing(false)
@@ -170,6 +204,14 @@ export function PaymentModal({
   }
 
   const handlePayment = async () => {
+    if (!hasActiveShift && !isInvoicePayment) {
+      setMessage({ 
+        type: "error", 
+        text: "Cannot process sale. No active shift found. Please open a shift first." 
+      })
+      return
+    }
+
     if (!canComplete) {
       if (!isPaymentComplete) {
         setMessage({ type: "error", text: `Payment incomplete. Remaining: KES ${remaining.toFixed(2)}` })
@@ -206,7 +248,7 @@ export function PaymentModal({
           setMessage({ type: "error", text: data.message?.message || "Payment failed" })
         }
       } catch (error) {
-        console.error("[v0] Payment error:", error)
+        console.error("[DukaPlus] Payment error:", error)
         setMessage({ type: "error", text: "An error occurred while processing payment" })
       } finally {
         setIsProcessing(false)
@@ -267,7 +309,7 @@ export function PaymentModal({
         setMessage({ type: "error", text: data.message || "Payment failed" })
       }
     } catch (error) {
-      console.error("[v0] Payment error:", error)
+      console.error("[DukaPlus] Payment error:", error)
       setMessage({ type: "error", text: "An error occurred while processing payment" })
     } finally {
       setIsProcessing(false)
@@ -279,6 +321,12 @@ export function PaymentModal({
       <div className="card-base w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
         <div className="px-6 py-4 border-b border-border flex-shrink-0">
           <h2 className="text-xl font-bold text-foreground">Complete Payment</h2>
+          {shiftCheckComplete && !hasActiveShift && !isInvoicePayment && (
+            <div className="mt-2 flex items-center gap-2 text-danger text-sm">
+              <AlertCircle className="w-4 h-4" />
+              <span>No active shift - Sales are disabled</span>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
@@ -475,16 +523,18 @@ export function PaymentModal({
         <div className="px-6 py-4 border-t border-border flex gap-3 flex-shrink-0">
           <Button
             onClick={handlePayment}
-            disabled={isProcessing || !canComplete}
+            disabled={isProcessing || !canComplete || (!hasActiveShift && !isInvoicePayment)}
             className="flex-1 btn-success h-11 text-sm font-semibold uppercase rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isProcessing
               ? "Processing..."
-              : canComplete
-                ? `Complete (KES ${totalAmount.toFixed(2)})`
-                : !isPaymentComplete
-                  ? `Remaining: KES ${remaining.toFixed(2)}`
-                  : "Complete Payments First"}
+              : !hasActiveShift && !isInvoicePayment
+                ? "Open Shift Required"
+                : canComplete
+                  ? `Complete (KES ${totalAmount.toFixed(2)})`
+                  : !isPaymentComplete
+                    ? `Remaining: KES ${remaining.toFixed(2)}`
+                    : "Complete Payments First"}
           </Button>
           <Button
             onClick={onClose}
