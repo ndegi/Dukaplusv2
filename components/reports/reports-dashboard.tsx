@@ -168,26 +168,26 @@ export function ReportsDashboard({ user }: { user: User }) {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4 bg-slate-800 dark:bg-slate-800 border border-slate-700">
-          <TabsTrigger 
-            value="sales" 
+          <TabsTrigger
+            value="sales"
             className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
           >
             Sales Report
           </TabsTrigger>
-          <TabsTrigger 
-            value="customers" 
+          <TabsTrigger
+            value="customers"
             className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
           >
             Customers
           </TabsTrigger>
-          <TabsTrigger 
-            value="stock" 
+          <TabsTrigger
+            value="stock"
             className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
           >
             Stock Balance
           </TabsTrigger>
-          <TabsTrigger 
-            value="ledger" 
+          <TabsTrigger
+            value="ledger"
             className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
           >
             Stock Ledger
@@ -311,11 +311,10 @@ function SalesReportTable({ data, isLoading }: { data: SalesReportItem[]; isLoad
                 </td>
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      row.status === "Paid"
+                    className={`px-2 py-1 rounded text-xs font-semibold ${row.status === "Paid"
                         ? "bg-green-500/20 text-green-600 dark:text-green-400"
                         : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                    }`}
+                      }`}
                   >
                     {row.status}
                   </span>
@@ -451,11 +450,10 @@ function CustomerStatementTable({ data, isLoading }: { data: CustomerStatement[]
                 </td>
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      row.outstanding_amount === 0
+                    className={`px-2 py-1 rounded text-xs font-semibold ${row.outstanding_amount === 0
                         ? "bg-green-500/20 text-green-600 dark:text-green-400"
                         : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                    }`}
+                      }`}
                   >
                     {row.outstanding_amount === 0 ? "Paid" : "Pending"}
                   </span>
@@ -504,12 +502,15 @@ function StockBalanceTable({ data, isLoading }: { data: StockBalanceItem[]; isLo
     return <div className="text-foreground p-6 text-center">Loading stock balance...</div>
   }
 
-  const filteredData = data.filter((item) =>
-    item.item_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.warehouse.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.item_group.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredData = data.filter((item) => {
+    const searchLower = searchTerm.toLowerCase()
+    return (
+      (item.item_code?.toLowerCase() || '').includes(searchLower) ||
+      (item.item_name?.toLowerCase() || '').includes(searchLower) ||
+      (item.warehouse?.toLowerCase() || '').includes(searchLower) ||
+      (item.item_group?.toLowerCase() || '').includes(searchLower)
+    )
+  })
 
   const totalStockValue = filteredData.reduce((sum, item) => sum + item.stock_value, 0)
   const totalAmountSold = filteredData.reduce((sum, item) => sum + item.amount_sold, 0)
@@ -641,12 +642,15 @@ function StockLedgerTable({ data, isLoading }: { data: StockLedgerItem[]; isLoad
     return <div className="text-foreground p-6 text-center">Loading stock ledger...</div>
   }
 
-  const filteredData = data.filter((item) =>
-    item.item_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.item_group.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.voucher_no.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredData = data.filter((item) => {
+    const searchLower = searchTerm.toLowerCase()
+    return (
+      (item.item_code?.toLowerCase() || '').includes(searchLower) ||
+      (item.item_name?.toLowerCase() || '').includes(searchLower) ||
+      (item.item_group?.toLowerCase() || '').includes(searchLower) ||
+      (item.voucher_no?.toLowerCase() || '').includes(searchLower)
+    )
+  })
 
   const totalValue = filteredData.reduce((sum, item) => sum + item.value_of_stock, 0)
   const totalBalance = filteredData.reduce((sum, item) => sum + item.balance_in_store, 0)
