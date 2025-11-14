@@ -12,11 +12,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const credentials = JSON.parse(decodeURIComponent(tenantCred))
 
-    const response = await fetch(`https://demo.duka.plus/api/method/dukaplus.services.rest.submit_expense`, {
+    const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.rest.submit_expense`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `token ${credentials.api_key}:${credentials.api_secret}`,
+        Authorization: `token ${credentials.apiKey}:${credentials.apiSecret}`,
       },
       body: JSON.stringify({
         expense_name: params.id,

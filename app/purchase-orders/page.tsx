@@ -48,7 +48,7 @@ export default function PurchaseOrdersPage() {
     open: false,
     title: "",
     description: "",
-    action: () => { },
+    action: () => {},
   })
 
   useEffect(() => {
@@ -238,6 +238,7 @@ export default function PurchaseOrdersPage() {
                               showCreateReceipt={order.status === "To Receive"}
                               onCancel={() => handleCancelOrder(order.order_id)}
                               onCreateReceipt={() => handleCreateReceipt(order.order_id)}
+                              size="sm"
                             />
                           </td>
                         </tr>
