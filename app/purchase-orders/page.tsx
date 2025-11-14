@@ -130,6 +130,11 @@ export default function PurchaseOrdersPage() {
     })
   }
 
+  const handleCreateReceipt = async (orderId: string) => {
+    // Implement the logic for creating a purchase receipt here
+    console.log(`Creating receipt for order ${orderId}`)
+  }
+
   if (isLoading || !user) {
     return null
   }
@@ -230,7 +235,9 @@ export default function PurchaseOrdersPage() {
                           <td className="px-4 py-3">
                             <TableActionButtons
                               showCancel={true}
+                              showCreateReceipt={order.status === "To Receive"}
                               onCancel={() => handleCancelOrder(order.order_id)}
+                              onCreateReceipt={() => handleCreateReceipt(order.order_id)}
                               size="sm"
                             />
                           </td>

@@ -1,6 +1,6 @@
 "use client"
 
-import { Eye, Download, Edit2, Trash2, Check, X, CreditCard } from 'lucide-react'
+import { Eye, Download, Edit2, Trash2, Check, X, CreditCard, FileText } from 'lucide-react'
 import {
   Tooltip,
   TooltipContent,
@@ -16,6 +16,7 @@ interface ActionButtonsProps {
   onSubmit?: () => void
   onCancel?: () => void
   onPay?: () => void
+  onCreateReceipt?: () => void
   showView?: boolean
   showDownload?: boolean
   showEdit?: boolean
@@ -23,6 +24,7 @@ interface ActionButtonsProps {
   showSubmit?: boolean
   showCancel?: boolean
   showPay?: boolean
+  showCreateReceipt?: boolean
 }
 
 export function TableActionButtons({
@@ -33,6 +35,7 @@ export function TableActionButtons({
   onSubmit,
   onCancel,
   onPay,
+  onCreateReceipt,
   showView = false,
   showDownload = false,
   showEdit = false,
@@ -40,6 +43,7 @@ export function TableActionButtons({
   showSubmit = false,
   showCancel = false,
   showPay = false,
+  showCreateReceipt = false,
 }: ActionButtonsProps) {
   return (
     <TooltipProvider>
@@ -142,6 +146,23 @@ export function TableActionButtons({
             </TooltipTrigger>
             <TooltipContent>
               <p>Pay</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {showCreateReceipt && onCreateReceipt && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onCreateReceipt}
+                className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors text-blue-600 dark:text-blue-400"
+                aria-label="Create Receipt"
+              >
+                <FileText className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Create Receipt</p>
             </TooltipContent>
           </Tooltip>
         )}

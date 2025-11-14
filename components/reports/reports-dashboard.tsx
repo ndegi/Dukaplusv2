@@ -59,6 +59,25 @@ interface StockBalanceItem {
   stock_value: number
 }
 
+interface StockLedgerItem {
+  item_code: string
+  item_name: string
+  item_group: string
+  opening_stock: number
+  qty_in: number
+  qty_out: number
+  amount_sold: number
+  balance_in_store: number
+  value_of_stock: number
+  voucher_type: string
+  voucher_no: string
+  party_type: string
+  party_name: string
+  posting_date: string
+  posting_time: string
+  modified_by: string
+}
+
 export function ReportsDashboard({ user }: { user: User }) {
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
@@ -68,6 +87,7 @@ export function ReportsDashboard({ user }: { user: User }) {
   const [salesReports, setSalesReports] = useState<SalesReportItem[]>([])
   const [customerStatements, setCustomerStatements] = useState<CustomerStatement[]>([])
   const [stockBalance, setStockBalance] = useState<StockBalanceItem[]>([])
+  const [stockLedger, setStockLedger] = useState<StockLedgerItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("sales")
@@ -80,10 +100,11 @@ export function ReportsDashboard({ user }: { user: User }) {
     try {
       setIsLoading(true)
 
-      const [salesRes, customerRes, stockRes] = await Promise.all([
+      const [salesRes, customerRes, stockRes, ledgerRes] = await Promise.all([
         fetch(`/api/reports/sales`),
         fetch(`/api/reports/customer-statement`),
         fetch(`/api/reports/stock-balance`),
+        fetch(`/api/reports/stock-ledger`),
       ])
 
       if (salesRes.ok) {
@@ -99,6 +120,11 @@ export function ReportsDashboard({ user }: { user: User }) {
       if (stockRes.ok) {
         const data = await stockRes.json()
         setStockBalance(data.stock || [])
+      }
+
+      if (ledgerRes.ok) {
+        const data = await ledgerRes.json()
+        setStockLedger(data.stock || [])
       }
 
       setError(null)
@@ -139,24 +165,30 @@ export function ReportsDashboard({ user }: { user: User }) {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-slate-800 dark:bg-slate-800 border border-slate-700">
+        <TabsList className="grid w-full grid-cols-4 bg-slate-800 dark:bg-slate-800 border border-slate-700">
           <TabsTrigger 
             value="sales" 
-            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
           >
             Sales Report
           </TabsTrigger>
           <TabsTrigger 
             value="customers" 
-            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
           >
             Customers
           </TabsTrigger>
           <TabsTrigger 
             value="stock" 
-            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
           >
             Stock Balance
+          </TabsTrigger>
+          <TabsTrigger 
+            value="ledger" 
+            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
+          >
+            Stock Ledger
           </TabsTrigger>
         </TabsList>
 
@@ -170,6 +202,10 @@ export function ReportsDashboard({ user }: { user: User }) {
 
         <TabsContent value="stock">
           <StockBalanceTable data={stockBalance} isLoading={isLoading} />
+        </TabsContent>
+
+        <TabsContent value="ledger">
+          <StockLedgerTable data={stockLedger} isLoading={isLoading} />
         </TabsContent>
       </Tabs>
     </div>
@@ -559,6 +595,140 @@ function StockBalanceTable({ data, isLoading }: { data: StockBalanceItem[]; isLo
                 <td className="p-3 text-right text-orange-600 dark:text-orange-400 font-semibold">
                   KES {row.stock_value.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-slate-700">
+          <div className="text-sm text-gray-400">
+            Showing {startIndex + 1} to {Math.min(endIndex, filteredData.length)} of {filteredData.length} records
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              variant="outline"
+              size="sm"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              variant="outline"
+              size="sm"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function StockLedgerTable({ data, isLoading }: { data: StockLedgerItem[]; isLoading: boolean }) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const [searchTerm, setSearchTerm] = useState("")
+  const itemsPerPage = 10
+
+  if (isLoading) {
+    return <div className="text-foreground p-6 text-center">Loading stock ledger...</div>
+  }
+
+  const filteredData = data.filter((item) =>
+    item.item_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.item_group.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.voucher_no.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const totalValue = filteredData.reduce((sum, item) => sum + item.value_of_stock, 0)
+  const totalBalance = filteredData.reduce((sum, item) => sum + item.balance_in_store, 0)
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedData = filteredData.slice(startIndex, endIndex)
+
+  return (
+    <Card className="bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border-b border-gray-200 dark:border-slate-700">
+        <div className="bg-blue-500/10 dark:bg-blue-500/10 border border-blue-500/20 dark:border-blue-500/20 rounded-lg p-3">
+          <p className="text-gray-600 dark:text-gray-400 text-sm">Total Items</p>
+          <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{filteredData.length}</p>
+        </div>
+        <div className="bg-green-500/10 dark:bg-green-500/10 border border-green-500/20 dark:border-green-500/20 rounded-lg p-3">
+          <p className="text-gray-600 dark:text-gray-400 text-sm">Total Balance</p>
+          <p className="text-xl font-bold text-green-600 dark:text-green-400">
+            {totalBalance.toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+          </p>
+        </div>
+        <div className="bg-orange-500/10 dark:bg-orange-500/10 border border-orange-500/20 dark:border-orange-500/20 rounded-lg p-3">
+          <p className="text-gray-600 dark:text-gray-400 text-sm">Total Stock Value</p>
+          <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
+            KES {totalValue.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        </div>
+      </div>
+
+      <div className="px-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Search by item, voucher, or group..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value)
+              setCurrentPage(1)
+            }}
+            className="pl-10 bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700"
+          />
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs sm:text-sm">
+          <thead className="bg-gray-100 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
+            <tr>
+              <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Item Code</th>
+              <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Item Name</th>
+              <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Voucher Type</th>
+              <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Voucher No</th>
+              <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Qty In</th>
+              <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Qty Out</th>
+              <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Balance</th>
+              <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Value</th>
+              <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedData.map((row, idx) => (
+              <tr
+                key={`${row.voucher_no}-${idx}`}
+                className="border-b border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50"
+              >
+                <td className="p-3 text-gray-900 dark:text-gray-200 font-medium">{row.item_code}</td>
+                <td className="p-3 text-gray-600 dark:text-gray-400">{row.item_name}</td>
+                <td className="p-3 text-gray-600 dark:text-gray-400">{row.voucher_type}</td>
+                <td className="p-3 text-gray-900 dark:text-gray-200 font-mono">{row.voucher_no}</td>
+                <td className="p-3 text-right text-green-600 dark:text-green-400">
+                  {row.qty_in.toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                </td>
+                <td className="p-3 text-right text-red-600 dark:text-red-400">
+                  {row.qty_out.toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                </td>
+                <td className="p-3 text-right text-blue-600 dark:text-blue-400 font-semibold">
+                  {row.balance_in_store.toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                </td>
+                <td className="p-3 text-right text-orange-600 dark:text-orange-400 font-semibold">
+                  KES {row.value_of_stock.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+                <td className="p-3 text-gray-600 dark:text-gray-400 text-xs">{row.posting_date}</td>
               </tr>
             ))}
           </tbody>
