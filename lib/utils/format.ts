@@ -12,37 +12,18 @@ export function formatNumber(amount: number): string {
   });
 }
 
-export function formatDate(
-  date: string | Date | number,
-  options?: {
-    month?: "short" | "long" | "numeric";
-    day?: "numeric";
-    year?: "numeric" | undefined;
-    includeTime?: boolean;
-  }
-): string {
-  if (!date && date !== 0) return "";
-
-  const d = date instanceof Date ? date : new Date(date);
-  if (isNaN(d.getTime())) return String(date);
-
-  const { includeTime } = options || {};
-
-  // Default: short month and numeric day, include year
-  const fmt: Intl.DateTimeFormatOptions = {
-    month: options?.month || "short",
-    day: options?.day || "numeric",
-    year: options?.year || "numeric",
-  };
-
-  const datePart = d.toLocaleDateString("en-US", fmt);
-  if (includeTime) {
-    const timePart = d.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
+export function formatDate(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return dateString;
+    }
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
-    return `${datePart} ${timePart}`;
+  } catch {
+    return dateString;
   }
-
-  return datePart;
 }

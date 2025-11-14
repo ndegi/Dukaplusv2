@@ -1,15 +1,16 @@
 "use client"
 
 import type React from "react"
+import { TableActionButtons } from "@/components/ui/table-action-buttons"
 
 import { useAuth } from "@/hooks/use-auth"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle, Plus, Trash2 } from "lucide-react"
+import { AlertCircle, Plus, Trash2 } from 'lucide-react'
 
 interface POSUser {
   email_address: string
@@ -291,12 +292,10 @@ export default function UsersPage() {
                     >
                       Assign
                     </Button>
-                    <button
-                      onClick={() => handleDisableUser(u.email_address)}
-                      className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors p-2"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <TableActionButtons
+                      showDelete={true}
+                      onDelete={() => handleDisableUser(u.email_address)}
+                    />
                   </div>
                 </div>
               ))}

@@ -1,7 +1,12 @@
 "use client"
 
-import { Eye, Download, Edit2, Trash2, Check, X } from 'lucide-react'
-import { Button } from "@/components/ui/button"
+import { Eye, Download, Edit2, Trash2, Check, X, CreditCard } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface ActionButtonsProps {
   onView?: () => void
@@ -18,7 +23,6 @@ interface ActionButtonsProps {
   showSubmit?: boolean
   showCancel?: boolean
   showPay?: boolean
-  size?: "sm" | "default" | "lg"
 }
 
 export function TableActionButtons({
@@ -36,64 +40,129 @@ export function TableActionButtons({
   showSubmit = false,
   showCancel = false,
   showPay = false,
-  size = "sm",
 }: ActionButtonsProps) {
   return (
-    <div className="flex items-center justify-center gap-2 flex-wrap">
-      {showView && onView && (
-        <button
-          onClick={onView}
-          className="action-btn-view p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-          title="View Details"
-        >
-          <Eye className="w-4 h-4" />
-        </button>
-      )}
-      
-      {showDownload && onDownload && (
-        <Button onClick={onDownload} size={size} className="btn-success">
-          <Download className="w-4 h-4" />
-        </Button>
-      )}
+    <TooltipProvider>
+      <div className="flex items-center justify-center gap-2">
+        {showView && onView && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onView}
+                className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors text-blue-600 dark:text-blue-400"
+                aria-label="View Details"
+              >
+                <Eye className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>View Details</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+        
+        {showDownload && onDownload && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onDownload}
+                className="p-2 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors text-green-600 dark:text-green-400"
+                aria-label="Download"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Download</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
 
-      {showEdit && onEdit && (
-        <button
-          onClick={onEdit}
-          className="action-btn-edit inline-flex items-center gap-1.5 px-2 py-1 rounded text-sm"
-          title="Edit"
-        >
-          <Edit2 className="w-4 h-4" />
-          <span>Edit</span>
-        </button>
-      )}
+        {showEdit && onEdit && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onEdit}
+                className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors text-blue-600 dark:text-blue-400"
+                aria-label="Edit"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Edit</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
 
-      {showDelete && onDelete && (
-        <button
-          onClick={onDelete}
-          className="action-btn-delete p-2 rounded"
-          title="Delete"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      )}
+        {showDelete && onDelete && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onDelete}
+                className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors text-red-600 dark:text-red-400"
+                aria-label="Delete"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Delete</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
 
-      {showSubmit && onSubmit && (
-        <Button onClick={onSubmit} size={size} className="btn-success">
-          Submit
-        </Button>
-      )}
+        {showSubmit && onSubmit && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onSubmit}
+                className="p-2 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors text-green-600 dark:text-green-400"
+                aria-label="Submit"
+              >
+                <Check className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Submit</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
 
-      {showPay && onPay && (
-        <Button onClick={onPay} size={size} className="btn-warning">
-          Pay
-        </Button>
-      )}
+        {showPay && onPay && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onPay}
+                className="p-2 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded transition-colors text-orange-600 dark:text-orange-400"
+                aria-label="Pay"
+              >
+                <CreditCard className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Pay</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
 
-      {showCancel && onCancel && (
-        <Button onClick={onCancel} size={size} className="btn-cancel">
-          Cancel
-        </Button>
-      )}
-    </div>
+        {showCancel && onCancel && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onCancel}
+                className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors text-red-600 dark:text-red-400"
+                aria-label="Cancel"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Cancel</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+    </TooltipProvider>
   )
 }

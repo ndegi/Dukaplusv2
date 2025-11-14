@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { AlertCircle, Search, UserPlus } from "lucide-react"
+import { AlertCircle, Search, UserPlus } from 'lucide-react'
+import { TableActionButtons } from "@/components/ui/table-action-buttons"
 
 interface User {
   id: string
@@ -114,8 +115,12 @@ export function UsersList() {
                       <span className={user.status === "active" ? "badge-success" : "badge-danger"}>{user.status}</span>
                     </td>
                     <td className="table-cell space-x-2">
-                      <button className="action-btn-edit">Edit</button>
-                      <button className="action-btn-delete">Deactivate</button>
+                      <TableActionButtons
+                        showEdit={true}
+                        showDelete={true}
+                        onEdit={() => {/* TODO: Add edit functionality */}}
+                        onDelete={() => {/* TODO: Add deactivate functionality */}}
+                      />
                     </td>
                   </tr>
                 ))}

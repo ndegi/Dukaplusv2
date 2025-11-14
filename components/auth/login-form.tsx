@@ -126,10 +126,10 @@ export function LoginForm() {
       )}
 
       <div>
-        <label className="form-label">Username</label>
+        <label className="form-label">Mobile Number</label>
         <Input
-          type="text"
-          placeholder="ENTER YOUR MOBILE NUMBER OR USERNAME"
+          type="tel"
+          placeholder="07XXXXXXXXX"
           value={mobile}
           onChange={(e) => setMobile(e.target.value)}
           disabled={isLoading}
@@ -142,7 +142,7 @@ export function LoginForm() {
         <label className="form-label">Password</label>
         <Input
           type="password"
-          placeholder="ENTER YOUR PASSWORD HERE "
+          placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={isLoading}

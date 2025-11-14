@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { formatCurrency, formatDate } from "@/lib/utils/format"
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Search, Filter } from 'lucide-react'
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface ShiftDetail {
   mode_of_payment: string
@@ -26,12 +28,34 @@ interface Shift {
 
 export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
   const [shifts, setShifts] = useState<Shift[]>([])
+  const [filteredShifts, setFilteredShifts] = useState<Shift[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">("all")
 
   useEffect(() => {
     fetchShifts()
   }, [warehouseId])
+
+  useEffect(() => {
+    let filtered = shifts
+
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(shift => 
+        statusFilter === "open" ? shift.status === 0 : shift.status === 1
+      )
+    }
+
+    if (searchTerm) {
+      filtered = filtered.filter(shift =>
+        shift.shift_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (shift.closed_by && shift.closed_by.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    }
+
+    setFilteredShifts(filtered)
+  }, [shifts, searchTerm, statusFilter])
 
   const fetchShifts = async () => {
     if (!warehouseId) return
@@ -72,100 +96,105 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
     )
   }
 
-  if (shifts.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-foreground">No shifts found</p>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-4">
-      {shifts.map((shift) => (
-        <div key={shift.shift_name} className="card-base p-4">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="font-mono text-lg font-bold text-warning">{shift.shift_name}</h3>
-              <p className="text-sm text-foreground">{formatDate(shift.shift_date)}</p>
-            </div>
-            <div
-              className={
-                shift.status === 0
-                  ? "badge-success"
-                  : "badge-disabled"
-              }
-            >
-              {shift.status === 0 ? "Open" : "Closed"}
-            </div>
-          </div>
-
-          {shift.closed_by && (
-            <p className="text-sm text-foreground mb-3">Closed by: {shift.closed_by}</p>
-          )}
-
-          <div className="border-t border-border pt-3">
-            <h4 className="text-sm font-semibold text-foreground mb-3">Payment Details</h4>
-            <div className="space-y-4">
-              {shift.details && shift.details.length > 0 ? (
-                shift.details.map((detail, index) => (
-                  <div key={index} className="border border-border rounded-lg p-3">
-                    <h5 className="font-semibold text-foreground mb-2">{detail.mode_of_payment}</h5>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-foreground opacity-70">Opening:</span>
-                        <span className="ml-2 text-foreground font-semibold">
-                          {formatCurrency(detail.opening_amount)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-foreground opacity-70">Sales:</span>
-                        <span className="ml-2 text-success font-semibold">
-                          {formatCurrency(detail.total_sales)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-foreground opacity-70">Credit Paid:</span>
-                        <span className="ml-2 text-success font-semibold">
-                          {formatCurrency(detail.total_credit_paid)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-foreground opacity-70">Expenses:</span>
-                        <span className="ml-2 text-danger font-semibold">
-                          {formatCurrency(detail.total_expense)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-foreground opacity-70">Expected:</span>
-                        <span className="ml-2 text-warning font-semibold">
-                          {formatCurrency(detail.expected_closing_balance)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-foreground opacity-70">Actual:</span>
-                        <span className="ml-2 text-foreground font-semibold">
-                          {formatCurrency(detail.actual_closing_amount)}
-                        </span>
-                      </div>
-                      {detail.difference !== 0 && (
-                        <div className="col-span-2 mt-1 pt-2 border-t border-border">
-                          <span className="text-foreground opacity-70">Difference:</span>
-                          <span className={`ml-2 font-bold ${detail.difference > 0 ? 'text-success' : 'text-danger'}`}>
-                            {formatCurrency(Math.abs(detail.difference))} {detail.difference > 0 ? '(Over)' : '(Short)'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-foreground">No payment details available</p>
-              )}
-            </div>
-          </div>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1 relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search by shift name or closed by..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 input-base"
+          />
         </div>
-      ))}
+        <div className="sm:w-48">
+          <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+            <SelectTrigger className="input-base">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Shifts</SelectItem>
+              <SelectItem value="open">Open</SelectItem>
+              <SelectItem value="closed">Closed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {filteredShifts.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          No shifts match your search criteria
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="table-header">
+              <tr>
+                <th className="table-header-cell text-left">Shift ID</th>
+                <th className="table-header-cell text-left">Date</th>
+                <th className="table-header-cell text-center">Status</th>
+                <th className="table-header-cell text-left">Closed By</th>
+                <th className="table-header-cell text-right">Payment Details</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filteredShifts.map((shift) => (
+                <tr key={shift.shift_name} className="table-row">
+                  <td className="table-cell">
+                    <span className="font-mono text-warning font-semibold">{shift.shift_name}</span>
+                  </td>
+                  <td className="table-cell-secondary">{formatDate(shift.shift_date)}</td>
+                  <td className="table-cell text-center">
+                    <span
+                      className={shift.status === 0 ? "badge-success" : "badge-disabled"}
+                    >
+                      {shift.status === 0 ? "Open" : "Closed"}
+                    </span>
+                  </td>
+                  <td className="table-cell-secondary">{shift.closed_by || "-"}</td>
+                  <td className="table-cell">
+                    {shift.details && shift.details.length > 0 ? (
+                      <div className="space-y-2">
+                        {shift.details.map((detail, index) => (
+                          <div key={index} className="text-right">
+                            <div className="font-semibold text-foreground text-sm">{detail.mode_of_payment}</div>
+                            <div className="text-xs text-muted-foreground space-y-1">
+                              <div>
+                                <span>Opening: </span>
+                                <span className="text-foreground">{formatCurrency(detail.opening_amount)}</span>
+                              </div>
+                              <div>
+                                <span>Sales: </span>
+                                <span className="text-success">{formatCurrency(detail.total_sales)}</span>
+                              </div>
+                              <div>
+                                <span>Expected: </span>
+                                <span className="text-warning">{formatCurrency(detail.expected_closing_balance)}</span>
+                              </div>
+                              {detail.difference !== 0 && (
+                                <div>
+                                  <span>Diff: </span>
+                                  <span className={detail.difference > 0 ? 'text-success' : 'text-danger'}>
+                                    {formatCurrency(Math.abs(detail.difference))} {detail.difference > 0 ? '↑' : '↓'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">No details</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Plus, ChevronLeft, ChevronRight, Pencil } from 'lucide-react'
+import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
 import { ProductForm } from "./product-form"
+import { TableActionButtons } from "@/components/ui/table-action-buttons"
 
 interface Product {
   id: string
@@ -181,17 +182,13 @@ export function InventoryOverview() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-center">
-                        <button
-                          onClick={() => {
+                        <TableActionButtons
+                          showEdit={true}
+                          onEdit={() => {
                             setSelectedProduct(product)
                             setShowForm(true)
                           }}
-                          className="action-btn-edit inline-flex items-center gap-1 text-sm"
-                          title="Edit Product"
-                        >
-                          <Pencil className="w-4 h-4" />
-                          <span>Edit</span>
-                        </button>
+                        />
                       </td>
                     </tr>
                   ))}
