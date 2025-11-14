@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { sales_id, payment_details } = body
 
-    const response = await fetch(`${baseUrl}/api/method/dukaplus.services.rest.submit_sales_invoice`, {
+    const response = await fetch(`${baseUrl}/api/method/dukaplus.services.rest.post_payment_to_invoice`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

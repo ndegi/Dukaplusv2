@@ -320,9 +320,17 @@ export function PaymentModal({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="card-base w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
         <div className="px-4 sm:px-6 py-4 border-b border-border flex-shrink-0">
-          <h2 className="text-lg sm:text-xl font-bold text-foreground">Complete Payment</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground">Complete Payment</h2>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-muted-foreground">Total:</span>
+              <span className="text-2xl sm:text-3xl font-bold text-warning">
+                KES {totalAmount.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
           {shiftCheckComplete && !hasActiveShift && !isInvoicePayment && (
-            <div className="mt-2 flex items-center gap-2 text-danger text-xs sm:text-sm">
+            <div className="flex items-center gap-2 text-danger text-xs sm:text-sm">
               <AlertCircle className="w-4 h-4" />
               <span>No active shift - Sales are disabled</span>
             </div>
@@ -396,24 +404,16 @@ export function PaymentModal({
             </div>
           )}
 
-          <div className="bg-muted rounded-lg px-4 sm:px-5 py-3 border border-border">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground">Total:</span>
-                <span className="text-2xl sm:text-3xl font-bold text-warning">
-                  KES {totalAmount.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {!isPaymentComplete && (
+            <div className="bg-muted rounded-lg px-4 sm:px-5 py-3 border border-border">
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-medium text-muted-foreground">Remaining:</span>
+                <span className="text-lg sm:text-xl font-bold text-danger">
+                  KES {remaining.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
-              {!isPaymentComplete && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs sm:text-sm font-medium text-muted-foreground">Remaining:</span>
-                  <span className="text-lg sm:text-xl font-bold text-danger">
-                    KES {remaining.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-              )}
             </div>
-          </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1.5">

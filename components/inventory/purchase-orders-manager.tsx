@@ -117,6 +117,35 @@ export function PurchaseOrdersManager() {
     })
   }
 
+  const handleCreateReceipt = async (orderId: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Create Purchase Receipt?",
+      description: `Create receipt for order ${orderId}?`,
+      action: async () => {
+        try {
+          const response = await fetch("/api/purchase-orders/receipt/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: orderId }),
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            alert("Receipt created successfully: " + data.message?.receipt_id)
+            fetchPurchaseOrders()
+          } else {
+            const data = await response.json()
+            alert(data.message?.message || "Failed to create receipt")
+          }
+        } catch (err) {
+          alert("Error creating receipt")
+          console.error("[DukaPlus] Error:", err)
+        }
+      },
+    })
+  }
+
   return (
     <div className="space-y-4">
       <ConfirmationDialog
@@ -202,7 +231,9 @@ export function PurchaseOrdersManager() {
                         <td className="table-cell text-center">
                           <TableActionButtons
                             showCancel={true}
+                            showCreateReceipt={true}
                             onCancel={() => handleCancelOrder(order.order_id)}
+                            onCreateReceipt={() => handleCreateReceipt(order.order_id)}
                             size="sm"
                           />
                         </td>

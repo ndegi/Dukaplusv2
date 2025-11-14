@@ -82,7 +82,9 @@ export default function CustomersPage() {
       const data = await res.json()
       console.log("[DukaPlus] Customer groups data:", data)
       const groupsArray = data.message?.customer_groups || data.groups || []
-      const parsedGroups = groupsArray.map((g: any) => (typeof g === "string" ? g : g.customer_group)).filter(Boolean)
+      const parsedGroups = groupsArray
+        .map((g: any) => (typeof g === "string" ? g : g?.customer_group))
+        .filter((g: any) => g && typeof g === "string")
       console.log("[DukaPlus] Parsed groups:", parsedGroups)
       setGroups(parsedGroups.length > 0 ? parsedGroups : ["Individual", "Corporate", "Government"])
     } catch (error) {
@@ -95,7 +97,7 @@ export default function CustomersPage() {
     e.preventDefault()
     try {
       const endpoint = editingCustomer ? `/api/customers/${editingCustomer.customer_id}` : "/api/customers/create"
-      const method = editingCustomer ? "PUT" : "POST"
+      const method = "POST"
 
       const res = await fetch(endpoint, {
         method,
@@ -141,7 +143,9 @@ export default function CustomersPage() {
 
   const filteredAndSorted = customers
     .filter(
-      (c) => c.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) || c.mobile_number.includes(searchQuery),
+      (c) =>
+        (c.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        (c.mobile_number?.includes(searchQuery) ?? false),
     )
     .sort((a, b) => {
       const aVal = a[sortField]
