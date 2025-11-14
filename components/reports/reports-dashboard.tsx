@@ -119,13 +119,13 @@ export function ReportsDashboard({ user }: { user: User }) {
 
       if (stockRes.ok) {
         const data = await stockRes.json()
-        console.log("[DukaPlus] Stock balance response:", data)
+        console.log("[v0] Stock balance response:", data)
         setStockBalance(data.message?.data || data.stock || [])
       }
 
       if (ledgerRes.ok) {
         const data = await ledgerRes.json()
-        console.log("[DukaPlus] Stock ledger response:", data)
+        console.log("[v0] Stock ledger response:", data)
         setStockLedger(data.message?.data || data.stock || [])
       }
 
@@ -512,8 +512,8 @@ function StockBalanceTable({ data, isLoading }: { data: StockBalanceItem[]; isLo
     )
   })
 
-  const totalStockValue = filteredData.reduce((sum, item) => sum + item.stock_value, 0)
-  const totalAmountSold = filteredData.reduce((sum, item) => sum + item.amount_sold, 0)
+  const totalStockValue = filteredData.reduce((sum, item) => sum + (item.stock_value || 0), 0)
+  const totalAmountSold = filteredData.reduce((sum, item) => sum + (item.amount_sold || 0), 0)
   const totalItems = filteredData.length
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage)
@@ -584,19 +584,19 @@ function StockBalanceTable({ data, isLoading }: { data: StockBalanceItem[]; isLo
                 <td className="p-3 text-gray-600 dark:text-gray-400">{row.item_group}</td>
                 <td className="p-3 text-gray-600 dark:text-gray-400">{row.warehouse}</td>
                 <td className="p-3 text-right text-gray-600 dark:text-gray-400">
-                  {row.opening_stock.toLocaleString('en-KE')}
+                  {(row.opening_stock || 0).toLocaleString('en-KE')}
                 </td>
                 <td className="p-3 text-right text-green-600 dark:text-green-400">
-                  {row.qty_in.toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  {(row.qty_in || 0).toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                 </td>
                 <td className="p-3 text-right text-red-600 dark:text-red-400">
-                  {row.qty_out.toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  {(row.qty_out || 0).toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                 </td>
                 <td className="p-3 text-right text-blue-600 dark:text-blue-400 font-semibold">
-                  {row.balance_stock.toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  {(row.balance_stock || 0).toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                 </td>
                 <td className="p-3 text-right text-orange-600 dark:text-orange-400 font-semibold">
-                  KES {row.stock_value.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  KES {(row.stock_value || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
               </tr>
             ))}
@@ -652,8 +652,8 @@ function StockLedgerTable({ data, isLoading }: { data: StockLedgerItem[]; isLoad
     )
   })
 
-  const totalValue = filteredData.reduce((sum, item) => sum + item.value_of_stock, 0)
-  const totalBalance = filteredData.reduce((sum, item) => sum + item.balance_in_store, 0)
+  const totalValue = filteredData.reduce((sum, item) => sum + (item.value_of_stock || 0), 0)
+  const totalBalance = filteredData.reduce((sum, item) => sum + (item.balance_in_store || 0), 0)
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -723,16 +723,16 @@ function StockLedgerTable({ data, isLoading }: { data: StockLedgerItem[]; isLoad
                 <td className="p-3 text-gray-600 dark:text-gray-400">{row.voucher_type}</td>
                 <td className="p-3 text-gray-900 dark:text-gray-200 font-mono">{row.voucher_no}</td>
                 <td className="p-3 text-right text-green-600 dark:text-green-400">
-                  {row.qty_in.toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  {(row.qty_in || 0).toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                 </td>
                 <td className="p-3 text-right text-red-600 dark:text-red-400">
-                  {row.qty_out.toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  {(row.qty_out || 0).toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                 </td>
                 <td className="p-3 text-right text-blue-600 dark:text-blue-400 font-semibold">
-                  {row.balance_in_store.toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  {(row.balance_in_store || 0).toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                 </td>
                 <td className="p-3 text-right text-orange-600 dark:text-orange-400 font-semibold">
-                  KES {row.value_of_stock.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  KES {(row.value_of_stock || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
                 <td className="p-3 text-gray-600 dark:text-gray-400 text-xs">{row.posting_date}</td>
               </tr>
