@@ -8,9 +8,10 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Search, ArrowUpDown, ChevronLeft, ChevronRight, Edit2 } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Plus, Search, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { TableActionButtons } from "@/components/ui/table-action-buttons"
 
 interface Customer {
   customer_id: string
@@ -69,7 +70,7 @@ export default function CustomersPage() {
       const data = await res.json()
       setCustomers(data.customers || [])
     } catch (error) {
-      console.error("[DukaPlus] Error fetching customers:", error)
+      console.error("[v0] Error fetching customers:", error)
     } finally {
       setPageLoading(false)
     }
@@ -79,13 +80,13 @@ export default function CustomersPage() {
     try {
       const res = await fetch("/api/customers/groups")
       const data = await res.json()
-      console.log("[DukaPlus] Customer groups data:", data)
+      console.log("[v0] Customer groups data:", data)
       const groupsArray = data.message?.customer_groups || data.groups || []
       const parsedGroups = groupsArray.map((g: any) => (typeof g === "string" ? g : g.customer_group)).filter(Boolean)
-      console.log("[DukaPlus] Parsed groups:", parsedGroups)
+      console.log("[v0] Parsed groups:", parsedGroups)
       setGroups(parsedGroups.length > 0 ? parsedGroups : ["Individual", "Corporate", "Government"])
     } catch (error) {
-      console.error("[DukaPlus] Error fetching groups:", error)
+      console.error("[v0] Error fetching groups:", error)
       setGroups(["Individual", "Corporate", "Government"])
     }
   }
@@ -114,7 +115,7 @@ export default function CustomersPage() {
         fetchCustomers()
       }
     } catch (error) {
-      console.error("[DukaPlus] Error saving customer:", error)
+      console.error("[v0] Error saving customer:", error)
     }
   }
 
@@ -273,9 +274,9 @@ export default function CustomersPage() {
 
         <Card className="card-base overflow-hidden">
           {pageLoading ? (
-            <div className="p-6 text-secondary text-center">Loading customers...</div>
+            <div className="p-6 text-foreground text-center">Loading customers...</div>
           ) : filteredAndSorted.length === 0 ? (
-            <div className="p-6 text-secondary text-center">No customers found</div>
+            <div className="p-6 text-foreground text-center">No customers found</div>
           ) : (
             <>
               <div className="overflow-x-auto text-xs sm:text-sm">
@@ -333,14 +334,11 @@ export default function CustomersPage() {
                         <td className="table-cell-secondary text-right">{customer.paid_invoices.count}</td>
                         <td className="table-cell-secondary text-right">{customer.unpaid_invoices.count}</td>
                         <td className="px-4 py-3">
-                          <button
-                            onClick={() => handleEditCustomer(customer)}
-                            className="action-btn-edit inline-flex items-center gap-1 text-sm"
-                            title="Edit Customer"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                            <span>Edit</span>
-                          </button>
+                          <TableActionButtons
+                            showEdit={true}
+                            onEdit={() => handleEditCustomer(customer)}
+                            size="sm"
+                          />
                         </td>
                       </tr>
                     ))}

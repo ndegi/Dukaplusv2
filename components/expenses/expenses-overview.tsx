@@ -8,15 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Plus, Edit2, Trash2, Check, ChevronLeft, ChevronRight } from "lucide-react"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { TableActionButtons } from "@/components/ui/table-action-buttons"
+import { Plus, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
 
@@ -47,6 +41,8 @@ export function ExpensesOverview() {
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "submitted">("all")
 
   const [formData, setFormData] = useState({
     expense_category: "",
@@ -235,13 +231,47 @@ export function ExpensesOverview() {
     }
   }
 
-  const totalPages = Math.ceil(expenses.length / itemsPerPage)
+  const filteredExpenses = expenses.filter((expense) => {
+    const matchesSearch =
+      expense.expense_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.expense_category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.mode_of_payment.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "draft" && expense.status === 0) ||
+      (statusFilter === "submitted" && expense.status === 1)
+
+    return matchesSearch && matchesStatus
+  })
+
+  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-  const paginatedExpenses = expenses.slice(startIndex, endIndex)
+  const paginatedExpenses = filteredExpenses.slice(startIndex, endIndex)
 
   return (
     <div className="space-y-4">
+      <ConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Expense?"
+        description={`This action cannot be undone. The expense ${deletingExpense?.expense_name} will be permanently deleted.`}
+        onConfirm={handleDeleteExpense}
+        variant="danger"
+        confirmText="Delete"
+      />
+
+      <ConfirmationDialog
+        open={showSubmitDialog}
+        onOpenChange={setShowSubmitDialog}
+        title="Submit Expense?"
+        description={`Are you sure you want to submit expense ${submittingExpense?.expense_name}? This action cannot be undone.`}
+        onConfirm={handleSubmitExpense}
+        variant="success"
+        confirmText="Submit"
+      />
+
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-start gap-3">
           <FontAwesomeIcon
@@ -271,9 +301,31 @@ export function ExpensesOverview() {
         </div>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
+          <Input
+            placeholder="Search by ID, category, or payment method..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="input-base pl-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+          <SelectTrigger className="w-full sm:w-[180px] input-base">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent className="dialog-content">
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="submitted">Submitted</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <Card className="card-base">
         {isLoading ? (
-          <div className="p-6 text-center text-muted-foreground text-sm">Loading expenses...</div>
+          <div className="p-6 text-center text-foreground text-sm">Loading expenses...</div>
         ) : (
           <>
             <div className="overflow-x-auto text-xs sm:text-sm">
@@ -290,10 +342,12 @@ export function ExpensesOverview() {
                   </tr>
                 </thead>
                 <tbody>
-                  {expenses.length === 0 ? (
+                  {filteredExpenses.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                        No expenses found. Create one to get started.
+                      <td colSpan={7} className="p-8 text-center text-foreground">
+                        {searchTerm || statusFilter !== "all"
+                          ? "No expenses match your filters"
+                          : "No expenses found. Create one to get started."}
                       </td>
                     </tr>
                   ) : (
@@ -315,37 +369,23 @@ export function ExpensesOverview() {
                             {expense.status === 1 ? "Submitted" : "Draft"}
                           </span>
                         </td>
-                        <td className="table-cell flex gap-2">
+                        <td className="table-cell">
                           {expense.status === 0 && (
-                            <>
-                              <button
-                                onClick={() => handleEditExpense(expense)}
-                                className="action-btn-edit"
-                                title="Edit"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setDeletingExpense(expense)
-                                  setShowDeleteDialog(true)
-                                }}
-                                className="action-btn-delete"
-                                title="Delete"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setSubmittingExpense(expense)
-                                  setShowSubmitDialog(true)
-                                }}
-                                className="action-btn-submit"
-                                title="Submit"
-                              >
-                                <Check className="w-4 h-4" />
-                              </button>
-                            </>
+                            <TableActionButtons
+                              showEdit={true}
+                              showDelete={true}
+                              showSubmit={true}
+                              onEdit={() => handleEditExpense(expense)}
+                              onDelete={() => {
+                                setDeletingExpense(expense)
+                                setShowDeleteDialog(true)
+                              }}
+                              onSubmit={() => {
+                                setSubmittingExpense(expense)
+                                setShowSubmitDialog(true)
+                              }}
+                              size="sm"
+                            />
                           )}
                         </td>
                       </tr>
@@ -358,7 +398,7 @@ export function ExpensesOverview() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-border">
                 <div className="text-sm text-muted-foreground">
-                  Showing {startIndex + 1} to {Math.min(endIndex, expenses.length)} of {expenses.length} expenses
+                  Showing {startIndex + 1} to {Math.min(endIndex, filteredExpenses.length)} of {filteredExpenses.length} expenses
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -376,7 +416,7 @@ export function ExpensesOverview() {
                         onClick={() => setCurrentPage(page)}
                         variant={currentPage === page ? "default" : "outline"}
                         size="sm"
-                        className={currentPage === page ? "bg-orange-500 hover:bg-orange-600" : ""}
+                        className={currentPage === page ? "btn-warning" : ""}
                       >
                         {page}
                       </Button>
@@ -474,7 +514,7 @@ export function ExpensesOverview() {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleSaveExpense} disabled={isLoading} className="flex-1 btn-create">
+              <Button onClick={handleSaveExpense} disabled={isLoading} className="flex-1 btn-success">
                 {isLoading ? "Saving..." : editingExpense ? "Update Expense" : "Save Expense"}
               </Button>
               <Button
@@ -507,7 +547,7 @@ export function ExpensesOverview() {
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleCreateCategory} className="flex-1 btn-create">
+              <Button onClick={handleCreateCategory} className="flex-1 btn-success">
                 Create Category
               </Button>
               <Button onClick={() => setShowCategoryDialog(false)} className="flex-1 btn-cancel">
@@ -517,36 +557,6 @@ export function ExpensesOverview() {
           </div>
         </DialogContent>
       </Dialog>
-
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="dialog-content">
-          <AlertDialogTitle className="dialog-title">Delete Expense?</AlertDialogTitle>
-          <AlertDialogDescription className="dialog-description">
-            This action cannot be undone. The expense {deletingExpense?.expense_name} will be permanently deleted.
-          </AlertDialogDescription>
-          <div className="flex gap-2">
-            <AlertDialogCancel className="btn-cancel">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteExpense} className="btn-danger">
-              Delete
-            </AlertDialogAction>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-        <AlertDialogContent className="dialog-content">
-          <AlertDialogTitle className="dialog-title">Submit Expense?</AlertDialogTitle>
-          <AlertDialogDescription className="dialog-description">
-            Are you sure you want to submit expense {submittingExpense?.expense_name}? This action cannot be undone.
-          </AlertDialogDescription>
-          <div className="flex gap-2">
-            <AlertDialogCancel className="btn-cancel">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubmitExpense} className="btn-success">
-              Submit
-            </AlertDialogAction>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from "react"
 import { AlertCircle, Plus, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { TableActionButtons } from "@/components/ui/table-action-buttons"
 
 interface PurchaseOrder {
   order_id: string
@@ -37,7 +39,17 @@ export default function PurchaseOrdersPage() {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
   const [showNewOrderModal, setShowNewOrderModal] = useState(false)
   const [showSupplierModal, setShowSupplierModal] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean
+    title: string
+    description: string
+    action: () => void
+  }>({
+    open: false,
+    title: "",
+    description: "",
+    action: () => {},
+  })
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -73,7 +85,7 @@ export default function PurchaseOrdersPage() {
       }
     } catch (err) {
       setError("Error fetching purchase orders")
-      console.error("[DukaPlus] Error fetching purchase orders:", err)
+      console.error("[v0] Error fetching purchase orders:", err)
     } finally {
       setIsLoadingOrders(false)
     }
@@ -91,6 +103,33 @@ export default function PurchaseOrdersPage() {
     })
   }
 
+  const handleCancelOrder = async (orderId: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Cancel Purchase Order?",
+      description: `Cancel order ${orderId}? This action cannot be undone.`,
+      action: async () => {
+        try {
+          const response = await fetch("/api/purchase-orders/cancel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: orderId }),
+          })
+
+          if (response.ok) {
+            fetchPurchaseOrders()
+          } else {
+            const data = await response.json()
+            setError(data.message?.message || "Failed to cancel order")
+          }
+        } catch (err) {
+          setError("Error cancelling order")
+          console.error("[v0] Error cancelling order:", err)
+        }
+      },
+    })
+  }
+
   if (isLoading || !user) {
     return null
   }
@@ -98,6 +137,16 @@ export default function PurchaseOrdersPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 px-2 sm:px-0">
+        <ConfirmationDialog
+          open={confirmDialog.open}
+          onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          onConfirm={confirmDialog.action}
+          variant="danger"
+          confirmText="Cancel Order"
+        />
+
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">Purchase Orders</h1>
@@ -124,22 +173,22 @@ export default function PurchaseOrdersPage() {
           </div>
         )}
 
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 sm:p-6">
+        <div className="card-base p-4 sm:p-6">
           {isLoadingOrders ? (
-            <p className="text-slate-600 dark:text-slate-400">Loading purchase orders...</p>
+            <p className="text-foreground p-6 text-center">Loading purchase orders...</p>
           ) : orders.length === 0 ? (
-            <p className="text-slate-600 dark:text-slate-400 text-center py-8">No purchase orders found</p>
+            <p className="text-foreground text-center py-8">No purchase orders found</p>
           ) : (
             <div className="overflow-x-auto text-xs sm:text-sm">
               <table className="w-full">
                 <thead className="table-header">
                   <tr>
-                    <th className="px-2 sm:px-4 py-3 text-left font-semibold w-10"></th>
-                    <th className="px-2 sm:px-4 py-3 text-left font-semibold">Order ID</th>
-                    <th className="px-2 sm:px-4 py-3 text-left font-semibold">Supplier</th>
-                    <th className="px-2 sm:px-4 py-3 text-right font-semibold">Grand Total</th>
-                    <th className="px-2 sm:px-4 py-3 text-center font-semibold">Status</th>
-                    <th className="px-2 sm:px-4 py-3 text-center font-semibold">Actions</th>
+                    <th className="table-header-cell w-10"></th>
+                    <th className="table-header-cell text-left">Order ID</th>
+                    <th className="table-header-cell text-left">Supplier</th>
+                    <th className="table-header-cell text-right">Grand Total</th>
+                    <th className="table-header-cell text-center">Status</th>
+                    <th className="table-header-cell text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -152,61 +201,58 @@ export default function PurchaseOrdersPage() {
                             {order.items && order.items.length > 0 && (
                               <button
                                 onClick={() => toggleOrderExpansion(order.order_id)}
-                                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                                className="p-1 hover:bg-muted rounded transition-colors"
                               >
                                 {isExpanded ? (
-                                  <ChevronUp className="w-4 h-4" />
+                                  <ChevronUp className="w-4 h-4 text-foreground" />
                                 ) : (
-                                  <ChevronDown className="w-4 h-4" />
+                                  <ChevronDown className="w-4 h-4 text-foreground" />
                                 )}
                               </button>
                             )}
                           </td>
-                          <td className="px-2 sm:px-4 py-3 font-mono text-warning">{order.order_id}</td>
-                          <td className="px-2 sm:px-4 py-3 text-foreground">{order.supplier}</td>
-                          <td className="px-2 sm:px-4 py-3 text-right text-foreground font-semibold">
+                          <td className="table-cell font-mono text-warning">{order.order_id}</td>
+                          <td className="table-cell">{order.supplier}</td>
+                          <td className="px-4 py-3 text-right text-warning font-semibold">
                             KES{" "}
                             {order.grand_total.toLocaleString("en-KE", {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
                           </td>
-                          <td className="px-2 sm:px-4 py-3 text-center">
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                              order.status === "To Bill"
-                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                                : "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                            }`}>
-                              {order.status}
-                            </span>
+                          <td className="px-4 py-3 text-center">
+                            {order.status === "To Bill" ? (
+                              <span className="badge-warning">{order.status}</span>
+                            ) : (
+                              <span className="badge-success">{order.status}</span>
+                            )}
                           </td>
-                          <td className="px-2 sm:px-4 py-3 text-center">
-                            <button
-                              className="btn-cancel p-2 rounded text-xs"
-                              title="Cancel Order"
-                            >
-                              Cancel
-                            </button>
+                          <td className="px-4 py-3">
+                            <TableActionButtons
+                              showCancel={true}
+                              onCancel={() => handleCancelOrder(order.order_id)}
+                              size="sm"
+                            />
                           </td>
                         </tr>
                         {isExpanded && order.items && order.items.length > 0 && (
                           <tr>
-                            <td colSpan={6} className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50">
+                            <td colSpan={6} className="px-4 py-2 bg-muted/30">
                               <div className="p-4">
                                 <h4 className="font-semibold text-sm mb-2 text-foreground">Items:</h4>
                                 <table className="w-full text-xs">
-                                  <thead className="bg-slate-100 dark:bg-slate-800">
+                                  <thead className="bg-muted">
                                     <tr>
-                                      <th className="text-left p-2 font-semibold">Item Code</th>
-                                      <th className="text-left p-2 font-semibold">Item Name</th>
-                                      <th className="text-right p-2 font-semibold">Quantity</th>
-                                      <th className="text-right p-2 font-semibold">Rate</th>
-                                      <th className="text-right p-2 font-semibold">Amount</th>
+                                      <th className="table-header-cell text-left">Item Code</th>
+                                      <th className="table-header-cell text-left">Item Name</th>
+                                      <th className="table-header-cell text-right">Quantity</th>
+                                      <th className="table-header-cell text-right">Rate</th>
+                                      <th className="table-header-cell text-right">Amount</th>
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {order.items.map((item, idx) => (
-                                      <tr key={idx} className="border-b border-slate-200 dark:border-slate-700">
+                                      <tr key={idx} className="border-b border-border">
                                         <td className="p-2 font-mono text-muted-foreground">{item.item_code}</td>
                                         <td className="p-2 text-foreground">{item.item_name}</td>
                                         <td className="p-2 text-right text-foreground">{item.qty}</td>
@@ -234,7 +280,6 @@ export default function PurchaseOrdersPage() {
         </div>
       </div>
 
-      {/* New Order Modal */}
       {showNewOrderModal && (
         <NewOrderModal
           onClose={() => setShowNewOrderModal(false)}
@@ -245,7 +290,6 @@ export default function PurchaseOrdersPage() {
         />
       )}
 
-      {/* New Supplier Modal */}
       {showSupplierModal && (
         <NewSupplierModal
           onClose={() => setShowSupplierModal(false)}
@@ -307,7 +351,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
       }
     } catch (err) {
       setError("Error creating purchase order")
-      console.error("[DukaPlus] Error:", err)
+      console.error("[v0] Error:", err)
     } finally {
       setIsSaving(false)
     }
@@ -315,9 +359,9 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div className="dialog-content w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-border sticky top-0 bg-card">
-          <h2 className="text-xl font-bold text-foreground">New Purchase Order</h2>
+          <h2 className="dialog-title">New Purchase Order</h2>
         </div>
 
         <div className="p-6 space-y-4">
@@ -406,16 +450,16 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
         </div>
 
         <div className="p-6 border-t border-border flex gap-2 sticky bottom-0 bg-card">
-          <button onClick={onClose} className="btn-secondary flex-1" disabled={isSaving}>
+          <Button onClick={onClose} className="btn-cancel flex-1" disabled={isSaving}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSubmit}
-            className="btn-primary flex-1"
+            className="btn-success flex-1"
             disabled={isSaving || !supplier || items.length === 0}
           >
             {isSaving ? "Creating..." : "Create Order"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -451,7 +495,7 @@ function NewSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
       }
     } catch (err) {
       setError("Error creating supplier")
-      console.error("[DukaPlus] Error:", err)
+      console.error("[v0] Error:", err)
     } finally {
       setIsSaving(false)
     }
@@ -459,9 +503,9 @@ function NewSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-lg w-full max-w-md">
+      <div className="dialog-content w-full max-w-md">
         <div className="p-6 border-b border-border">
-          <h2 className="text-xl font-bold text-foreground">Add Supplier</h2>
+          <h2 className="dialog-title">Add Supplier</h2>
         </div>
 
         <div className="p-6 space-y-4">
@@ -495,16 +539,16 @@ function NewSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
         </div>
 
         <div className="p-6 border-t border-border flex gap-2">
-          <button onClick={onClose} className="btn-secondary flex-1" disabled={isSaving}>
+          <Button onClick={onClose} className="btn-cancel flex-1" disabled={isSaving}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSubmit}
-            className="btn-primary flex-1"
+            className="btn-success flex-1"
             disabled={isSaving || !supplier || !mobileNumber}
           >
             {isSaving ? "Adding..." : "Add Supplier"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from "react"
 import { AlertCircle, Download, Eye, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from "@/components/ui/button"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { TableActionButtons } from "@/components/ui/table-action-buttons"
 
 interface SalesReceipt {
   sales_id: string
@@ -58,10 +60,19 @@ export default function SalesPage() {
   const itemsPerPage = 10
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState<"receipts" | "invoices">("receipts")
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
-  const [itemToCancel, setItemToCancel] = useState<{ id: string; type: "receipt" | "invoice" } | null>(null)
-  const [isCancelling, setIsCancelling] = useState(false)
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean
+    title: string
+    description: string
+    action: () => void
+  }>({
+    open: false,
+    title: "",
+    description: "",
+    action: () => {},
+  })
+  const [isCancelling, setIsCancelling] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -98,7 +109,7 @@ export default function SalesPage() {
       }
     } catch (err) {
       setError("Error fetching sales receipts")
-      console.error("[DukaPlus] Error fetching sales receipts:", err)
+      console.error("[v0] Error fetching sales receipts:", err)
     } finally {
       setIsLoadingReceipts(false)
     }
@@ -119,7 +130,7 @@ export default function SalesPage() {
         setInvoices(data.message.sales_data)
       }
     } catch (err) {
-      console.error("[DukaPlus] Error fetching sales invoices:", err)
+      console.error("[v0] Error fetching sales invoices:", err)
     }
   }
 
@@ -176,36 +187,66 @@ export default function SalesPage() {
     router.push("/pos")
   }
 
-  const handleCancelInvoice = async (salesId: string) => {
-    try {
-      setIsCancelling(true)
-      const response = await fetch("/api/sales/invoice/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sales_invoice_id: salesId }),
-      })
+  const handleCancelReceipt = async (salesId: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Cancel Receipt?",
+      description: `Are you sure you want to cancel receipt ${salesId}? This action cannot be undone.`,
+      action: async () => {
+        try {
+          setIsCancelling(true)
+          const response = await fetch("/api/sales/receipt/cancel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sales_receipt_id: salesId }),
+          })
 
-      const data = await response.json()
-
-      if (response.ok) {
-        setShowCancelConfirm(false)
-        setItemToCancel(null)
-        fetchSalesReceipts()
-        fetchSalesInvoices()
-      } else {
-        setError(data.message?.message || "Failed to cancel invoice")
-      }
-    } catch (err) {
-      setError("Error cancelling invoice")
-      console.error("[DukaPlus] Error cancelling invoice:", err)
-    } finally {
-      setIsCancelling(false)
-    }
+          if (response.ok) {
+            fetchSalesReceipts()
+            fetchSalesInvoices()
+          } else {
+            const data = await response.json()
+            setError(data.message?.message || "Failed to cancel receipt")
+          }
+        } catch (err) {
+          setError("Error cancelling receipt")
+          console.error("[v0] Error:", err)
+        } finally {
+          setIsCancelling(false)
+        }
+      },
+    })
   }
 
-  const handleShowCancelConfirm = (salesId: string, type: "receipt" | "invoice") => {
-    setItemToCancel({ id: salesId, type })
-    setShowCancelConfirm(true)
+  const handleCancelInvoice = async (salesId: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Cancel Invoice?",
+      description: `Are you sure you want to cancel invoice ${salesId}? This action cannot be undone.`,
+      action: async () => {
+        try {
+          setIsCancelling(true)
+          const response = await fetch("/api/sales/invoice/cancel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sales_invoice_id: salesId }),
+          })
+
+          if (response.ok) {
+            fetchSalesReceipts()
+            fetchSalesInvoices()
+          } else {
+            const data = await response.json()
+            setError(data.message?.message || "Failed to cancel invoice")
+          }
+        } catch (err) {
+          setError("Error cancelling invoice")
+          console.error("[v0] Error:", err)
+        } finally {
+          setIsCancelling(false)
+        }
+      },
+    })
   }
 
   const toggleRowExpansion = (id: string) => {
@@ -227,6 +268,16 @@ export default function SalesPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 px-2 sm:px-0">
+        <ConfirmationDialog
+          open={confirmDialog.open}
+          onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          onConfirm={confirmDialog.action}
+          variant="danger"
+          confirmText="Yes, Cancel"
+        />
+
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">Sales History</h1>
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
@@ -301,9 +352,9 @@ export default function SalesPage() {
           </div>
 
           {isLoadingReceipts ? (
-            <p className="text-slate-600 dark:text-slate-400">Loading sales data...</p>
+            <p className="text-foreground p-6 text-center">Loading sales data...</p>
           ) : filteredData.length === 0 ? (
-            <p className="text-slate-600 dark:text-slate-400 text-center py-8">
+            <p className="text-foreground text-center py-8">
               {searchTerm ? "No records match your search" : `No ${activeTab} found`}
             </p>
           ) : (
@@ -370,33 +421,21 @@ export default function SalesPage() {
                                   maximumFractionDigits: 2,
                                 })}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-center flex items-center justify-center gap-2">
-                                <button
-                                  onClick={() => handleViewReceipt(receipt.receipt_url)}
-                                  className="action-btn-view p-2"
-                                  title="View Receipt"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => {
+                              <td className="px-2 sm:px-4 py-3 text-center">
+                                <TableActionButtons
+                                  showView={true}
+                                  showDownload={true}
+                                  showCancel={true}
+                                  onView={() => handleViewReceipt(receipt.receipt_url)}
+                                  onDownload={() => {
                                     const link = document.createElement("a")
                                     link.href = receipt.receipt_url
                                     link.download = `receipt-${receipt.sales_id}.pdf`
                                     link.click()
                                   }}
-                                  className="btn-success p-2 rounded"
-                                  title="Download Receipt"
-                                >
-                                  <Download className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleShowCancelConfirm(receipt.sales_id, "receipt")}
-                                  className="btn-cancel p-2 rounded text-xs"
-                                  title="Cancel Receipt"
-                                >
-                                  Cancel
-                                </button>
+                                  onCancel={() => handleCancelReceipt(receipt.sales_id)}
+                                  size="sm"
+                                />
                               </td>
                             </tr>
                             {isExpanded && receipt.receipt_items && receipt.receipt_items.length > 0 && (
@@ -487,42 +526,23 @@ export default function SalesPage() {
                                   {invoice.status}
                                 </span>
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-center flex items-center justify-center gap-2">
-                                <button
-                                  onClick={() => handleViewReceipt(invoice.invoice_url)}
-                                  className="action-btn-view p-2"
-                                  title="View Invoice"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => {
+                              <td className="px-2 sm:px-4 py-3 text-center">
+                                <TableActionButtons
+                                  showView={true}
+                                  showDownload={true}
+                                  showPay={invoice.outstanding_amount > 0}
+                                  showCancel={true}
+                                  onView={() => handleViewReceipt(invoice.invoice_url)}
+                                  onDownload={() => {
                                     const link = document.createElement("a")
                                     link.href = invoice.invoice_url
                                     link.download = `invoice-${invoice.sales_id}.pdf`
                                     link.click()
                                   }}
-                                  className="btn-success p-2 rounded"
-                                  title="Download Invoice"
-                                >
-                                  <Download className="w-4 h-4" />
-                                </button>
-                                {invoice.outstanding_amount > 0 && (
-                                  <button
-                                    onClick={() => handleCompletePayment(invoice)}
-                                    className="btn-warning p-2 rounded text-xs"
-                                    title="Complete Payment"
-                                  >
-                                    Pay
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => handleShowCancelConfirm(invoice.sales_id, "invoice")}
-                                  className="btn-cancel p-2 rounded text-xs"
-                                  title="Cancel Invoice"
-                                >
-                                  Cancel
-                                </button>
+                                  onPay={() => handleCompletePayment(invoice)}
+                                  onCancel={() => handleCancelInvoice(invoice.sales_id)}
+                                  size="sm"
+                                />
                               </td>
                             </tr>
                             {isExpanded && invoice.invoice_items && invoice.invoice_items.length > 0 && (
@@ -623,46 +643,6 @@ export default function SalesPage() {
           )}
         </div>
       </div>
-
-      {showCancelConfirm && itemToCancel && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-lg w-full max-w-md">
-            <div className="p-6 border-b border-border">
-              <h2 className="text-xl font-bold text-foreground">
-                Cancel {itemToCancel.type === "receipt" ? "Receipt" : "Invoice"}
-              </h2>
-            </div>
-
-            <div className="p-6">
-              <p className="text-foreground">
-                Are you sure you want to cancel {itemToCancel.type === "receipt" ? "receipt" : "invoice"}{" "}
-                <span className="font-mono font-semibold text-warning">{itemToCancel.id}</span>?
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">This action cannot be undone.</p>
-            </div>
-
-            <div className="p-6 border-t border-border flex gap-2">
-              <button
-                onClick={() => {
-                  setShowCancelConfirm(false)
-                  setItemToCancel(null)
-                }}
-                className="btn-secondary flex-1"
-                disabled={isCancelling}
-              >
-                No, Keep It
-              </button>
-              <button
-                onClick={() => handleCancelInvoice(itemToCancel.id)}
-                className="btn-cancel flex-1"
-                disabled={isCancelling}
-              >
-                {isCancelling ? "Cancelling..." : "Yes, Cancel"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </DashboardLayout>
   )
 }

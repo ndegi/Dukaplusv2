@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { AlertCircle, Plus, ChevronDown, ChevronUp, Trash2, Search } from 'lucide-react'
 import { Button } from "@/components/ui/button"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { TableActionButtons } from "@/components/ui/table-action-buttons"
 
 interface PurchaseOrder {
   order_id: string
@@ -32,6 +34,17 @@ export function PurchaseOrdersManager() {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
   const [showNewOrderModal, setShowNewOrderModal] = useState(false)
   const [showSupplierModal, setShowSupplierModal] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean
+    title: string
+    description: string
+    action: () => void
+  }>({
+    open: false,
+    title: "",
+    description: "",
+    action: () => {},
+  })
 
   useEffect(() => {
     fetchPurchaseOrders()
@@ -59,7 +72,7 @@ export function PurchaseOrdersManager() {
       }
     } catch (err) {
       setError("Error fetching purchase orders")
-      console.error("[DukaPlus] Error fetching purchase orders:", err)
+      console.error("[v0] Error fetching purchase orders:", err)
     } finally {
       setIsLoadingOrders(false)
     }
@@ -78,33 +91,44 @@ export function PurchaseOrdersManager() {
   }
 
   const handleCancelOrder = async (orderId: string) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to cancel purchase order ${orderId}?\n\nThis action cannot be undone.`
-    )
-    
-    if (!confirmed) return
+    setConfirmDialog({
+      open: true,
+      title: "Cancel Purchase Order?",
+      description: `Cancel order ${orderId}? This action cannot be undone.`,
+      action: async () => {
+        try {
+          const response = await fetch("/api/purchase-orders/cancel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: orderId }),
+          })
 
-    try {
-      const response = await fetch("/api/purchase-orders/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_id: orderId }),
-      })
-
-      if (response.ok) {
-        fetchPurchaseOrders()
-      } else {
-        const data = await response.json()
-        alert(data.message?.message || "Failed to cancel order")
-      }
-    } catch (err) {
-      alert("Error canceling order")
-      console.error("[DukaPlus] Error:", err)
-    }
+          if (response.ok) {
+            fetchPurchaseOrders()
+          } else {
+            const data = await response.json()
+            alert(data.message?.message || "Failed to cancel order")
+          }
+        } catch (err) {
+          alert("Error canceling order")
+          console.error("[v0] Error:", err)
+        }
+      },
+    })
   }
 
   return (
     <div className="space-y-4">
+      <ConfirmationDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        onConfirm={confirmDialog.action}
+        variant="danger"
+        confirmText="Cancel Order"
+      />
+
       <div className="flex justify-between items-center">
         <div className="flex gap-2">
           <Button onClick={() => setShowSupplierModal(true)} variant="outline" size="sm">
@@ -176,13 +200,11 @@ export function PurchaseOrdersManager() {
                           </span>
                         </td>
                         <td className="table-cell text-center">
-                          <button
-                            onClick={() => handleCancelOrder(order.order_id)}
-                            className="btn-danger text-sm px-3 py-1"
-                            title="Cancel Order"
-                          >
-                            Cancel
-                          </button>
+                          <TableActionButtons
+                            showCancel={true}
+                            onCancel={() => handleCancelOrder(order.order_id)}
+                            size="sm"
+                          />
                         </td>
                       </tr>
                       {isExpanded && order.items && order.items.length > 0 && (
@@ -273,7 +295,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
         setSuppliers(data.suppliers || [])
       }
     } catch (err) {
-      console.error("[DukaPlus] Error fetching suppliers:", err)
+      console.error("[v0] Error fetching suppliers:", err)
     }
   }
 
@@ -286,7 +308,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
         setProducts(data.products || [])
       }
     } catch (err) {
-      console.error("[DukaPlus] Error fetching products:", err)
+      console.error("[v0] Error fetching products:", err)
     }
   }
 
@@ -368,7 +390,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
       }
     } catch (err) {
       setError("Error creating purchase order")
-      console.error("[DukaPlus] Error:", err)
+      console.error("[v0] Error:", err)
     } finally {
       setIsSaving(false)
     }
@@ -573,7 +595,7 @@ function NewSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
       }
     } catch (err) {
       setError("Error creating supplier")
-      console.error("[DukaPlus] Error:", err)
+      console.error("[v0] Error:", err)
     } finally {
       setIsSaving(false)
     }

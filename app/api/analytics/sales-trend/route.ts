@@ -31,14 +31,14 @@ export async function POST(request: NextRequest) {
     })
 
     if (!response.ok) {
-      console.error("[DukaPlus] DukaPlus API error:", response.status, await response.text())
+      console.error("[v0] DukaPlus API error:", response.status, await response.text())
       return NextResponse.json({ message: "Failed to fetch sales trend" }, { status: response.status })
     }
 
     const data = await response.json()
     return NextResponse.json(data.message || {})
   } catch (error) {
-    console.error("[DukaPlus] Sales trend fetch error:", error)
+    console.error("[v0] Sales trend fetch error:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

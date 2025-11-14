@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AlertCircle, CheckCircle, Plus, Trash2, ArrowRightLeft } from 'lucide-react'
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { TableActionButtons } from "@/components/ui/table-action-buttons"
 
 interface StockTransfer {
   material_transfer_id: string
@@ -46,6 +48,20 @@ export function StockTransferManager() {
   const [products, setProducts] = useState<Product[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "submitted" | "cancelled">("all")
+  
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean
+    title: string
+    description: string
+    action: () => void
+    variant: "danger" | "warning" | "success"
+  }>({
+    open: false,
+    title: "",
+    description: "",
+    action: () => {},
+    variant: "danger",
+  })
 
   useEffect(() => {
     fetchTransfers()
@@ -66,7 +82,7 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error fetching stock transfers" })
-      console.error("[DukaPlus] Error fetching stock transfers:", error)
+      console.error("[v0] Error fetching stock transfers:", error)
     } finally {
       setIsLoading(false)
     }
@@ -87,7 +103,7 @@ export function StockTransferManager() {
         }
       }
     } catch (error) {
-      console.error("[DukaPlus] Error fetching warehouses:", error)
+      console.error("[v0] Error fetching warehouses:", error)
     }
   }
 
@@ -101,7 +117,7 @@ export function StockTransferManager() {
         setProducts(data.products)
       }
     } catch (error) {
-      console.error("[DukaPlus] Error fetching products:", error)
+      console.error("[v0] Error fetching products:", error)
     }
   }
 
@@ -116,101 +132,107 @@ export function StockTransferManager() {
       return
     }
 
-    const confirmed = window.confirm(
-      `Create stock transfer?\n\nFrom: ${sourceWarehouse}\nTo: ${targetWarehouse}\nItems: ${transferItems.length}`
-    )
-    
-    if (!confirmed) return
+    setConfirmDialog({
+      open: true,
+      title: "Create Stock Transfer?",
+      description: `This will create a stock transfer from ${sourceWarehouse} to ${targetWarehouse} with ${transferItems.length} item(s).`,
+      action: async () => {
+        setIsSubmitting(true)
+        setMessage(null)
 
-    setIsSubmitting(true)
-    setMessage(null)
+        try {
+          const response = await fetch("/api/inventory/stock-transfer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              source_warehouse: sourceWarehouse,
+              target_warehouse: targetWarehouse,
+              material_transfer_id: "",
+              items: transferItems,
+            }),
+          })
 
-    try {
-      const response = await fetch("/api/inventory/stock-transfer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source_warehouse: sourceWarehouse,
-          target_warehouse: targetWarehouse,
-          material_transfer_id: "",
-          items: transferItems,
-        }),
-      })
+          const data = await response.json()
 
-      const data = await response.json()
-
-      if (response.ok) {
-        setMessage({ type: "success", text: "Stock transfer created successfully" })
-        setShowCreateForm(false)
-        setSourceWarehouse("")
-        setTargetWarehouse("")
-        setTransferItems([{ item_code: "", qty: 1 }])
-        fetchTransfers()
-      } else {
-        setMessage({ type: "error", text: data.message || "Failed to create stock transfer" })
-      }
-    } catch (error) {
-      setMessage({ type: "error", text: "Error creating stock transfer" })
-      console.error("[DukaPlus] Error creating stock transfer:", error)
-    } finally {
-      setIsSubmitting(false)
-    }
+          if (response.ok) {
+            setMessage({ type: "success", text: "Stock transfer created successfully" })
+            setShowCreateForm(false)
+            setSourceWarehouse("")
+            setTargetWarehouse("")
+            setTransferItems([{ item_code: "", qty: 1 }])
+            fetchTransfers()
+          } else {
+            setMessage({ type: "error", text: data.message || "Failed to create stock transfer" })
+          }
+        } catch (error) {
+          setMessage({ type: "error", text: "Error creating stock transfer" })
+          console.error("[v0] Error creating stock transfer:", error)
+        } finally {
+          setIsSubmitting(false)
+        }
+      },
+      variant: "success",
+    })
   }
 
   const handleSubmitTransfer = async (transferId: string) => {
-    const confirmed = window.confirm(
-      `Submit stock transfer ${transferId}?\n\nThis will move the items between warehouses.\nThis action cannot be undone.`
-    )
-    
-    if (!confirmed) return
+    setConfirmDialog({
+      open: true,
+      title: "Submit Stock Transfer?",
+      description: `Submit transfer ${transferId}? This will move items between warehouses. This action cannot be undone.`,
+      action: async () => {
+        try {
+          const response = await fetch("/api/inventory/stock-transfer/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ material_transfer_id: transferId }),
+          })
 
-    try {
-      const response = await fetch("/api/inventory/stock-transfer/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ material_transfer_id: transferId }),
-      })
+          const data = await response.json()
 
-      const data = await response.json()
-
-      if (response.ok) {
-        setMessage({ type: "success", text: "Stock transfer submitted successfully" })
-        fetchTransfers()
-      } else {
-        setMessage({ type: "error", text: data.message || "Failed to submit stock transfer" })
-      }
-    } catch (error) {
-      setMessage({ type: "error", text: "Error submitting stock transfer" })
-      console.error("[DukaPlus] Error submitting stock transfer:", error)
-    }
+          if (response.ok) {
+            setMessage({ type: "success", text: "Stock transfer submitted successfully" })
+            fetchTransfers()
+          } else {
+            setMessage({ type: "error", text: data.message || "Failed to submit stock transfer" })
+          }
+        } catch (error) {
+          setMessage({ type: "error", text: "Error submitting stock transfer" })
+          console.error("[v0] Error submitting stock transfer:", error)
+        }
+      },
+      variant: "success",
+    })
   }
 
   const handleCancelTransfer = async (transferId: string) => {
-    const confirmed = window.confirm(
-      `Cancel stock transfer ${transferId}?\n\nThis action cannot be undone.`
-    )
-    
-    if (!confirmed) return
+    setConfirmDialog({
+      open: true,
+      title: "Cancel Stock Transfer?",
+      description: `Cancel transfer ${transferId}? This action cannot be undone.`,
+      action: async () => {
+        try {
+          const response = await fetch("/api/inventory/stock-transfer/cancel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ material_transfer_id: transferId }),
+          })
 
-    try {
-      const response = await fetch("/api/inventory/stock-transfer/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ material_transfer_id: transferId }),
-      })
+          const data = await response.json()
 
-      const data = await response.json()
-
-      if (response.ok) {
-        setMessage({ type: "success", text: "Stock transfer cancelled successfully" })
-        fetchTransfers()
-      } else {
-        setMessage({ type: "error", text: data.message || "Failed to cancel stock transfer" })
-      }
-    } catch (error) {
-      setMessage({ type: "error", text: "Error cancelling stock transfer" })
-      console.error("[DukaPlus] Error cancelling stock transfer:", error)
-    }
+          if (response.ok) {
+            setMessage({ type: "success", text: "Stock transfer cancelled successfully" })
+            fetchTransfers()
+          } else {
+            setMessage({ type: "error", text: data.message || "Failed to cancel stock transfer" })
+          }
+        } catch (error) {
+          setMessage({ type: "error", text: "Error cancelling stock transfer" })
+          console.error("[v0] Error cancelling stock transfer:", error)
+        }
+      },
+      variant: "danger",
+    })
   }
 
   const addTransferItem = () => {
@@ -257,6 +279,16 @@ export function StockTransferManager() {
 
   return (
     <div className="space-y-6">
+      <ConfirmationDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        onConfirm={confirmDialog.action}
+        variant={confirmDialog.variant}
+        confirmText={confirmDialog.variant === "danger" ? "Cancel Transfer" : "Confirm"}
+      />
+
       {message && (
         <div
           className={
@@ -410,53 +442,40 @@ export function StockTransferManager() {
             <table className="w-full">
               <thead className="table-header">
                 <tr>
-                  <th className="px-4 py-3 text-left">Transfer ID</th>
-                  <th className="px-4 py-3 text-left">From Warehouse</th>
-                  <th className="px-4 py-3 text-left">To Warehouse</th>
-                  <th className="px-4 py-3 text-left">Date</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-center">Actions</th>
+                  <th className="table-header-cell text-left">Transfer ID</th>
+                  <th className="table-header-cell text-left">From Warehouse</th>
+                  <th className="table-header-cell text-left">To Warehouse</th>
+                  <th className="table-header-cell text-left">Date</th>
+                  <th className="table-header-cell text-left">Status</th>
+                  <th className="table-header-cell text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredTransfers.map((transfer) => (
                   <tr key={transfer.material_transfer_id} className="table-row">
-                    <td className="px-4 py-3 font-mono text-warning text-sm">{transfer.material_transfer_id}</td>
-                    <td className="px-4 py-3 text-foreground">{transfer.from_warehouse || "N/A"}</td>
-                    <td className="px-4 py-3 text-foreground">{transfer.to_warehouse || "N/A"}</td>
-                    <td className="px-4 py-3 text-foreground">{transfer.posting_date}</td>
-                    <td className="px-4 py-3">{getStatusBadge(transfer.docstatus)}</td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {transfer.docstatus === 0 && (
-                          <>
-                            <Button
-                              onClick={() => handleSubmitTransfer(transfer.material_transfer_id)}
-                              size="sm"
-                              className="btn-success text-xs px-3"
-                            >
-                              Submit
-                            </Button>
-                            <Button
-                              onClick={() => handleCancelTransfer(transfer.material_transfer_id)}
-                              size="sm"
-                              className="btn-danger text-xs px-3"
-                            >
-                              Cancel
-                            </Button>
-                          </>
-                        )}
-                        {transfer.docstatus === 1 && (
-                          <Button
-                            onClick={() => handleCancelTransfer(transfer.material_transfer_id)}
-                            size="sm"
-                            className="btn-danger text-xs px-3"
-                          >
-                            Cancel
-                          </Button>
-                        )}
-                        {transfer.docstatus === 2 && <span className="text-foreground text-sm">Cancelled</span>}
-                      </div>
+                    <td className="table-cell font-mono text-warning text-sm">{transfer.material_transfer_id}</td>
+                    <td className="table-cell">{transfer.from_warehouse || "N/A"}</td>
+                    <td className="table-cell">{transfer.to_warehouse || "N/A"}</td>
+                    <td className="table-cell">{transfer.posting_date}</td>
+                    <td className="table-cell">{getStatusBadge(transfer.docstatus)}</td>
+                    <td className="px-4 py-3">
+                      {transfer.docstatus === 0 && (
+                        <TableActionButtons
+                          showSubmit={true}
+                          showCancel={true}
+                          onSubmit={() => handleSubmitTransfer(transfer.material_transfer_id)}
+                          onCancel={() => handleCancelTransfer(transfer.material_transfer_id)}
+                          size="sm"
+                        />
+                      )}
+                      {transfer.docstatus === 1 && (
+                        <TableActionButtons
+                          showCancel={true}
+                          onCancel={() => handleCancelTransfer(transfer.material_transfer_id)}
+                          size="sm"
+                        />
+                      )}
+                      {transfer.docstatus === 2 && <span className="text-foreground text-sm">Cancelled</span>}
                     </td>
                   </tr>
                 ))}
