@@ -126,9 +126,9 @@ export function LoginForm() {
       )}
 
       <div>
-        <label className="form-label">Mobile Number</label>
+        <label className="form-label">Username</label>
         <Input
-          type="tel"
+          type="text"
           placeholder="ENTER YOUR MOBILE NUMBER OR USERNAME"
           value={mobile}
           onChange={(e) => setMobile(e.target.value)}
