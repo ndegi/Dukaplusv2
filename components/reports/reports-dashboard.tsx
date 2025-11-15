@@ -94,22 +94,19 @@ export function ReportsDashboard({ user }: { user: User }) {
 
   useEffect(() => {
     fetchAllReports()
-  }, [dateRange])
+  }, [])
 
   const fetchAllReports = async () => {
     try {
       setIsLoading(true)
 
-      const fromDate = dateRange.from.toISOString().split('T')[0]
-      const toDate = dateRange.to.toISOString().split('T')[0]
-
-      console.log("[v0] Fetching reports with date range:", { fromDate, toDate })
+      console.log("[DukaPlus] Fetching all reports data (no date filter on API)")
 
       const [salesRes, customerRes, stockRes, ledgerRes] = await Promise.all([
-        fetch(`/api/reports/sales?from_date=${fromDate}&to_date=${toDate}`),
-        fetch(`/api/reports/customer-statement?from_date=${fromDate}&to_date=${toDate}`),
-        fetch(`/api/reports/stock-balance?from_date=${fromDate}&to_date=${toDate}`),
-        fetch(`/api/reports/stock-ledger?from_date=${fromDate}&to_date=${toDate}`),
+        fetch(`/api/reports/sales`),
+        fetch(`/api/reports/customer-statement`),
+        fetch(`/api/reports/stock-balance`),
+        fetch(`/api/reports/stock-ledger`),
       ])
 
       if (salesRes.ok) {
@@ -349,11 +346,24 @@ function SalesReportTable({
     return <div className="text-foreground p-6 text-center">Loading sales report...</div>
   }
 
-  const filteredData = data.filter((item) =>
-    (item.sales_invoice?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
-    (item.customer?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
-    (item.warehouse?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
-  )
+  const filteredData = data.filter((item) => {
+    // Date filter
+    const itemDate = new Date(item.posting_date)
+    const fromDate = new Date(dateRange.from)
+    const toDate = new Date(dateRange.to)
+    fromDate.setHours(0, 0, 0, 0)
+    toDate.setHours(23, 59, 59, 999)
+
+    const dateMatch = itemDate >= fromDate && itemDate <= toDate
+
+    // Search filter
+    const searchMatch = searchTerm === "" ||
+      (item.sales_invoice?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+      (item.customer?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+      (item.warehouse?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
+
+    return dateMatch && searchMatch
+  })
 
   const totalSales = filteredData.reduce((sum, item) => sum + item.grand_total, 0)
   const profitTotal = filteredData.reduce((sum, item) => sum + (item.grand_total - item.cost_of_goods_sold), 0)
@@ -485,11 +495,24 @@ function CustomerStatementTable({
     return <div className="text-foreground p-6 text-center">Loading customer statements...</div>
   }
 
-  const filteredData = data.filter((item) =>
-    (item.sales_invoice?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
-    (item.customer_name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
-    (item.warehouse?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
-  )
+  const filteredData = data.filter((item) => {
+    // Date filter
+    const itemDate = new Date(item.posting_date)
+    const fromDate = new Date(dateRange.from)
+    const toDate = new Date(dateRange.to)
+    fromDate.setHours(0, 0, 0, 0)
+    toDate.setHours(23, 59, 59, 999)
+
+    const dateMatch = itemDate >= fromDate && itemDate <= toDate
+
+    // Search filter
+    const searchMatch = searchTerm === "" ||
+      (item.sales_invoice?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+      (item.customer_name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+      (item.warehouse?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
+
+    return dateMatch && searchMatch
+  })
 
   const totalInvoiced = filteredData.reduce((sum, item) => sum + item.invoice_amount, 0)
   const totalPaid = filteredData.reduce((sum, item) => sum + item.paid_amount, 0)
@@ -757,13 +780,27 @@ function StockLedgerTable({
   }
 
   const filteredData = data.filter((item) => {
+    // Date filter (only if posting_date exists)
+    let dateMatch = true
+    if (item.posting_date) {
+      const itemDate = new Date(item.posting_date)
+      const fromDate = new Date(dateRange.from)
+      const toDate = new Date(dateRange.to)
+      fromDate.setHours(0, 0, 0, 0)
+      toDate.setHours(23, 59, 59, 999)
+
+      dateMatch = itemDate >= fromDate && itemDate <= toDate
+    }
+
+    // Search filter
     const searchLower = searchTerm.toLowerCase()
-    return (
+    const searchMatch = searchTerm === "" ||
       (item.item_code?.toLowerCase() ?? '').includes(searchLower) ||
       (item.item_name?.toLowerCase() ?? '').includes(searchLower) ||
       (item.item_group?.toLowerCase() ?? '').includes(searchLower) ||
       (item.voucher_no?.toLowerCase() ?? '').includes(searchLower)
-    )
+
+    return dateMatch && searchMatch
   })
 
   const totalValue = filteredData.reduce((sum, item) => sum + (item.value_of_stock || 0), 0)
