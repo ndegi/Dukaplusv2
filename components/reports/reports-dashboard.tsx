@@ -224,9 +224,9 @@ function SalesReportTable({ data, isLoading }: { data: SalesReportItem[]; isLoad
   }
 
   const filteredData = data.filter((item) =>
-    item.sales_invoice.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.warehouse.toLowerCase().includes(searchTerm.toLowerCase())
+    (item.sales_invoice?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+    (item.customer?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+    (item.warehouse?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
   )
 
   const totalSales = filteredData.reduce((sum, item) => sum + item.grand_total, 0)
@@ -365,9 +365,9 @@ function CustomerStatementTable({ data, isLoading }: { data: CustomerStatement[]
   }
 
   const filteredData = data.filter((item) =>
-    item.sales_invoice.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.warehouse.toLowerCase().includes(searchTerm.toLowerCase())
+    (item.sales_invoice?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+    (item.customer_name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+    (item.warehouse?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
   )
 
   const totalInvoiced = filteredData.reduce((sum, item) => sum + item.invoice_amount, 0)
@@ -507,10 +507,10 @@ function StockBalanceTable({ data, isLoading }: { data: StockBalanceItem[]; isLo
   const filteredData = data.filter((item) => {
     const searchLower = searchTerm.toLowerCase()
     return (
-      (item.item_code?.toLowerCase() || '').includes(searchLower) ||
-      (item.item_name?.toLowerCase() || '').includes(searchLower) ||
-      (item.warehouse?.toLowerCase() || '').includes(searchLower) ||
-      (item.item_group?.toLowerCase() || '').includes(searchLower)
+      (item.item_code?.toLowerCase() ?? '').includes(searchLower) ||
+      (item.item_name?.toLowerCase() ?? '').includes(searchLower) ||
+      (item.warehouse?.toLowerCase() ?? '').includes(searchLower) ||
+      (item.item_group?.toLowerCase() ?? '').includes(searchLower)
     )
   })
 
@@ -647,10 +647,10 @@ function StockLedgerTable({ data, isLoading }: { data: StockLedgerItem[]; isLoad
   const filteredData = data.filter((item) => {
     const searchLower = searchTerm.toLowerCase()
     return (
-      (item.item_code?.toLowerCase() || '').includes(searchLower) ||
-      (item.item_name?.toLowerCase() || '').includes(searchLower) ||
-      (item.item_group?.toLowerCase() || '').includes(searchLower) ||
-      (item.voucher_no?.toLowerCase() || '').includes(searchLower)
+      (item.item_code?.toLowerCase() ?? '').includes(searchLower) ||
+      (item.item_name?.toLowerCase() ?? '').includes(searchLower) ||
+      (item.item_group?.toLowerCase() ?? '').includes(searchLower) ||
+      (item.voucher_no?.toLowerCase() ?? '').includes(searchLower)
     )
   })
 

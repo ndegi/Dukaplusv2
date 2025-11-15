@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/use-auth"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from "react"
 import { ProductProductivityTable } from "@/components/analytics/product-productivity-table"
 import { SalesByPersonChart } from "@/components/analytics/sales-by-person-chart"
