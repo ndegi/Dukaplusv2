@@ -48,8 +48,9 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
     try {
       // Fetch payment modes
       const modesResponse = await fetch("/api/payments/modes")
+      let modesData = null
       if (modesResponse.ok) {
-        const modesData = await modesResponse.json()
+        modesData = await modesResponse.json()
         console.log("[DukaPlus] Close shift - fetched modes:", modesData)
         const modes = modesData.modes || []
         setPaymentModes(modes)
@@ -78,9 +79,8 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
               expected_amount: detail.expected_closing_balance || 0
             }))
             setShiftDetails(detailsWithExpected)
-          } else if (modesResponse.ok) {
+          } else if (modesData) {
             // Fallback to payment modes if no shift details
-            const modesData = await modesResponse.json()
             const modes = modesData.modes || []
             setShiftDetails(modes.map((mode: PaymentMode) => ({
               mode_of_payment: mode.mode_of_payment,
@@ -90,15 +90,24 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
           }
         } else {
           // No open shift found, use payment modes
-          const modesResponse2 = await fetch("/api/payments/modes")
-          if (modesResponse2.ok) {
-            const modesData = await modesResponse2.json()
+          if (modesData) {
             const modes = modesData.modes || []
             setShiftDetails(modes.map((mode: PaymentMode) => ({
               mode_of_payment: mode.mode_of_payment,
               closing_amount: 0,
               expected_amount: 0
             })))
+          } else {
+            const modesResponse2 = await fetch("/api/payments/modes")
+            if (modesResponse2.ok) {
+              const modesData2 = await modesResponse2.json()
+              const modes = modesData2.modes || []
+              setShiftDetails(modes.map((mode: PaymentMode) => ({
+                mode_of_payment: mode.mode_of_payment,
+                closing_amount: 0,
+                expected_amount: 0
+              })))
+            }
           }
         }
       }
