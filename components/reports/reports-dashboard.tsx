@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DateRangeFilter } from "./date-range-filter"
 import { ExportButton } from "./export-button"
-import { AlertCircle, ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { AlertCircle, ChevronLeft, ChevronRight, Search, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -103,6 +103,8 @@ export function ReportsDashboard({ user }: { user: User }) {
       const fromDate = dateRange.from.toISOString().split('T')[0]
       const toDate = dateRange.to.toISOString().split('T')[0]
 
+      console.log("[v0] Fetching reports with date range:", { fromDate, toDate })
+
       const [salesRes, customerRes, stockRes, ledgerRes] = await Promise.all([
         fetch(`/api/reports/sales?from_date=${fromDate}&to_date=${toDate}`),
         fetch(`/api/reports/customer-statement?from_date=${fromDate}&to_date=${toDate}`),
@@ -112,11 +114,13 @@ export function ReportsDashboard({ user }: { user: User }) {
 
       if (salesRes.ok) {
         const data = await salesRes.json()
+        console.log("[v0] Sales data received:", data.sales?.length || 0, "records")
         setSalesReports(data.sales || [])
       }
 
       if (customerRes.ok) {
         const data = await customerRes.json()
+        console.log("[v0] Customer data received:", data.customers?.length || 0, "records")
         setCustomerStatements(data.customers || [])
       }
 
@@ -164,7 +168,6 @@ export function ReportsDashboard({ user }: { user: User }) {
           <p className="text-gray-600 dark:text-gray-400">View sales performance and insights</p>
         </div>
         <div className="flex gap-2">
-          <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
           <ExportButton reportData={null} dateRange={dateRange} />
         </div>
       </div>
@@ -198,26 +201,146 @@ export function ReportsDashboard({ user }: { user: User }) {
         </TabsList>
 
         <TabsContent value="sales">
-          <SalesReportTable data={salesReports} isLoading={isLoading} />
+          <SalesReportTable data={salesReports} isLoading={isLoading} dateRange={dateRange} onDateRangeChange={setDateRange} />
         </TabsContent>
 
         <TabsContent value="customers">
-          <CustomerStatementTable data={customerStatements} isLoading={isLoading} />
+          <CustomerStatementTable data={customerStatements} isLoading={isLoading} dateRange={dateRange} onDateRangeChange={setDateRange} />
         </TabsContent>
 
         <TabsContent value="stock">
-          <StockBalanceTable data={stockBalance} isLoading={isLoading} />
+          <StockBalanceTable data={stockBalance} isLoading={isLoading} dateRange={dateRange} onDateRangeChange={setDateRange} />
         </TabsContent>
 
         <TabsContent value="ledger">
-          <StockLedgerTable data={stockLedger} isLoading={isLoading} />
+          <StockLedgerTable data={stockLedger} isLoading={isLoading} dateRange={dateRange} onDateRangeChange={setDateRange} />
         </TabsContent>
       </Tabs>
     </div>
   )
 }
 
-function SalesReportTable({ data, isLoading }: { data: SalesReportItem[]; isLoading: boolean }) {
+function EnhancedPagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+  startIndex,
+  endIndex,
+  totalRecords
+}: {
+  currentPage: number
+  totalPages: number
+  onPageChange: (page: number) => void
+  startIndex: number
+  endIndex: number
+  totalRecords: number
+}) {
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = []
+
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, '...', totalPages)
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages)
+      }
+    }
+
+    return pages
+  }
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-200 dark:border-slate-700">
+      <div className="text-sm text-gray-600 dark:text-gray-400">
+        Showing {startIndex + 1} to {Math.min(endIndex, totalRecords)} of {totalRecords} records
+      </div>
+
+      <div className="flex items-center gap-1">
+        {/* First page */}
+        <Button
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1}
+          variant="outline"
+          size="sm"
+          className="h-8 w-8 p-0"
+        >
+          <ChevronsLeft className="w-4 h-4" />
+        </Button>
+
+        {/* Previous page */}
+        <Button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          variant="outline"
+          size="sm"
+          className="h-8 w-8 p-0"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+
+        {/* Page numbers */}
+        {getPageNumbers().map((page, idx) => (
+          page === '...' ? (
+            <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">...</span>
+          ) : (
+            <Button
+              key={page}
+              onClick={() => onPageChange(page as number)}
+              variant={currentPage === page ? "default" : "outline"}
+              size="sm"
+              className={`h-8 w-8 p-0 ${currentPage === page
+                  ? "bg-orange-500 hover:bg-orange-600 text-white"
+                  : ""
+                }`}
+            >
+              {page}
+            </Button>
+          )
+        ))}
+
+        {/* Next page */}
+        <Button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          variant="outline"
+          size="sm"
+          className="h-8 w-8 p-0"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+
+        {/* Last page */}
+        <Button
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages}
+          variant="outline"
+          size="sm"
+          className="h-8 w-8 p-0"
+        >
+          <ChevronsRight className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function SalesReportTable({
+  data,
+  isLoading,
+  dateRange,
+  onDateRangeChange
+}: {
+  data: SalesReportItem[]
+  isLoading: boolean
+  dateRange: { from: Date; to: Date }
+  onDateRangeChange: (range: { from: Date; to: Date }) => void
+}) {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
   const itemsPerPage = 10
@@ -263,8 +386,8 @@ function SalesReportTable({ data, isLoading }: { data: SalesReportItem[]; isLoad
         </div>
       </div>
 
-      <div className="px-4">
-        <div className="relative">
+      <div className="px-4 flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             type="text"
@@ -277,6 +400,7 @@ function SalesReportTable({ data, isLoading }: { data: SalesReportItem[]; isLoad
             className="pl-10 bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700"
           />
         </div>
+        <DateRangeFilter dateRange={dateRange} onDateRangeChange={onDateRangeChange} />
       </div>
 
       <div className="overflow-x-auto">
@@ -329,35 +453,30 @@ function SalesReportTable({ data, isLoading }: { data: SalesReportItem[]; isLoad
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-slate-700">
-          <div className="text-sm text-gray-400">
-            Showing {startIndex + 1} to {Math.min(endIndex, filteredData.length)} of {filteredData.length} records
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              variant="outline"
-              size="sm"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              variant="outline"
-              size="sm"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+        <EnhancedPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalRecords={filteredData.length}
+        />
       )}
     </Card>
   )
 }
 
-function CustomerStatementTable({ data, isLoading }: { data: CustomerStatement[]; isLoading: boolean }) {
+function CustomerStatementTable({
+  data,
+  isLoading,
+  dateRange,
+  onDateRangeChange
+}: {
+  data: CustomerStatement[]
+  isLoading: boolean
+  dateRange: { from: Date; to: Date }
+  onDateRangeChange: (range: { from: Date; to: Date }) => void
+}) {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
   const itemsPerPage = 10
@@ -404,8 +523,8 @@ function CustomerStatementTable({ data, isLoading }: { data: CustomerStatement[]
         </div>
       </div>
 
-      <div className="px-4">
-        <div className="relative">
+      <div className="px-4 flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             type="text"
@@ -418,6 +537,7 @@ function CustomerStatementTable({ data, isLoading }: { data: CustomerStatement[]
             className="pl-10 bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700"
           />
         </div>
+        <DateRangeFilter dateRange={dateRange} onDateRangeChange={onDateRangeChange} />
       </div>
 
       <div className="overflow-x-auto">
@@ -468,35 +588,30 @@ function CustomerStatementTable({ data, isLoading }: { data: CustomerStatement[]
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-slate-700">
-          <div className="text-sm text-gray-400">
-            Showing {startIndex + 1} to {Math.min(endIndex, filteredData.length)} of {filteredData.length} records
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              variant="outline"
-              size="sm"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              variant="outline"
-              size="sm"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+        <EnhancedPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalRecords={filteredData.length}
+        />
       )}
     </Card>
   )
 }
 
-function StockBalanceTable({ data, isLoading }: { data: StockBalanceItem[]; isLoading: boolean }) {
+function StockBalanceTable({
+  data,
+  isLoading,
+  dateRange,
+  onDateRangeChange
+}: {
+  data: StockBalanceItem[]
+  isLoading: boolean
+  dateRange: { from: Date; to: Date }
+  onDateRangeChange: (range: { from: Date; to: Date }) => void
+}) {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
   const itemsPerPage = 10
@@ -545,8 +660,8 @@ function StockBalanceTable({ data, isLoading }: { data: StockBalanceItem[]; isLo
         </div>
       </div>
 
-      <div className="px-4">
-        <div className="relative">
+      <div className="px-4 flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             type="text"
@@ -559,6 +674,7 @@ function StockBalanceTable({ data, isLoading }: { data: StockBalanceItem[]; isLo
             className="pl-10 bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700"
           />
         </div>
+        <DateRangeFilter dateRange={dateRange} onDateRangeChange={onDateRangeChange} />
       </div>
 
       <div className="overflow-x-auto">
@@ -608,35 +724,30 @@ function StockBalanceTable({ data, isLoading }: { data: StockBalanceItem[]; isLo
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-slate-700">
-          <div className="text-sm text-gray-400">
-            Showing {startIndex + 1} to {Math.min(endIndex, filteredData.length)} of {filteredData.length} records
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              variant="outline"
-              size="sm"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              variant="outline"
-              size="sm"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+        <EnhancedPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalRecords={filteredData.length}
+        />
       )}
     </Card>
   )
 }
 
-function StockLedgerTable({ data, isLoading }: { data: StockLedgerItem[]; isLoading: boolean }) {
+function StockLedgerTable({
+  data,
+  isLoading,
+  dateRange,
+  onDateRangeChange
+}: {
+  data: StockLedgerItem[]
+  isLoading: boolean
+  dateRange: { from: Date; to: Date }
+  onDateRangeChange: (range: { from: Date; to: Date }) => void
+}) {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
   const itemsPerPage = 10
@@ -684,8 +795,8 @@ function StockLedgerTable({ data, isLoading }: { data: StockLedgerItem[]; isLoad
         </div>
       </div>
 
-      <div className="px-4">
-        <div className="relative">
+      <div className="px-4 flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             type="text"
@@ -698,6 +809,7 @@ function StockLedgerTable({ data, isLoading }: { data: StockLedgerItem[]; isLoad
             className="pl-10 bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700"
           />
         </div>
+        <DateRangeFilter dateRange={dateRange} onDateRangeChange={onDateRangeChange} />
       </div>
 
       <div className="overflow-x-auto">
@@ -745,29 +857,14 @@ function StockLedgerTable({ data, isLoading }: { data: StockLedgerItem[]; isLoad
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-slate-700">
-          <div className="text-sm text-gray-400">
-            Showing {startIndex + 1} to {Math.min(endIndex, filteredData.length)} of {filteredData.length} records
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              variant="outline"
-              size="sm"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              variant="outline"
-              size="sm"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+        <EnhancedPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalRecords={filteredData.length}
+        />
       )}
     </Card>
   )
