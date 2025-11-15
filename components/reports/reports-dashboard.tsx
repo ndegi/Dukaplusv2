@@ -224,9 +224,9 @@ function SalesReportTable({ data, isLoading }: { data: SalesReportItem[]; isLoad
   }
 
   const filteredData = data.filter((item) =>
-    item.sales_invoice?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.customer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.warehouse?.toLowerCase().includes(searchTerm.toLowerCase())
+    item.sales_invoice.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.warehouse.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const totalSales = filteredData.reduce((sum, item) => sum + item.grand_total, 0)
@@ -311,10 +311,11 @@ function SalesReportTable({ data, isLoading }: { data: SalesReportItem[]; isLoad
                 </td>
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${row.status === "Paid"
-                      ? "bg-green-500/20 text-green-600 dark:text-green-400"
-                      : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                      }`}
+                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                      row.status === "Paid"
+                        ? "bg-green-500/20 text-green-600 dark:text-green-400"
+                        : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                    }`}
                   >
                     {row.status}
                   </span>
@@ -364,9 +365,9 @@ function CustomerStatementTable({ data, isLoading }: { data: CustomerStatement[]
   }
 
   const filteredData = data.filter((item) =>
-    item.sales_invoice?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.warehouse?.toLowerCase().includes(searchTerm.toLowerCase())
+    item.sales_invoice.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.warehouse.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const totalInvoiced = filteredData.reduce((sum, item) => sum + item.invoice_amount, 0)
@@ -450,10 +451,11 @@ function CustomerStatementTable({ data, isLoading }: { data: CustomerStatement[]
                 </td>
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${row.outstanding_amount === 0
-                      ? "bg-green-500/20 text-green-600 dark:text-green-400"
-                      : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                      }`}
+                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                      row.outstanding_amount === 0
+                        ? "bg-green-500/20 text-green-600 dark:text-green-400"
+                        : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                    }`}
                   >
                     {row.outstanding_amount === 0 ? "Paid" : "Pending"}
                   </span>

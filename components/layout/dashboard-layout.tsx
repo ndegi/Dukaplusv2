@@ -151,14 +151,15 @@ export function DashboardLayout({
             <p className="text-slate-600 dark:text-slate-400 mb-6">
               You must select a warehouse before accessing the application.
             </p>
-            <WarehouseSwitcher onSuccess={handleWarehouseSwitch} onCancel={() => { }} />
+            <WarehouseSwitcher onSuccess={handleWarehouseSwitch} onCancel={() => {}} />
           </div>
         </div>
       )}
 
       <aside
-        className={`bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transition-all duration-300 ${sidebarOpen ? "w-64" : "w-20"
-          }`}
+        className={`bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transition-all duration-300 ${
+          sidebarOpen ? "w-64" : "w-20"
+        }`}
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
@@ -183,10 +184,11 @@ export function DashboardLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group ${pathname === item.href
-                  ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
-                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
-                  }`}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group ${
+                  pathname === item.href
+                    ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
+                }`}
                 title={!sidebarOpen ? item.label : ""}
               >
                 <FontAwesomeIcon icon={item.icon} className="w-5 h-5 flex-shrink-0" />
@@ -349,8 +351,9 @@ export function DashboardLayout({
 
         {/* Page Content */}
         <div
-          className={`flex-1 overflow-auto ${isPOS ? "p-0 bg-slate-50 dark:bg-slate-900" : "p-4 md:p-8 bg-slate-50 dark:bg-slate-900"
-            }`}
+          className={`flex-1 overflow-auto ${
+            isPOS ? "p-0 bg-slate-50 dark:bg-slate-900" : "p-4 md:p-8 bg-slate-50 dark:bg-slate-900"
+          }`}
         >
           {children}
         </div>

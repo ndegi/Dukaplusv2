@@ -3,11 +3,11 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { loginUser } from "@/lib/api/auth"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Warehouse {
@@ -126,10 +126,10 @@ export function LoginForm() {
       )}
 
       <div>
-        <label className="form-label">Mobile Number</label>
+        <label className="form-label">Username</label>
         <Input
-          type="tel"
-          placeholder="07XXXXXXXXX"
+          type="text"
+          placeholder="Enter your username, email, or phone"
           value={mobile}
           onChange={(e) => setMobile(e.target.value)}
           disabled={isLoading}

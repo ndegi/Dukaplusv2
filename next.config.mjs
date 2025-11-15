@@ -9,6 +9,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  output: "standalone",
   // Added turbopack config (Turbopack is default in Next.js 16)
   turbopack: {},
 }

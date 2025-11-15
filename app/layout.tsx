@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from "@vercel/analytics/next"
 import { SyncManager } from "@/components/offline/sync-manager"
 import { OfflineIndicator } from "@/components/offline/offline-indicator"
@@ -13,7 +13,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "DukaPlus POS",
   description: "Modern Point of Sale System",
-  generator: "DukaPlus.app",
+  generator: "dukaplus",
   icons: {
     icon: "/favicon.png",
     apple: "/icon.png",

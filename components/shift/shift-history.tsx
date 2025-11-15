@@ -23,7 +23,7 @@ interface Shift {
   creation: string
   status: number // 0 = open, 1 = closed
   closed_by: string | null
-  details: ShiftDetail[]
+  payment_details: ShiftDetail[]
 }
 
 export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
@@ -90,7 +90,7 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
   if (error) {
     return (
       <div className="alert-error">
-        <AlertCircle className="w-5 h-5 text-danger" />
+        <AlertCircle className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-danger" />
         <p className="text-danger">{error}</p>
       </div>
     )
@@ -155,29 +155,29 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
                   </td>
                   <td className="table-cell-secondary">{shift.closed_by || "-"}</td>
                   <td className="table-cell">
-                    {shift.details && shift.details.length > 0 ? (
+                    {shift.payment_details && shift.payment_details.length > 0 ? (
                       <div className="space-y-2">
-                        {shift.details.map((detail, index) => (
-                          <div key={index} className="text-right">
+                        {shift.payment_details.map((detail, index) => (
+                          <div key={index} className="text-right bg-muted/30 rounded p-2">
                             <div className="font-semibold text-foreground text-sm">{detail.mode_of_payment}</div>
                             <div className="text-xs text-muted-foreground space-y-1">
                               <div>
                                 <span>Opening: </span>
-                                <span className="text-foreground">{formatCurrency(detail.opening_amount)}</span>
+                                <span className="text-foreground">{formatCurrency(detail.opening_amount || 0)}</span>
                               </div>
                               <div>
                                 <span>Sales: </span>
-                                <span className="text-success">{formatCurrency(detail.total_sales)}</span>
+                                <span className="text-success">{formatCurrency(detail.total_sales || 0)}</span>
                               </div>
                               <div>
                                 <span>Expected: </span>
-                                <span className="text-warning">{formatCurrency(detail.expected_closing_balance)}</span>
+                                <span className="text-warning">{formatCurrency(detail.expected_closing_balance || 0)}</span>
                               </div>
-                              {detail.difference !== 0 && (
+                              {(detail.difference || 0) !== 0 && (
                                 <div>
                                   <span>Diff: </span>
-                                  <span className={detail.difference > 0 ? 'text-success' : 'text-danger'}>
-                                    {formatCurrency(Math.abs(detail.difference))} {detail.difference > 0 ? '↑' : '↓'}
+                                  <span className={(detail.difference || 0) > 0 ? 'text-success' : 'text-danger'}>
+                                    {formatCurrency(Math.abs(detail.difference || 0))} {(detail.difference || 0) > 0 ? '↑' : '↓'}
                                   </span>
                                 </div>
                               )}
