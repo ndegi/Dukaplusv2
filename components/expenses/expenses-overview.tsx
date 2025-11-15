@@ -10,7 +10,8 @@ import { Card } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
-import { Plus, ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { DateRangeFilter } from "@/components/reports/date-range-filter"
+import { Plus, ChevronLeft, ChevronRight, ChevronFirst, ChevronLast, Search } from 'lucide-react'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
 
@@ -55,6 +56,13 @@ export function ExpensesOverview() {
 
   const [newCategory, setNewCategory] = useState("")
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
+
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => {
+    const to = new Date()
+    const from = new Date()
+    from.setDate(from.getDate() - 30) // Default to last 30 days
+    return { from, to }
+  })
 
   useEffect(() => {
     fetchExpenses()
@@ -242,13 +250,57 @@ export function ExpensesOverview() {
       (statusFilter === "draft" && expense.status === 0) ||
       (statusFilter === "submitted" && expense.status === 1)
 
-    return matchesSearch && matchesStatus
+    // Date filtering
+    const expenseDate = new Date(expense.date)
+    const matchesDateRange = expenseDate >= dateRange.from && expenseDate <= dateRange.to
+
+    return matchesSearch && matchesStatus && matchesDateRange
   })
 
   const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
   const paginatedExpenses = filteredExpenses.slice(startIndex, endIndex)
+
+  const renderPaginationButtons = () => {
+    const pages = []
+    const maxVisible = 5
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, '...', totalPages)
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages)
+      }
+    }
+
+    return pages.map((page, index) => {
+      if (page === '...') {
+        return (
+          <span key={`ellipsis-${index}`} className="px-3 py-1 text-muted-foreground">
+            ...
+          </span>
+        )
+      }
+      return (
+        <Button
+          key={page}
+          onClick={() => setCurrentPage(page as number)}
+          variant={currentPage === page ? "default" : "outline"}
+          size="sm"
+          className={currentPage === page ? "btn-warning" : ""}
+        >
+          {page}
+        </Button>
+      )
+    })
+  }
 
   return (
     <div className="space-y-4">
@@ -321,6 +373,7 @@ export function ExpensesOverview() {
             <SelectItem value="submitted">Submitted</SelectItem>
           </SelectContent>
         </Select>
+        <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
       </div>
 
       <Card className="card-base">
@@ -384,7 +437,6 @@ export function ExpensesOverview() {
                                 setSubmittingExpense(expense)
                                 setShowSubmitDialog(true)
                               }}
-                              size="sm"
                             />
                           )}
                         </td>
@@ -396,11 +448,19 @@ export function ExpensesOverview() {
             </div>
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border">
                 <div className="text-sm text-muted-foreground">
                   Showing {startIndex + 1} to {Math.min(endIndex, filteredExpenses.length)} of {filteredExpenses.length} expenses
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1 items-center">
+                  <Button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <ChevronFirst className="w-4 h-4" />
+                  </Button>
                   <Button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
@@ -409,19 +469,7 @@ export function ExpensesOverview() {
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <Button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        className={currentPage === page ? "btn-warning" : ""}
-                      >
-                        {page}
-                      </Button>
-                    ))}
-                  </div>
+                  {renderPaginationButtons()}
                   <Button
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
@@ -429,6 +477,14 @@ export function ExpensesOverview() {
                     size="sm"
                   >
                     <ChevronRight className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <ChevronLast className="w-4 h-4" />
                   </Button>
                 </div>
               </div>

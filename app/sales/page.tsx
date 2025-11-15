@@ -4,10 +4,11 @@ import { useAuth } from "@/hooks/use-auth"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from "react"
-import { AlertCircle, Download, Eye, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { AlertCircle, Download, Eye, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
+import { Input } from "@/components/ui/input"
 
 interface SalesReceipt {
   sales_id: string
@@ -70,9 +71,14 @@ export default function SalesPage() {
     open: false,
     title: "",
     description: "",
-    action: () => {},
+    action: () => { },
   })
   const [isCancelling, setIsCancelling] = useState(false)
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    to: new Date()
+  })
+  const [showDatePicker, setShowDatePicker] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -109,7 +115,7 @@ export default function SalesPage() {
       }
     } catch (err) {
       setError("Error fetching sales receipts")
-      console.error("[DukaPlus] Error fetching sales receipts:", err)
+      console.error("[v0] Error fetching sales receipts:", err)
     } finally {
       setIsLoadingReceipts(false)
     }
@@ -130,7 +136,7 @@ export default function SalesPage() {
         setInvoices(data.message.sales_data)
       }
     } catch (err) {
-      console.error("[DukaPlus] Error fetching sales invoices:", err)
+      console.error("[v0] Error fetching sales invoices:", err)
     }
   }
 
@@ -149,19 +155,24 @@ export default function SalesPage() {
 
   const filteredData = sortedData.filter((item) => {
     const searchLower = searchTerm.toLowerCase()
+    const itemDate = new Date(`${item.date} ${item.time}`)
+    const matchesDate = itemDate >= dateRange.from && itemDate <= dateRange.to
+
     if (activeTab === "receipts") {
       const receipt = item as SalesReceipt
-      return (
+      const matchesSearch = (
         receipt.sales_id.toLowerCase().includes(searchLower) ||
         receipt.customer.toLowerCase().includes(searchLower) ||
         receipt.sales_owner.toLowerCase().includes(searchLower)
       )
+      return matchesSearch && matchesDate
     } else {
       const invoice = item as SalesInvoice
-      return (
+      const matchesSearch = (
         invoice.sales_id.toLowerCase().includes(searchLower) ||
         invoice.customer_name.toLowerCase().includes(searchLower)
       )
+      return matchesSearch && matchesDate
     }
   })
 
@@ -210,7 +221,7 @@ export default function SalesPage() {
           }
         } catch (err) {
           setError("Error cancelling receipt")
-          console.error("[DukaPlus] Error:", err)
+          console.error("[v0] Error:", err)
         } finally {
           setIsCancelling(false)
         }
@@ -241,7 +252,7 @@ export default function SalesPage() {
           }
         } catch (err) {
           setError("Error cancelling invoice")
-          console.error("[DukaPlus] Error:", err)
+          console.error("[v0] Error:", err)
         } finally {
           setIsCancelling(false)
         }
@@ -299,11 +310,10 @@ export default function SalesPage() {
                 setActiveTab("receipts")
                 setCurrentPage(1)
               }}
-              className={`pb-3 px-2 font-semibold transition-colors ${
-                activeTab === "receipts"
-                  ? "border-b-2 border-green-500 text-green-600 dark:text-green-400"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
+              className={`pb-3 px-2 font-semibold transition-colors ${activeTab === "receipts"
+                ? "border-b-2 border-green-500 text-green-600 dark:text-green-400"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
             >
               Sales Receipts ({receipts.length})
             </button>
@@ -312,11 +322,10 @@ export default function SalesPage() {
                 setActiveTab("invoices")
                 setCurrentPage(1)
               }}
-              className={`pb-3 px-2 font-semibold transition-colors ${
-                activeTab === "invoices"
-                  ? "border-b-2 border-orange-500 text-orange-600 dark:text-orange-400"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
+              className={`pb-3 px-2 font-semibold transition-colors ${activeTab === "invoices"
+                ? "border-b-2 border-orange-500 text-orange-600 dark:text-orange-400"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
             >
               Sales Invoices ({invoices.length})
             </button>
@@ -334,6 +343,47 @@ export default function SalesPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="input-base px-3 py-2 text-sm flex-1 sm:w-64"
               />
+              <div className="relative">
+                <Button
+                  onClick={() => setShowDatePicker(!showDatePicker)}
+                  variant="outline"
+                  className="border-border hover:bg-muted w-full sm:w-auto justify-start text-left font-normal"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  <span className="text-xs sm:text-sm">
+                    {dateRange.from.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {dateRange.to.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </Button>
+
+                {showDatePicker && (
+                  <div className="absolute top-full right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-50 p-4 space-y-3 min-w-64">
+                    <button onClick={() => {
+                      const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 7)
+                      setDateRange({ from, to }); setShowDatePicker(false)
+                    }} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm">Last 7 days</button>
+                    <button onClick={() => {
+                      const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 30)
+                      setDateRange({ from, to }); setShowDatePicker(false)
+                    }} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm">Last 30 days</button>
+                    <button onClick={() => {
+                      const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 90)
+                      setDateRange({ from, to }); setShowDatePicker(false)
+                    }} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm">Last 90 days</button>
+                    <div className="border-t border-border pt-3 space-y-2">
+                      <p className="text-xs text-muted-foreground font-semibold uppercase">Custom Range</p>
+                      <div>
+                        <label className="text-xs text-muted-foreground">From</label>
+                        <Input type="date" value={dateRange.from.toISOString().split('T')[0]} onChange={(e) => setDateRange({ ...dateRange, from: new Date(e.target.value) })} className="input-base text-sm h-8" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">To</label>
+                        <Input type="date" value={dateRange.to.toISOString().split('T')[0]} onChange={(e) => setDateRange({ ...dateRange, to: new Date(e.target.value) })} className="input-base text-sm h-8" />
+                      </div>
+                    </div>
+                    <button onClick={() => setShowDatePicker(false)} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm border-t border-border pt-2">Close</button>
+                  </div>
+                )}
+              </div>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as "date" | "amount")}
@@ -434,7 +484,6 @@ export default function SalesPage() {
                                     link.click()
                                   }}
                                   onCancel={() => handleCancelReceipt(receipt.sales_id)}
-                                  size="sm"
                                 />
                               </td>
                             </tr>
@@ -541,7 +590,6 @@ export default function SalesPage() {
                                   }}
                                   onPay={() => handleCompletePayment(invoice)}
                                   onCancel={() => handleCancelInvoice(invoice.sales_id)}
-                                  size="sm"
                                 />
                               </td>
                             </tr>

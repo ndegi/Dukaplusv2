@@ -53,7 +53,20 @@ export function StockTransferManager() {
     to: new Date()
   })
   const [showDatePicker, setShowDatePicker] = useState(false)
-  
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean
+    title: string
+    description: string
+    action: () => void
+    variant: "danger" | "success"
+  }>({
+    open: false,
+    title: "",
+    description: "",
+    action: () => { },
+    variant: "success"
+  })
+
   useEffect(() => {
     fetchTransfers()
     fetchWarehouses()
@@ -73,7 +86,7 @@ export function StockTransferManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error fetching stock transfers" })
-      console.error("[DukaPlus] Error fetching stock transfers:", error)
+      console.error("[v0] Error fetching stock transfers:", error)
     } finally {
       setIsLoading(false)
     }
@@ -94,7 +107,7 @@ export function StockTransferManager() {
         }
       }
     } catch (error) {
-      console.error("[DukaPlus] Error fetching warehouses:", error)
+      console.error("[v0] Error fetching warehouses:", error)
     }
   }
 
@@ -108,7 +121,7 @@ export function StockTransferManager() {
         setProducts(data.products)
       }
     } catch (error) {
-      console.error("[DukaPlus] Error fetching products:", error)
+      console.error("[v0] Error fetching products:", error)
     }
   }
 
@@ -157,7 +170,7 @@ export function StockTransferManager() {
           }
         } catch (error) {
           setMessage({ type: "error", text: "Error creating stock transfer" })
-          console.error("[DukaPlus] Error creating stock transfer:", error)
+          console.error("[v0] Error creating stock transfer:", error)
         } finally {
           setIsSubmitting(false)
         }
@@ -189,7 +202,7 @@ export function StockTransferManager() {
           }
         } catch (error) {
           setMessage({ type: "error", text: "Error submitting stock transfer" })
-          console.error("[DukaPlus] Error submitting stock transfer:", error)
+          console.error("[v0] Error submitting stock transfer:", error)
         }
       },
       variant: "success",
@@ -219,7 +232,7 @@ export function StockTransferManager() {
           }
         } catch (error) {
           setMessage({ type: "error", text: "Error cancelling stock transfer" })
-          console.error("[DukaPlus] Error cancelling stock transfer:", error)
+          console.error("[v0] Error cancelling stock transfer:", error)
         }
       },
       variant: "danger",
@@ -339,7 +352,7 @@ export function StockTransferManager() {
                 {dateRange.from.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {dateRange.to.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
             </Button>
-            
+
             {showDatePicker && (
               <div className="absolute top-full right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-50 p-4 space-y-3 min-w-64">
                 <button onClick={() => {
@@ -358,11 +371,11 @@ export function StockTransferManager() {
                   <p className="text-xs text-muted-foreground font-semibold uppercase">Custom Range</p>
                   <div>
                     <label className="text-xs text-muted-foreground">From</label>
-                    <Input type="date" value={dateRange.from.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, from: new Date(e.target.value)})} className="input-base text-sm h-8" />
+                    <Input type="date" value={dateRange.from.toISOString().split('T')[0]} onChange={(e) => setDateRange({ ...dateRange, from: new Date(e.target.value) })} className="input-base text-sm h-8" />
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground">To</label>
-                    <Input type="date" value={dateRange.to.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, to: new Date(e.target.value)})} className="input-base text-sm h-8" />
+                    <Input type="date" value={dateRange.to.toISOString().split('T')[0]} onChange={(e) => setDateRange({ ...dateRange, to: new Date(e.target.value) })} className="input-base text-sm h-8" />
                   </div>
                 </div>
                 <button onClick={() => setShowDatePicker(false)} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm border-t border-border pt-2">Close</button>
@@ -500,14 +513,12 @@ export function StockTransferManager() {
                           showCancel={true}
                           onSubmit={() => handleSubmitTransfer(transfer.material_transfer_id)}
                           onCancel={() => handleCancelTransfer(transfer.material_transfer_id)}
-                          size="sm"
                         />
                       )}
                       {transfer.docstatus === 1 && (
                         <TableActionButtons
                           showCancel={true}
                           onCancel={() => handleCancelTransfer(transfer.material_transfer_id)}
-                          size="sm"
                         />
                       )}
                       {transfer.docstatus === 2 && <span className="text-foreground text-sm">Cancelled</span>}

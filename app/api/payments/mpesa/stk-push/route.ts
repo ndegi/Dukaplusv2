@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.json()
-      console.error("[DukaPlus] STK push error:", errorData)
+      console.error("[v0] STK push error:", errorData)
       return NextResponse.json({ message: errorData.message || "Payment failed" }, { status: response.status })
     }
 
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       message: data.message?.message || "Payment successful",
     })
   } catch (error) {
-    console.error("[DukaPlus] STK push error:", error)
+    console.error("[v0] STK push error:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }
