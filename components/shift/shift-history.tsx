@@ -67,13 +67,13 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
       if (response.ok) {
         const data = await response.json()
         const shiftsList = data.message?.shifts || []
-        console.log("[v0] Shift data received:", shiftsList)
+        console.log("[DukaPlus] Shift data received:", shiftsList)
         setShifts(shiftsList)
       } else {
         setError("Failed to load shifts")
       }
     } catch (err) {
-      console.error("[v0] Failed to fetch shifts:", err)
+      console.error("[DukaPlus] Failed to fetch shifts:", err)
       setError("An error occurred while loading shifts")
     } finally {
       setIsLoading(false)

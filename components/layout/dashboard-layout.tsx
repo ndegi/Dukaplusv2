@@ -98,7 +98,7 @@ export function DashboardLayout({
         )
       }
     } catch (error) {
-      console.error("[v0] Failed to fetch customers:", error)
+      console.error("[DukaPlus] Failed to fetch customers:", error)
     }
   }
 

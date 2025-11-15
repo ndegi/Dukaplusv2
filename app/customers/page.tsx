@@ -70,7 +70,7 @@ export default function CustomersPage() {
       const data = await res.json()
       setCustomers(data.customers || [])
     } catch (error) {
-      console.error("[v0] Error fetching customers:", error)
+      console.error("[DukaPlus] Error fetching customers:", error)
     } finally {
       setPageLoading(false)
     }
@@ -80,15 +80,15 @@ export default function CustomersPage() {
     try {
       const res = await fetch("/api/customers/groups")
       const data = await res.json()
-      console.log("[v0] Customer groups data:", data)
+      console.log("[DukaPlus] Customer groups data:", data)
       const groupsArray = data.message?.customer_groups || data.groups || []
       const parsedGroups = groupsArray
         .map((g: any) => (typeof g === "string" ? g : g?.customer_group))
         .filter((g: any) => g && typeof g === "string")
-      console.log("[v0] Parsed groups:", parsedGroups)
+      console.log("[DukaPlus] Parsed groups:", parsedGroups)
       setGroups(parsedGroups.length > 0 ? parsedGroups : ["Individual", "Corporate", "Government"])
     } catch (error) {
-      console.error("[v0] Error fetching groups:", error)
+      console.error("[DukaPlus] Error fetching groups:", error)
       setGroups(["Individual", "Corporate", "Government"])
     }
   }
@@ -117,7 +117,7 @@ export default function CustomersPage() {
         fetchCustomers()
       }
     } catch (error) {
-      console.error("[v0] Error saving customer:", error)
+      console.error("[DukaPlus] Error saving customer:", error)
     }
   }
 

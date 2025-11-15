@@ -119,13 +119,13 @@ export function ReportsDashboard({ user }: { user: User }) {
 
       if (stockRes.ok) {
         const data = await stockRes.json()
-        console.log("[v0] Stock balance response:", data)
+        console.log("[DukaPlus] Stock balance response:", data)
         setStockBalance(data.message?.data || data.stock || [])
       }
 
       if (ledgerRes.ok) {
         const data = await ledgerRes.json()
-        console.log("[v0] Stock ledger response:", data)
+        console.log("[DukaPlus] Stock ledger response:", data)
         setStockLedger(data.message?.data || data.stock || [])
       }
 

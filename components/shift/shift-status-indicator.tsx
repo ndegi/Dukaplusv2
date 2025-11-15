@@ -36,7 +36,7 @@ export function ShiftStatusIndicator({ warehouseId }: ShiftStatusIndicatorProps)
         setHasActiveShift(isOpen)
       }
     } catch (error) {
-      console.error("[v0] Failed to check shift status:", error)
+      console.error("[DukaPlus] Failed to check shift status:", error)
     } finally {
       setIsLoading(false)
     }
