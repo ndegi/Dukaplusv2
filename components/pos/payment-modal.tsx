@@ -86,7 +86,7 @@ export function PaymentModal({
         }
       }
     } catch (error) {
-      console.error("[v0] Failed to check shift status:", error)
+      console.error("[DukaPlus] Failed to check shift status:", error)
     } finally {
       setShiftCheckComplete(true)
     }
@@ -111,7 +111,7 @@ export function PaymentModal({
         }
       }
     } catch (error) {
-      console.error("[v0] Failed to fetch payment modes:", error)
+      console.error("[DukaPlus] Failed to fetch payment modes:", error)
       setPaymentModes([
         { mode_of_payment: "Cash" },
         { mode_of_payment: "Mpesa" },
@@ -196,7 +196,7 @@ export function PaymentModal({
         setMessage({ type: "error", text: data.message || "STK Push failed" })
       }
     } catch (error) {
-      console.error("[v0] STK Push error:", error)
+      console.error("[DukaPlus] STK Push error:", error)
       setMessage({ type: "error", text: "Failed to initiate STK Push" })
     } finally {
       setIsProcessing(false)
@@ -248,7 +248,7 @@ export function PaymentModal({
           setMessage({ type: "error", text: data.message?.message || "Payment failed" })
         }
       } catch (error) {
-        console.error("[v0] Payment error:", error)
+        console.error("[DukaPlus] Payment error:", error)
         setMessage({ type: "error", text: "An error occurred while processing payment" })
       } finally {
         setIsProcessing(false)
@@ -309,7 +309,7 @@ export function PaymentModal({
         setMessage({ type: "error", text: data.message || "Payment failed" })
       }
     } catch (error) {
-      console.error("[v0] Payment error:", error)
+      console.error("[DukaPlus] Payment error:", error)
       setMessage({ type: "error", text: "An error occurred while processing payment" })
     } finally {
       setIsProcessing(false)

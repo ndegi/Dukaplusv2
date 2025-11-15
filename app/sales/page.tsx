@@ -109,7 +109,7 @@ export default function SalesPage() {
       }
     } catch (err) {
       setError("Error fetching sales receipts")
-      console.error("[v0] Error fetching sales receipts:", err)
+      console.error("[DukaPlus] Error fetching sales receipts:", err)
     } finally {
       setIsLoadingReceipts(false)
     }
@@ -130,7 +130,7 @@ export default function SalesPage() {
         setInvoices(data.message.sales_data)
       }
     } catch (err) {
-      console.error("[v0] Error fetching sales invoices:", err)
+      console.error("[DukaPlus] Error fetching sales invoices:", err)
     }
   }
 
@@ -210,7 +210,7 @@ export default function SalesPage() {
           }
         } catch (err) {
           setError("Error cancelling receipt")
-          console.error("[v0] Error:", err)
+          console.error("[DukaPlus] Error:", err)
         } finally {
           setIsCancelling(false)
         }
@@ -241,7 +241,7 @@ export default function SalesPage() {
           }
         } catch (err) {
           setError("Error cancelling invoice")
-          console.error("[v0] Error:", err)
+          console.error("[DukaPlus] Error:", err)
         } finally {
           setIsCancelling(false)
         }

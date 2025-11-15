@@ -60,7 +60,7 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
         }
       }
     } catch (error) {
-      console.error("[v0] Failed to fetch initial data:", error)
+      console.error("[DukaPlus] Failed to fetch initial data:", error)
     } finally {
       setIsLoadingData(false)
     }
@@ -99,7 +99,7 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
         setMessage({ type: "error", text: data.message || "Failed to close shift" })
       }
     } catch (error) {
-      console.error("[v0] Error closing shift:", error)
+      console.error("[DukaPlus] Error closing shift:", error)
       setMessage({ type: "error", text: "An error occurred while closing shift" })
     } finally {
       setIsLoading(false)

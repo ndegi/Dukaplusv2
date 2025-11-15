@@ -72,7 +72,7 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
         setError("Failed to load shifts")
       }
     } catch (err) {
-      console.error("[v0] Failed to fetch shifts:", err)
+      console.error("[DukaPlus] Failed to fetch shifts:", err)
       setError("An error occurred while loading shifts")
     } finally {
       setIsLoading(false)

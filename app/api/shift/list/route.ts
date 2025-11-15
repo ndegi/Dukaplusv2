@@ -31,13 +31,13 @@ export async function GET(req: NextRequest) {
     const data = await response.json()
 
     if (!response.ok) {
-      console.error("[v0] Get shifts error:", data)
+      console.error("[DukaPlus] Get shifts error:", data)
       return NextResponse.json({ error: "Failed to get shifts" }, { status: 500 })
     }
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[v0] Get shifts error:", error)
+    console.error("[DukaPlus] Get shifts error:", error)
     return NextResponse.json({ error: "Failed to get shifts" }, { status: 500 })
   }
 }
