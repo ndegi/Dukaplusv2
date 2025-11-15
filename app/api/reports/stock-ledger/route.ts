@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       stock: data.message?.data || [],
     })
   } catch (error) {
-    console.error("[DukaPlus] Stock ledger fetch error:", error)
+    console.error("[v0] Stock ledger fetch error:", error)
     return NextResponse.json(
       { message: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 },

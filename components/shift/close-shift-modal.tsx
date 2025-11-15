@@ -60,7 +60,7 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
         }
       }
     } catch (error) {
-      console.error("[DukaPlus] Failed to fetch initial data:", error)
+      console.error("[v0] Failed to fetch initial data:", error)
     } finally {
       setIsLoadingData(false)
     }
@@ -99,7 +99,7 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
         setMessage({ type: "error", text: data.message || "Failed to close shift" })
       }
     } catch (error) {
-      console.error("[DukaPlus] Error closing shift:", error)
+      console.error("[v0] Error closing shift:", error)
       setMessage({ type: "error", text: "An error occurred while closing shift" })
     } finally {
       setIsLoading(false)
@@ -116,7 +116,7 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="card-base max-w-md w-full">
+      <div className="card-base max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-border">
           <h2 className="text-xl font-bold text-foreground">Close Shift</h2>
           {shiftName && <p className="text-sm text-muted-foreground mt-1">Shift: {shiftName}</p>}
@@ -148,28 +148,36 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">Enter closing amounts for each payment mode:</p>
-              {shiftDetails.map((detail) => (
-                <div key={detail.mode_of_payment} className="space-y-2">
-                  <label className="form-label">{detail.mode_of_payment}</label>
-                  <Input
-                    type="number"
-                    value={detail.closing_amount}
-                    onChange={(e) => updateShiftDetail(detail.mode_of_payment, Number(e.target.value))}
-                    placeholder="0.00"
-                    step="0.01"
-                    className="input-base"
-                  />
-                </div>
-              ))}
+              <p className="text-sm text-muted-foreground">
+                {paymentModes.length > 0 
+                  ? `Enter closing amounts for each payment mode (${paymentModes.length} modes):`
+                  : "Enter closing amounts for each payment mode:"}
+              </p>
+              {shiftDetails.length > 0 ? (
+                shiftDetails.map((detail) => (
+                  <div key={detail.mode_of_payment} className="space-y-2">
+                    <label className="form-label">{detail.mode_of_payment}</label>
+                    <Input
+                      type="number"
+                      value={detail.closing_amount}
+                      onChange={(e) => updateShiftDetail(detail.mode_of_payment, Number(e.target.value))}
+                      placeholder="0.00"
+                      step="0.01"
+                      className="input-base"
+                    />
+                  </div>
+                ))
+              ) : (
+                <p className="text-muted-foreground text-sm">No payment modes available</p>
+              )}
             </div>
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-border flex gap-3">
+        <div className="px-6 py-4 border-t border-border flex gap-3 sticky bottom-0 bg-background">
           <Button
             onClick={handleCloseShift}
-            disabled={isLoading || isLoadingData || !shiftName}
+            disabled={isLoading || isLoadingData || !shiftName || shiftDetails.length === 0}
             className="flex-1 btn-danger"
           >
             {isLoading ? "Closing..." : "Close Shift"}

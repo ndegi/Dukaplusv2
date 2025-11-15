@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error("[DukaPlus] Sales report API error:", errorData)
+      console.error("[v0] Sales report API error:", errorData)
       return NextResponse.json(
         { error: `Failed to fetch sales report: ${response.status}` },
         { status: response.status }
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json()
     return NextResponse.json({ sales: data.message?.data || [] })
   } catch (error) {
-    console.error("[DukaPlus] Sales report error:", error)
+    console.error("[v0] Sales report error:", error)
     return NextResponse.json({ error: "Failed to fetch sales report" }, { status: 500 })
   }
 }

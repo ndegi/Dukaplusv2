@@ -23,7 +23,7 @@ interface Shift {
   creation: string
   status: number // 0 = open, 1 = closed
   closed_by: string | null
-  payment_details: ShiftDetail[]
+  details: ShiftDetail[] // renamed from payment_details to match API response
 }
 
 export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
@@ -72,7 +72,7 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
         setError("Failed to load shifts")
       }
     } catch (err) {
-      console.error("[DukaPlus] Failed to fetch shifts:", err)
+      console.error("[v0] Failed to fetch shifts:", err)
       setError("An error occurred while loading shifts")
     } finally {
       setIsLoading(false)
@@ -155,9 +155,9 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
                   </td>
                   <td className="table-cell-secondary">{shift.closed_by || "-"}</td>
                   <td className="table-cell">
-                    {shift.payment_details && shift.payment_details.length > 0 ? (
+                    {shift.details && shift.details.length > 0 ? ( {/* mapped details from API response */}
                       <div className="space-y-2">
-                        {shift.payment_details.map((detail, index) => (
+                        {shift.details.map((detail, index) => (
                           <div key={index} className="text-right bg-muted/30 rounded p-2">
                             <div className="font-semibold text-foreground text-sm">{detail.mode_of_payment}</div>
                             <div className="text-xs text-muted-foreground space-y-1">

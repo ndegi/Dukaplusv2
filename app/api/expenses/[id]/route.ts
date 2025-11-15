@@ -24,7 +24,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[DukaPlus] Update expense error:", error)
+    console.error("[v0] Update expense error:", error)
     return NextResponse.json({ error: "Failed to update expense" }, { status: 500 })
   }
 }
@@ -51,7 +51,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[DukaPlus] Delete expense error:", error)
+    console.error("[v0] Delete expense error:", error)
     return NextResponse.json({ error: "Failed to delete expense" }, { status: 500 })
   }
 }

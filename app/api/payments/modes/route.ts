@@ -27,7 +27,7 @@ export async function GET() {
     })
 
     if (!response.ok) {
-      console.error("[DukaPlus] Failed to fetch payment modes:", response.status)
+      console.error("[v0] Failed to fetch payment modes:", response.status)
       return NextResponse.json({ modes: [] })
     }
 
@@ -35,7 +35,7 @@ export async function GET() {
     const modes = data.message?.modes_of_payments || data.message?.modes_of_payment || data.modes || []
     return NextResponse.json({ modes: Array.isArray(modes) ? modes : [] })
   } catch (error) {
-    console.error("[DukaPlus] Payment modes fetch error:", error)
+    console.error("[v0] Payment modes fetch error:", error)
     return NextResponse.json({ modes: [] })
   }
 }
