@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[DukaPlus] Error cancelling invoice:", error)
+    console.error("[v0] Error cancelling invoice:", error)
     return NextResponse.json({ message: { message: "Internal server error" } }, { status: 500 })
   }
 }

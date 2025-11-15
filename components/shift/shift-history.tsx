@@ -67,13 +67,13 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
       if (response.ok) {
         const data = await response.json()
         const shiftsList = data.message?.shifts || []
-        console.log("[DukaPlus] Shift data received:", shiftsList)
+        console.log("[v0] Shift data received:", shiftsList)
         setShifts(shiftsList)
       } else {
         setError("Failed to load shifts")
       }
     } catch (err) {
-      console.error("[DukaPlus] Failed to fetch shifts:", err)
+      console.error("[v0] Failed to fetch shifts:", err)
       setError("An error occurred while loading shifts")
     } finally {
       setIsLoading(false)
@@ -129,15 +129,15 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
           No shifts match your search criteria
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <table className="w-full min-w-[800px]">
             <thead className="table-header">
               <tr>
-                <th className="table-header-cell text-left">Shift ID</th>
-                <th className="table-header-cell text-left">Date</th>
-                <th className="table-header-cell text-center">Status</th>
-                <th className="table-header-cell text-left">Closed By</th>
-                <th className="table-header-cell text-right">Payment Details</th>
+                <th className="table-header-cell text-left px-3 sm:px-4">Shift ID</th>
+                <th className="table-header-cell text-left px-3 sm:px-4">Date</th>
+                <th className="table-header-cell text-center px-3 sm:px-4">Status</th>
+                <th className="table-header-cell text-left px-3 sm:px-4">Closed By</th>
+                <th className="table-header-cell text-left px-3 sm:px-4">Payment Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -145,51 +145,53 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
                 const hasDetails = shift.details && Array.isArray(shift.details) && shift.details.length > 0
                 return (
                   <tr key={shift.shift_name} className="table-row">
-                    <td className="table-cell">
-                      <span className="font-mono text-warning font-semibold">{shift.shift_name}</span>
+                    <td className="table-cell px-3 sm:px-4">
+                      <span className="font-mono text-warning font-semibold text-xs sm:text-sm">{shift.shift_name}</span>
                     </td>
-                    <td className="table-cell-secondary">{formatDate(shift.shift_date)}</td>
-                    <td className="table-cell text-center">
+                    <td className="table-cell-secondary px-3 sm:px-4 text-xs sm:text-sm">{formatDate(shift.shift_date)}</td>
+                    <td className="table-cell text-center px-3 sm:px-4">
                       <span
-                        className={shift.status === 0 ? "badge-success" : "badge-disabled"}
+                        className={shift.status === 0 ? "badge-success text-xs" : "badge-disabled text-xs"}
                       >
                         {shift.status === 0 ? "Open" : "Closed"}
                       </span>
                     </td>
-                    <td className="table-cell-secondary">{shift.closed_by || "-"}</td>
-                    <td className="table-cell">
+                    <td className="table-cell-secondary px-3 sm:px-4 text-xs sm:text-sm">{shift.closed_by || "-"}</td>
+                    <td className="table-cell px-3 sm:px-4">
                       {hasDetails ? (
-                        <div className="space-y-2">
-                          {shift.details.map((detail, index) => (
-                            <div key={index} className="text-right bg-muted/30 rounded p-2">
-                              <div className="font-semibold text-foreground text-sm">{detail.mode_of_payment}</div>
-                              <div className="text-xs text-muted-foreground space-y-1">
-                                <div>
-                                  <span>Opening: </span>
-                                  <span className="text-foreground">{formatCurrency(detail.opening_amount ?? 0)}</span>
-                                </div>
-                                <div>
-                                  <span>Sales: </span>
-                                  <span className="text-success">{formatCurrency(detail.total_sales ?? 0)}</span>
-                                </div>
-                                <div>
-                                  <span>Expected: </span>
-                                  <span className="text-warning">{formatCurrency(detail.expected_closing_balance ?? 0)}</span>
-                                </div>
-                                {(detail.difference ?? 0) !== 0 && (
-                                  <div>
-                                    <span>Diff: </span>
-                                    <span className={(detail.difference ?? 0) > 0 ? 'text-success' : 'text-danger'}>
-                                      {formatCurrency(Math.abs(detail.difference ?? 0))} {(detail.difference ?? 0) > 0 ? '↑' : '↓'}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
+                        <div className="space-y-1">
+                          <table className="w-full text-xs border border-border/50 rounded overflow-hidden">
+                            <thead className="bg-muted/50">
+                              <tr>
+                                <th className="text-left px-2 py-1 font-semibold text-foreground">Mode</th>
+                                <th className="text-right px-2 py-1 font-semibold text-foreground">Opening</th>
+                                <th className="text-right px-2 py-1 font-semibold text-foreground">Sales</th>
+                                <th className="text-right px-2 py-1 font-semibold text-foreground">Expected</th>
+                                <th className="text-right px-2 py-1 font-semibold text-foreground">Diff</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border/30">
+                              {shift.details.map((detail, index) => (
+                                <tr key={index} className="hover:bg-muted/20">
+                                  <td className="px-2 py-1.5 font-medium text-foreground">{detail.mode_of_payment}</td>
+                                  <td className="px-2 py-1.5 text-right text-muted-foreground">{formatCurrency(detail.opening_amount ?? 0)}</td>
+                                  <td className="px-2 py-1.5 text-right text-success">{formatCurrency(detail.total_sales ?? 0)}</td>
+                                  <td className="px-2 py-1.5 text-right text-warning">{formatCurrency(detail.expected_closing_balance ?? 0)}</td>
+                                  <td className={`px-2 py-1.5 text-right font-semibold ${
+                                    (detail.difference ?? 0) === 0 ? 'text-muted-foreground' :
+                                    (detail.difference ?? 0) > 0 ? 'text-success' : 'text-danger'
+                                  }`}>
+                                    {(detail.difference ?? 0) === 0 ? '-' : 
+                                     `${formatCurrency(Math.abs(detail.difference ?? 0))} ${(detail.difference ?? 0) > 0 ? '↑' : '↓'}`
+                                    }
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       ) : (
-                        <span className="text-muted-foreground text-sm">No details</span>
+                        <span className="text-muted-foreground text-xs">No details</span>
                       )}
                     </td>
                   </tr>

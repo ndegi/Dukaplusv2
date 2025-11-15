@@ -24,13 +24,13 @@ export async function GET() {
     const data = await response.json()
 
     if (!response.ok) {
-      console.error("[DukaPlus] Get customer groups error:", data)
+      console.error("[v0] Get customer groups error:", data)
       return NextResponse.json({ error: "Failed to fetch customer groups" }, { status: 500 })
     }
 
     return NextResponse.json({ message: data.message, groups: data.message?.customer_groups || [] })
   } catch (error) {
-    console.error("[DukaPlus] Get customer groups error:", error)
+    console.error("[v0] Get customer groups error:", error)
     return NextResponse.json({ error: "Failed to fetch customer groups" }, { status: 500 })
   }
 }

@@ -22,7 +22,7 @@ interface CloseShiftModalProps {
 
 export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftModalProps) {
   const [paymentModes, setPaymentModes] = useState<PaymentMode[]>([])
-  const [shiftDetails, setShiftDetails] = useState<ShiftDetails[]>([{ mode_of_payment: "Cash", closing_amount: 0 }])
+  const [shiftDetails, setShiftDetails] = useState<ShiftDetails[]>([])
   const [shiftName, setShiftName] = useState("")
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -38,12 +38,15 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
       const modesResponse = await fetch("/api/payments/modes")
       if (modesResponse.ok) {
         const modesData = await modesResponse.json()
+        console.log("[DukaPlus] Close shift - fetched modes:", modesData)
         const modes = modesData.modes || []
         setPaymentModes(modes)
 
-        // Initialize shift details with all payment modes
         if (modes.length > 0) {
-          setShiftDetails(modes.map((mode: PaymentMode) => ({ mode_of_payment: mode.mode_of_payment, closing_amount: 0 })))
+          setShiftDetails(modes.map((mode: PaymentMode) => ({ 
+            mode_of_payment: mode.mode_of_payment, 
+            closing_amount: 0 
+          })))
         }
       }
 
@@ -117,12 +120,12 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="card-base max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-border">
-          <h2 className="text-xl font-bold text-foreground">Close Shift</h2>
-          {shiftName && <p className="text-sm text-muted-foreground mt-1">Shift: {shiftName}</p>}
+        <div className="px-4 sm:px-6 py-4 border-b border-border">
+          <h2 className="text-lg sm:text-xl font-bold text-foreground">Close Shift</h2>
+          {shiftName && <p className="text-xs sm:text-sm text-muted-foreground mt-1">Shift: {shiftName}</p>}
         </div>
 
-        <div className="px-6 py-4">
+        <div className="px-4 sm:px-6 py-4">
           {message && (
             <div
               className={
@@ -132,11 +135,11 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
               }
             >
               {message.type === "success" ? (
-                <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-success flex-shrink-0" />
               ) : (
-                <AlertCircle className="w-5 h-5 text-danger flex-shrink-0" />
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-danger flex-shrink-0" />
               )}
-              <p className={message.type === "success" ? "text-success text-sm" : "text-danger text-sm"}>
+              <p className={message.type === "success" ? "text-success text-xs sm:text-sm" : "text-danger text-xs sm:text-sm"}>
                 {message.text}
               </p>
             </div>
@@ -144,45 +147,47 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
 
           {isLoadingData ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">Loading shift data...</p>
+              <p className="text-muted-foreground text-sm">Loading shift data...</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
+            <div className="space-y-3 sm:space-y-4">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {paymentModes.length > 0 
-                  ? `Enter closing amounts for each payment mode (${paymentModes.length} modes):`
+                  ? `Enter closing amounts for all ${paymentModes.length} payment modes:`
                   : "Enter closing amounts for each payment mode:"}
               </p>
               {shiftDetails.length > 0 ? (
-                shiftDetails.map((detail) => (
-                  <div key={detail.mode_of_payment} className="space-y-2">
-                    <label className="form-label">{detail.mode_of_payment}</label>
-                    <Input
-                      type="number"
-                      value={detail.closing_amount}
-                      onChange={(e) => updateShiftDetail(detail.mode_of_payment, Number(e.target.value))}
-                      placeholder="0.00"
-                      step="0.01"
-                      className="input-base"
-                    />
-                  </div>
-                ))
+                <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
+                  {shiftDetails.map((detail) => (
+                    <div key={detail.mode_of_payment} className="space-y-1.5 sm:space-y-2">
+                      <label className="form-label text-xs sm:text-sm">{detail.mode_of_payment}</label>
+                      <Input
+                        type="number"
+                        value={detail.closing_amount}
+                        onChange={(e) => updateShiftDetail(detail.mode_of_payment, Number(e.target.value))}
+                        placeholder="0.00"
+                        step="0.01"
+                        className="input-base text-sm"
+                      />
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <p className="text-muted-foreground text-sm">No payment modes available</p>
+                <p className="text-muted-foreground text-xs sm:text-sm">No payment modes available. Please check your connection.</p>
               )}
             </div>
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-border flex gap-3 sticky bottom-0 bg-background">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-border flex flex-col sm:flex-row gap-2 sm:gap-3 sticky bottom-0 bg-background">
           <Button
             onClick={handleCloseShift}
             disabled={isLoading || isLoadingData || !shiftName || shiftDetails.length === 0}
-            className="flex-1 btn-danger"
+            className="w-full sm:flex-1 btn-danger text-sm"
           >
             {isLoading ? "Closing..." : "Close Shift"}
           </Button>
-          <Button onClick={onClose} disabled={isLoading} className="flex-1 btn-cancel">
+          <Button onClick={onClose} disabled={isLoading} className="w-full sm:flex-1 btn-cancel text-sm">
             Cancel
           </Button>
         </div>

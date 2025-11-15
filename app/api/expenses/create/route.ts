@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[DukaPlus] Create expense error:", error)
+    console.error("[v0] Create expense error:", error)
     return NextResponse.json({ error: "Failed to create expense" }, { status: 500 })
   }
 }

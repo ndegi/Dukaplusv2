@@ -38,7 +38,7 @@ export async function dukaPlusApi(endpoint: string, options: RequestInit = {}) {
     ...options.headers,
   }
 
-  console.log("[DukaPlus] API Request:", { url, method: options.method || "GET" })
+  console.log("[v0] API Request:", { url, method: options.method || "GET" })
 
   const response = await fetch(url, {
     ...options,

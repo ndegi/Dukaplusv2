@@ -32,7 +32,9 @@ export async function GET() {
     }
 
     const data = await response.json()
-    const modes = data.message?.modes_of_payments || data.message?.modes_of_payment || data.modes || []
+    console.log("[DukaPlus] Payment modes API response:", data)
+    const modes = data.message?.mode_of_payments || []
+    console.log("[DukaPlus] Extracted payment modes:", modes)
     return NextResponse.json({ modes: Array.isArray(modes) ? modes : [] })
   } catch (error) {
     console.error("[DukaPlus] Payment modes fetch error:", error)
