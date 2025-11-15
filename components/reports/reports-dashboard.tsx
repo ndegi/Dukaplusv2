@@ -111,13 +111,13 @@ export function ReportsDashboard({ user }: { user: User }) {
 
       if (salesRes.ok) {
         const data = await salesRes.json()
-        console.log("[v0] Sales data received:", data.sales?.length || 0, "records")
+        console.log("[DukaPlus] Sales data received:", data.sales?.length || 0, "records")
         setSalesReports(data.sales || [])
       }
 
       if (customerRes.ok) {
         const data = await customerRes.json()
-        console.log("[v0] Customer data received:", data.customers?.length || 0, "records")
+        console.log("[DukaPlus] Customer data received:", data.customers?.length || 0, "records")
         setCustomerStatements(data.customers || [])
       }
 
