@@ -100,11 +100,14 @@ export function ReportsDashboard({ user }: { user: User }) {
     try {
       setIsLoading(true)
 
+      const fromDate = dateRange.from.toISOString().split('T')[0]
+      const toDate = dateRange.to.toISOString().split('T')[0]
+
       const [salesRes, customerRes, stockRes, ledgerRes] = await Promise.all([
-        fetch(`/api/reports/sales`),
-        fetch(`/api/reports/customer-statement`),
-        fetch(`/api/reports/stock-balance`),
-        fetch(`/api/reports/stock-ledger`),
+        fetch(`/api/reports/sales?from_date=${fromDate}&to_date=${toDate}`),
+        fetch(`/api/reports/customer-statement?from_date=${fromDate}&to_date=${toDate}`),
+        fetch(`/api/reports/stock-balance?from_date=${fromDate}&to_date=${toDate}`),
+        fetch(`/api/reports/stock-ledger?from_date=${fromDate}&to_date=${toDate}`),
       ])
 
       if (salesRes.ok) {
@@ -311,11 +314,10 @@ function SalesReportTable({ data, isLoading }: { data: SalesReportItem[]; isLoad
                 </td>
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      row.status === "Paid"
+                    className={`px-2 py-1 rounded text-xs font-semibold ${row.status === "Paid"
                         ? "bg-green-500/20 text-green-600 dark:text-green-400"
                         : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                    }`}
+                      }`}
                   >
                     {row.status}
                   </span>
@@ -451,11 +453,10 @@ function CustomerStatementTable({ data, isLoading }: { data: CustomerStatement[]
                 </td>
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      row.outstanding_amount === 0
+                    className={`px-2 py-1 rounded text-xs font-semibold ${row.outstanding_amount === 0
                         ? "bg-green-500/20 text-green-600 dark:text-green-400"
                         : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                    }`}
+                      }`}
                   >
                     {row.outstanding_amount === 0 ? "Paid" : "Pending"}
                   </span>
