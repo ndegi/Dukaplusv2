@@ -30,30 +30,30 @@ export function useAuth(): AuthContextType {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log("[v0] Checking auth status...")
+        console.log("[DukaPlus] Checking auth status...")
         const response = await fetch("/api/auth/me")
-        console.log("[v0] Auth me response status:", response.status)
+        console.log("[DukaPlus] Auth me response status:", response.status)
 
         if (response.ok) {
           const data = await response.json()
-          console.log("[v0] User authenticated:", data.user?.id)
+          console.log("[DukaPlus] User authenticated:", data.user?.id)
           setUser(data.user)
           const storedCredentials = sessionStorage.getItem("tenant_credentials")
           if (storedCredentials) {
             setCredentials(JSON.parse(storedCredentials))
           }
         } else if (response.status === 401) {
-          console.log("[v0] User not authenticated (401)")
+          console.log("[DukaPlus] User not authenticated (401)")
           setUser(null)
           setCredentials(null)
           sessionStorage.removeItem("tenant_credentials")
         } else {
-          console.log("[v0] Auth check failed with status:", response.status)
+          console.log("[DukaPlus] Auth check failed with status:", response.status)
           setUser(null)
           setCredentials(null)
         }
       } catch (err) {
-        console.error("[v0] Auth check failed:", err)
+        console.error("[DukaPlus] Auth check failed:", err)
         setUser(null)
         setCredentials(null)
       } finally {
