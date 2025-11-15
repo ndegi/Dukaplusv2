@@ -15,7 +15,10 @@ export const metadata: Metadata = {
   description: "Modern Point of Sale System",
   generator: "dukaplus",
   icons: {
-    icon: "/favicon.png",
+    icon: [
+      { rel: "icon", url: "/favicon.png" },
+      { rel: "icon", url: "/icon.ico", sizes: "any" }
+    ],
     apple: "/icon.png",
   },
 }
@@ -27,11 +30,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="theme-color" content="#1a1a1a" />
+        <meta name="description" content="DukaPlus - Modern Point of Sale System" />
+      </head>
       <body className={`font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <SyncManager />
           <OfflineIndicator />
-          {children}
+          <div suppressHydrationWarning>
+            {children}
+          </div>
           <Analytics />
         </ThemeProvider>
       </body>

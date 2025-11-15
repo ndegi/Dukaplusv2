@@ -32,12 +32,20 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json()
 
+    console.log("[DukaPlus] Stock ledger raw API response:", JSON.stringify(data, null, 2))
+    console.log("[DukaPlus] Stock ledger data path check - data.message:", data.message)
+    console.log("[DukaPlus] Stock ledger data path check - data.message.data:", data.message?.data)
+    console.log("[DukaPlus] Stock ledger data path check - data.data:", data.data)
+
     if (!response.ok) {
       return NextResponse.json({ message: data.message || "Failed to fetch stock ledger" }, { status: response.status })
     }
 
+    const stockData = data.message?.data || data.data || []
+    console.log("[DukaPlus] Stock ledger final extracted data:", stockData)
+
     return NextResponse.json({
-      stock: data.message?.data || [],
+      stock: stockData,
     })
   } catch (error) {
     console.error("[DukaPlus] Stock ledger fetch error:", error)

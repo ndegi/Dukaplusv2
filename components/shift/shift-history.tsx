@@ -67,6 +67,7 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
       if (response.ok) {
         const data = await response.json()
         const shiftsList = data.message?.shifts || []
+        console.log("[DukaPlus] Shift data received:", shiftsList)
         setShifts(shiftsList)
       } else {
         setError("Failed to load shifts")
@@ -140,57 +141,60 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filteredShifts.map((shift) => (
-                <tr key={shift.shift_name} className="table-row">
-                  <td className="table-cell">
-                    <span className="font-mono text-warning font-semibold">{shift.shift_name}</span>
-                  </td>
-                  <td className="table-cell-secondary">{formatDate(shift.shift_date)}</td>
-                  <td className="table-cell text-center">
-                    <span
-                      className={shift.status === 0 ? "badge-success" : "badge-disabled"}
-                    >
-                      {shift.status === 0 ? "Open" : "Closed"}
-                    </span>
-                  </td>
-                  <td className="table-cell-secondary">{shift.closed_by || "-"}</td>
-                  <td className="table-cell">
-                    {shift.details && shift.details.length > 0 ? ( {/* mapped details from API response */}
-                      <div className="space-y-2">
-                        {shift.details.map((detail, index) => (
-                          <div key={index} className="text-right bg-muted/30 rounded p-2">
-                            <div className="font-semibold text-foreground text-sm">{detail.mode_of_payment}</div>
-                            <div className="text-xs text-muted-foreground space-y-1">
-                              <div>
-                                <span>Opening: </span>
-                                <span className="text-foreground">{formatCurrency(detail.opening_amount || 0)}</span>
-                              </div>
-                              <div>
-                                <span>Sales: </span>
-                                <span className="text-success">{formatCurrency(detail.total_sales || 0)}</span>
-                              </div>
-                              <div>
-                                <span>Expected: </span>
-                                <span className="text-warning">{formatCurrency(detail.expected_closing_balance || 0)}</span>
-                              </div>
-                              {(detail.difference || 0) !== 0 && (
+              {filteredShifts.map((shift) => {
+                const hasDetails = shift.details && Array.isArray(shift.details) && shift.details.length > 0
+                return (
+                  <tr key={shift.shift_name} className="table-row">
+                    <td className="table-cell">
+                      <span className="font-mono text-warning font-semibold">{shift.shift_name}</span>
+                    </td>
+                    <td className="table-cell-secondary">{formatDate(shift.shift_date)}</td>
+                    <td className="table-cell text-center">
+                      <span
+                        className={shift.status === 0 ? "badge-success" : "badge-disabled"}
+                      >
+                        {shift.status === 0 ? "Open" : "Closed"}
+                      </span>
+                    </td>
+                    <td className="table-cell-secondary">{shift.closed_by || "-"}</td>
+                    <td className="table-cell">
+                      {hasDetails ? (
+                        <div className="space-y-2">
+                          {shift.details.map((detail, index) => (
+                            <div key={index} className="text-right bg-muted/30 rounded p-2">
+                              <div className="font-semibold text-foreground text-sm">{detail.mode_of_payment}</div>
+                              <div className="text-xs text-muted-foreground space-y-1">
                                 <div>
-                                  <span>Diff: </span>
-                                  <span className={(detail.difference || 0) > 0 ? 'text-success' : 'text-danger'}>
-                                    {formatCurrency(Math.abs(detail.difference || 0))} {(detail.difference || 0) > 0 ? '↑' : '↓'}
-                                  </span>
+                                  <span>Opening: </span>
+                                  <span className="text-foreground">{formatCurrency(detail.opening_amount ?? 0)}</span>
                                 </div>
-                              )}
+                                <div>
+                                  <span>Sales: </span>
+                                  <span className="text-success">{formatCurrency(detail.total_sales ?? 0)}</span>
+                                </div>
+                                <div>
+                                  <span>Expected: </span>
+                                  <span className="text-warning">{formatCurrency(detail.expected_closing_balance ?? 0)}</span>
+                                </div>
+                                {(detail.difference ?? 0) !== 0 && (
+                                  <div>
+                                    <span>Diff: </span>
+                                    <span className={(detail.difference ?? 0) > 0 ? 'text-success' : 'text-danger'}>
+                                      {formatCurrency(Math.abs(detail.difference ?? 0))} {(detail.difference ?? 0) > 0 ? '↑' : '↓'}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">No details</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">No details</span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
