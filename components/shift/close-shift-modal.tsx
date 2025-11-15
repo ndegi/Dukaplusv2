@@ -9,9 +9,21 @@ interface PaymentMode {
   mode_of_payment: string
 }
 
+interface ShiftDetail {
+  mode_of_payment: string
+  opening_amount: number
+  total_sales: number
+  total_credit_paid: number
+  total_expense: number
+  expected_closing_balance: number
+  actual_closing_amount: number
+  difference: number
+}
+
 interface ShiftDetails {
   mode_of_payment: string
   closing_amount: number
+  expected_amount?: number
 }
 
 interface CloseShiftModalProps {
@@ -41,25 +53,53 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
         console.log("[DukaPlus] Close shift - fetched modes:", modesData)
         const modes = modesData.modes || []
         setPaymentModes(modes)
-
-        if (modes.length > 0) {
-          setShiftDetails(modes.map((mode: PaymentMode) => ({ 
-            mode_of_payment: mode.mode_of_payment, 
-            closing_amount: 0 
-          })))
-        }
       }
 
-      // Fetch current shifts to get the shift name
+      // Fetch current shifts to get the shift name and expected amounts
       const shiftsResponse = await fetch(`/api/shift/list?warehouse_id=${encodeURIComponent(warehouseId)}`)
       if (shiftsResponse.ok) {
         const shiftsData = await shiftsResponse.json()
+        console.log("[DukaPlus] Close shift - fetched shifts:", shiftsData)
         const shifts = shiftsData.message?.shifts || []
-        
+
         // Find the open shift (status = 0)
         const openShift = shifts.find((shift: any) => shift.status === 0)
         if (openShift) {
           setShiftName(openShift.shift_name)
+
+          const shiftDetailsFromApi = openShift.details || []
+          console.log("[DukaPlus] Close shift - shift details:", shiftDetailsFromApi)
+
+          if (shiftDetailsFromApi.length > 0) {
+            // Map shift details to include expected amounts
+            const detailsWithExpected = shiftDetailsFromApi.map((detail: ShiftDetail) => ({
+              mode_of_payment: detail.mode_of_payment,
+              closing_amount: 0,
+              expected_amount: detail.expected_closing_balance || 0
+            }))
+            setShiftDetails(detailsWithExpected)
+          } else if (modesResponse.ok) {
+            // Fallback to payment modes if no shift details
+            const modesData = await modesResponse.json()
+            const modes = modesData.modes || []
+            setShiftDetails(modes.map((mode: PaymentMode) => ({
+              mode_of_payment: mode.mode_of_payment,
+              closing_amount: 0,
+              expected_amount: 0
+            })))
+          }
+        } else {
+          // No open shift found, use payment modes
+          const modesResponse2 = await fetch("/api/payments/modes")
+          if (modesResponse2.ok) {
+            const modesData = await modesResponse2.json()
+            const modes = modesData.modes || []
+            setShiftDetails(modes.map((mode: PaymentMode) => ({
+              mode_of_payment: mode.mode_of_payment,
+              closing_amount: 0,
+              expected_amount: 0
+            })))
+          }
         }
       }
     } catch (error) {
@@ -152,23 +192,40 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
           ) : (
             <div className="space-y-3 sm:space-y-4">
               <p className="text-xs sm:text-sm text-muted-foreground">
-                {paymentModes.length > 0 
-                  ? `Enter closing amounts for all ${paymentModes.length} payment modes:`
+                {shiftDetails.length > 0
+                  ? `Enter actual closing amounts for all ${shiftDetails.length} payment modes:`
                   : "Enter closing amounts for each payment mode:"}
               </p>
               {shiftDetails.length > 0 ? (
                 <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
                   {shiftDetails.map((detail) => (
                     <div key={detail.mode_of_payment} className="space-y-1.5 sm:space-y-2">
-                      <label className="form-label text-xs sm:text-sm">{detail.mode_of_payment}</label>
+                      <div className="flex items-center justify-between">
+                        <label className="form-label text-xs sm:text-sm font-semibold">{detail.mode_of_payment}</label>
+                        <span className="text-xs text-muted-foreground">
+                          Expected: <span className="font-semibold text-foreground">
+                            KES {(detail.expected_amount ?? 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </span>
+                      </div>
                       <Input
                         type="number"
                         value={detail.closing_amount}
                         onChange={(e) => updateShiftDetail(detail.mode_of_payment, Number(e.target.value))}
-                        placeholder="0.00"
+                        placeholder="Enter actual amount"
                         step="0.01"
                         className="input-base text-sm"
                       />
+                      {detail.closing_amount > 0 && (
+                        <p className={`text-xs ${detail.closing_amount === detail.expected_amount
+                            ? 'text-success'
+                            : Math.abs(detail.closing_amount - (detail.expected_amount ?? 0)) < 1
+                              ? 'text-warning'
+                              : 'text-danger'
+                          }`}>
+                          Difference: KES {(detail.closing_amount - (detail.expected_amount ?? 0)).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
