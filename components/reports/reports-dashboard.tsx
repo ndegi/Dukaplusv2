@@ -99,7 +99,7 @@ export function ReportsDashboard({ user }: { user: User }) {
   const fetchAllReports = async () => {
     try {
       setIsLoading(true)
-
+      
       console.log("[DukaPlus] Fetching all reports data (no date filter on API)")
 
       const [salesRes, customerRes, stockRes, ledgerRes] = await Promise.all([
@@ -217,14 +217,14 @@ export function ReportsDashboard({ user }: { user: User }) {
   )
 }
 
-function EnhancedPagination({
-  currentPage,
-  totalPages,
+function EnhancedPagination({ 
+  currentPage, 
+  totalPages, 
   onPageChange,
   startIndex,
   endIndex,
   totalRecords
-}: {
+}: { 
   currentPage: number
   totalPages: number
   onPageChange: (page: number) => void
@@ -234,7 +234,7 @@ function EnhancedPagination({
 }) {
   const getPageNumbers = () => {
     const pages: (number | string)[] = []
-
+    
     if (totalPages <= 7) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i)
@@ -248,7 +248,7 @@ function EnhancedPagination({
         pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages)
       }
     }
-
+    
     return pages
   }
 
@@ -257,7 +257,7 @@ function EnhancedPagination({
       <div className="text-sm text-gray-600 dark:text-gray-400">
         Showing {startIndex + 1} to {Math.min(endIndex, totalRecords)} of {totalRecords} records
       </div>
-
+      
       <div className="flex items-center gap-1">
         {/* First page */}
         <Button
@@ -269,7 +269,7 @@ function EnhancedPagination({
         >
           <ChevronsLeft className="w-4 h-4" />
         </Button>
-
+        
         {/* Previous page */}
         <Button
           onClick={() => onPageChange(currentPage - 1)}
@@ -291,10 +291,11 @@ function EnhancedPagination({
               onClick={() => onPageChange(page as number)}
               variant={currentPage === page ? "default" : "outline"}
               size="sm"
-              className={`h-8 w-8 p-0 ${currentPage === page
-                  ? "bg-orange-500 hover:bg-orange-600 text-white"
+              className={`h-8 w-8 p-0 ${
+                currentPage === page 
+                  ? "bg-orange-500 hover:bg-orange-600 text-white" 
                   : ""
-                }`}
+              }`}
             >
               {page}
             </Button>
@@ -327,12 +328,12 @@ function EnhancedPagination({
   )
 }
 
-function SalesReportTable({
-  data,
+function SalesReportTable({ 
+  data, 
   isLoading,
   dateRange,
   onDateRangeChange
-}: {
+}: { 
   data: SalesReportItem[]
   isLoading: boolean
   dateRange: { from: Date; to: Date }
@@ -353,15 +354,15 @@ function SalesReportTable({
     const toDate = new Date(dateRange.to)
     fromDate.setHours(0, 0, 0, 0)
     toDate.setHours(23, 59, 59, 999)
-
+    
     const dateMatch = itemDate >= fromDate && itemDate <= toDate
-
+    
     // Search filter
-    const searchMatch = searchTerm === "" ||
+    const searchMatch = searchTerm === "" || 
       (item.sales_invoice?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
       (item.customer?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
       (item.warehouse?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
-
+    
     return dateMatch && searchMatch
   })
 
@@ -448,10 +449,11 @@ function SalesReportTable({
                 </td>
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${row.status === "Paid"
+                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                      row.status === "Paid"
                         ? "bg-green-500/20 text-green-600 dark:text-green-400"
                         : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                      }`}
+                    }`}
                   >
                     {row.status}
                   </span>
@@ -476,12 +478,12 @@ function SalesReportTable({
   )
 }
 
-function CustomerStatementTable({
-  data,
+function CustomerStatementTable({ 
+  data, 
   isLoading,
   dateRange,
   onDateRangeChange
-}: {
+}: { 
   data: CustomerStatement[]
   isLoading: boolean
   dateRange: { from: Date; to: Date }
@@ -502,15 +504,15 @@ function CustomerStatementTable({
     const toDate = new Date(dateRange.to)
     fromDate.setHours(0, 0, 0, 0)
     toDate.setHours(23, 59, 59, 999)
-
+    
     const dateMatch = itemDate >= fromDate && itemDate <= toDate
-
+    
     // Search filter
     const searchMatch = searchTerm === "" ||
       (item.sales_invoice?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
       (item.customer_name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
       (item.warehouse?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
-
+    
     return dateMatch && searchMatch
   })
 
@@ -596,10 +598,11 @@ function CustomerStatementTable({
                 </td>
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${row.outstanding_amount === 0
+                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                      row.outstanding_amount === 0
                         ? "bg-green-500/20 text-green-600 dark:text-green-400"
                         : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                      }`}
+                    }`}
                   >
                     {row.outstanding_amount === 0 ? "Paid" : "Pending"}
                   </span>
@@ -624,12 +627,12 @@ function CustomerStatementTable({
   )
 }
 
-function StockBalanceTable({
-  data,
+function StockBalanceTable({ 
+  data, 
   isLoading,
   dateRange,
   onDateRangeChange
-}: {
+}: { 
   data: StockBalanceItem[]
   isLoading: boolean
   dateRange: { from: Date; to: Date }
@@ -760,12 +763,12 @@ function StockBalanceTable({
   )
 }
 
-function StockLedgerTable({
-  data,
+function StockLedgerTable({ 
+  data, 
   isLoading,
   dateRange,
   onDateRangeChange
-}: {
+}: { 
   data: StockLedgerItem[]
   isLoading: boolean
   dateRange: { from: Date; to: Date }
@@ -788,10 +791,10 @@ function StockLedgerTable({
       const toDate = new Date(dateRange.to)
       fromDate.setHours(0, 0, 0, 0)
       toDate.setHours(23, 59, 59, 999)
-
+      
       dateMatch = itemDate >= fromDate && itemDate <= toDate
     }
-
+    
     // Search filter
     const searchLower = searchTerm.toLowerCase()
     const searchMatch = searchTerm === "" ||
@@ -799,7 +802,7 @@ function StockLedgerTable({
       (item.item_name?.toLowerCase() ?? '').includes(searchLower) ||
       (item.item_group?.toLowerCase() ?? '').includes(searchLower) ||
       (item.voucher_no?.toLowerCase() ?? '').includes(searchLower)
-
+    
     return dateMatch && searchMatch
   })
 

@@ -4,12 +4,13 @@ import { useAuth } from "@/hooks/use-auth"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from "react"
-import { DateRangeFilter } from "@/components/reports/date-range-filter"
-import { SalesTrendChart } from "@/components/analytics/sales-trend-chart"
-import { SalesPerformanceChart } from "@/components/analytics/sales-performance-chart"
+import { ProductProductivityTable } from "@/components/analytics/product-productivity-table"
 import { SalesByPersonChart } from "@/components/analytics/sales-by-person-chart"
 import { SalesCountChart } from "@/components/analytics/sales-count-chart"
-import { ProductProductivityTable } from "@/components/analytics/product-productivity-table"
+import { SalesPerformanceChart } from "@/components/analytics/sales-performance-chart"
+import { SalesTrendChart } from "@/components/analytics/sales-trend-chart"
+import { DateRangeFilter } from "@/components/reports/date-range-filter"
+
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth()

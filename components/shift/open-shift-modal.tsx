@@ -94,70 +94,74 @@ export function OpenShiftModal({ onClose, onSuccess }: { onClose: () => void; on
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">Open Shift</h2>
+      <div className="card-base max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="px-4 sm:px-6 py-4 border-b border-border">
+          <h2 className="text-lg sm:text-xl font-bold text-foreground">Open Shift</h2>
+        </div>
 
-        {message && (
-          <div
-            className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg flex items-start gap-2 sm:gap-3 ${
-              message.type === "success"
-                ? "bg-green-500/10 border border-green-500/20"
-                : "bg-red-500/10 border border-red-500/20"
-            }`}
-          >
-            {message.type === "success" ? (
-              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-            ) : (
-              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 flex-shrink-0 mt-0.5" />
-            )}
-            <p className={message.type === "success" ? "text-green-200 text-xs sm:text-sm" : "text-red-200 text-xs sm:text-sm"}>
-              {message.text}
-            </p>
-          </div>
-        )}
+        <div className="px-4 sm:px-6 py-4">
+          {message && (
+            <div
+              className={
+                message.type === "success"
+                  ? "alert-success flex items-start gap-2 mb-4"
+                  : "alert-error flex items-start gap-2 mb-4"
+              }
+            >
+              {message.type === "success" ? (
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-success flex-shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-danger flex-shrink-0" />
+              )}
+              <p className={message.type === "success" ? "text-success text-xs sm:text-sm" : "text-danger text-xs sm:text-sm"}>
+                {message.text}
+              </p>
+            </div>
+          )}
 
-        {isLoadingModes ? (
-          <div className="text-center py-8">
-            <p className="text-slate-400 text-sm">Loading payment modes...</p>
-          </div>
-        ) : (
-          <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
-            <p className="text-xs sm:text-sm text-slate-400">
-              {paymentModes.length > 0 
-                ? `Enter opening amounts for all ${paymentModes.length} payment modes:`
-                : "Enter opening amounts for each payment mode:"}
-            </p>
-            {shiftDetails.length > 0 ? (
-              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
-                {shiftDetails.map((detail) => (
-                  <div key={detail.mode_of_payment} className="space-y-1.5 sm:space-y-2">
-                    <label className="block text-xs sm:text-sm font-medium text-slate-300">{detail.mode_of_payment}</label>
-                    <Input
-                      type="number"
-                      value={detail.opening_amount}
-                      onChange={(e) => updateShiftDetail(detail.mode_of_payment, Number(e.target.value))}
-                      placeholder="0.00"
-                      step="0.01"
-                      className="bg-slate-700 border-slate-600 text-white placeholder-slate-500 text-sm"
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-slate-400 text-xs sm:text-sm">No payment modes available. Please check your connection.</p>
-            )}
-          </div>
-        )}
+          {isLoadingModes ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground text-sm">Loading payment modes...</p>
+            </div>
+          ) : (
+            <div className="space-y-3 sm:space-y-4">
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                {paymentModes.length > 0 
+                  ? `Enter opening amounts for all ${paymentModes.length} payment modes:`
+                  : "Enter opening amounts for each payment mode:"}
+              </p>
+              {shiftDetails.length > 0 ? (
+                <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
+                  {shiftDetails.map((detail) => (
+                    <div key={detail.mode_of_payment} className="space-y-1.5 sm:space-y-2">
+                      <label className="form-label text-xs sm:text-sm font-semibold">{detail.mode_of_payment}</label>
+                      <Input
+                        type="number"
+                        value={detail.opening_amount}
+                        onChange={(e) => updateShiftDetail(detail.mode_of_payment, Number(e.target.value))}
+                        placeholder="0.00"
+                        step="0.01"
+                        className="input-base text-sm"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-xs sm:text-sm">No payment modes available. Please check your connection.</p>
+              )}
+            </div>
+          )}
+        </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sticky bottom-0">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-border flex flex-col sm:flex-row gap-2 sm:gap-3 sticky bottom-0 bg-background">
           <Button
             onClick={handleOpenShift}
             disabled={isLoading || isLoadingModes || shiftDetails.length === 0}
-            className="w-full sm:flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm"
+            className="w-full sm:flex-1 btn-success text-sm"
           >
             {isLoading ? "Opening..." : "Open Shift"}
           </Button>
-          <Button onClick={onClose} disabled={isLoading} className="w-full sm:flex-1 bg-slate-700 hover:bg-slate-600 text-white text-sm">
+          <Button onClick={onClose} disabled={isLoading} className="w-full sm:flex-1 btn-cancel text-sm">
             Cancel
           </Button>
         </div>

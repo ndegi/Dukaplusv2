@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { AlertCircle, CheckCircle, Plus, Trash2, ArrowRightLeft } from 'lucide-react'
+import { AlertCircle, CheckCircle, Plus, Trash2, ArrowRightLeft, Calendar } from 'lucide-react'
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 
@@ -48,21 +48,12 @@ export function StockTransferManager() {
   const [products, setProducts] = useState<Product[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "submitted" | "cancelled">("all")
-  
-  const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean
-    title: string
-    description: string
-    action: () => void
-    variant: "danger" | "warning" | "success"
-  }>({
-    open: false,
-    title: "",
-    description: "",
-    action: () => {},
-    variant: "danger",
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    to: new Date()
   })
-
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  
   useEffect(() => {
     fetchTransfers()
     fetchWarehouses()
@@ -274,7 +265,10 @@ export function StockTransferManager() {
       (statusFilter === "submitted" && transfer.docstatus === 1) ||
       (statusFilter === "cancelled" && transfer.docstatus === 2)
 
-    return matchesSearch && matchesStatus
+    const transferDate = new Date(transfer.posting_date)
+    const matchesDate = transferDate >= dateRange.from && transferDate <= dateRange.to
+
+    return matchesSearch && matchesStatus && matchesDate
   })
 
   return (
@@ -316,7 +310,7 @@ export function StockTransferManager() {
           </Button>
         </div>
 
-        <div className="flex gap-3 mb-4">
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <input
             type="text"
             placeholder="Search transfers..."
@@ -334,6 +328,47 @@ export function StockTransferManager() {
             <option value="submitted">Submitted</option>
             <option value="cancelled">Cancelled</option>
           </select>
+          <div className="relative">
+            <Button
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              variant="outline"
+              className="border-border hover:bg-muted w-full sm:w-auto justify-start text-left font-normal"
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              <span className="text-xs sm:text-sm">
+                {dateRange.from.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {dateRange.to.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            </Button>
+            
+            {showDatePicker && (
+              <div className="absolute top-full right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-50 p-4 space-y-3 min-w-64">
+                <button onClick={() => {
+                  const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 7)
+                  setDateRange({ from, to }); setShowDatePicker(false)
+                }} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm">Last 7 days</button>
+                <button onClick={() => {
+                  const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 30)
+                  setDateRange({ from, to }); setShowDatePicker(false)
+                }} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm">Last 30 days</button>
+                <button onClick={() => {
+                  const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 90)
+                  setDateRange({ from, to }); setShowDatePicker(false)
+                }} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm">Last 90 days</button>
+                <div className="border-t border-border pt-3 space-y-2">
+                  <p className="text-xs text-muted-foreground font-semibold uppercase">Custom Range</p>
+                  <div>
+                    <label className="text-xs text-muted-foreground">From</label>
+                    <Input type="date" value={dateRange.from.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, from: new Date(e.target.value)})} className="input-base text-sm h-8" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">To</label>
+                    <Input type="date" value={dateRange.to.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, to: new Date(e.target.value)})} className="input-base text-sm h-8" />
+                  </div>
+                </div>
+                <button onClick={() => setShowDatePicker(false)} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm border-t border-border pt-2">Close</button>
+              </div>
+            )}
+          </div>
         </div>
 
         {showCreateForm && (
@@ -435,7 +470,7 @@ export function StockTransferManager() {
           <p className="text-foreground p-6 text-center">Loading stock transfers...</p>
         ) : filteredTransfers.length === 0 ? (
           <p className="text-foreground text-center py-8">
-            {searchTerm || statusFilter !== "all" ? "No transfers match your filters" : "No stock transfers found"}
+            {searchTerm || statusFilter !== "all" || showDatePicker ? "No transfers match your filters" : "No stock transfers found"}
           </p>
         ) : (
           <div className="overflow-x-auto">

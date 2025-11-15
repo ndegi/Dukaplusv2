@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
-import { AlertCircle, Search, Calendar } from "lucide-react"
+import { AlertCircle, Search, Calendar } from 'lucide-react'
+import { Button } from "@/components/ui/button"
 
 interface Transaction {
   id: string
@@ -21,19 +22,29 @@ export function SalesHistory() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [totalSales, setTotalSales] = useState(0)
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    to: new Date()
+  })
+  const [showDatePicker, setShowDatePicker] = useState(false)
 
   useEffect(() => {
     fetchTransactions()
   }, [])
 
   useEffect(() => {
-    const filtered = transactions.filter(
-      (transaction) =>
+    const filtered = transactions.filter((transaction) => {
+      const matchesSearch =
         transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.paymentMethod.toLowerCase().includes(searchTerm.toLowerCase()),
-    )
+        transaction.paymentMethod.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      const transactionDate = new Date(transaction.date)
+      const matchesDate = transactionDate >= dateRange.from && transactionDate <= dateRange.to
+      
+      return matchesSearch && matchesDate
+    })
     setFilteredTransactions(filtered)
-  }, [searchTerm, transactions])
+  }, [searchTerm, transactions, dateRange])
 
   const fetchTransactions = async () => {
     try {
@@ -98,14 +109,42 @@ export function SalesHistory() {
       </div>
 
       {/* Search */}
-      <div className="relative">
-        <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-        <Input
-          placeholder="Search by transaction ID or payment method..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 bg-slate-700 border-slate-600 text-white"
-        />
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Input
+            placeholder="Search by transaction ID or payment method..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 bg-slate-700 border-slate-600 text-white"
+          />
+        </div>
+        <div className="relative">
+          <Button
+            onClick={() => setShowDatePicker(!showDatePicker)}
+            variant="outline"
+            className="border-slate-600 bg-slate-700 hover:bg-slate-600 text-white"
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            <span className="text-sm">
+              {dateRange.from.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {dateRange.to.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+          </Button>
+          
+          {showDatePicker && (
+            <div className="absolute top-full right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-50 p-4 space-y-3 min-w-64">
+              <button onClick={() => { const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 7); setDateRange({ from, to }); setShowDatePicker(false) }} className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300">Last 7 days</button>
+              <button onClick={() => { const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 30); setDateRange({ from, to }); setShowDatePicker(false) }} className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300">Last 30 days</button>
+              <button onClick={() => { const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 90); setDateRange({ from, to }); setShowDatePicker(false) }} className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300">Last 90 days</button>
+              <div className="border-t border-slate-700 pt-3 space-y-2">
+                <p className="text-xs text-slate-400 font-semibold uppercase">Custom Range</p>
+                <div><label className="text-xs text-slate-400">From</label><Input type="date" value={dateRange.from.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, from: new Date(e.target.value)})} className="bg-slate-700 border-slate-600 text-white text-sm h-8" /></div>
+                <div><label className="text-xs text-slate-400">To</label><Input type="date" value={dateRange.to.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, to: new Date(e.target.value)})} className="bg-slate-700 border-slate-600 text-white text-sm h-8" /></div>
+              </div>
+              <button onClick={() => setShowDatePicker(false)} className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300 border-t border-slate-700 pt-2">Close</button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Transactions Table */}
