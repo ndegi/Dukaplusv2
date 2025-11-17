@@ -5,10 +5,12 @@ import { AlertCircle, Plus, ChevronDown, ChevronUp, Trash2, Search } from 'lucid
 import { Button } from "@/components/ui/button"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
+import { DateRangeFilter } from "@/components/reports/date-range-filter"
 
 interface PurchaseOrder {
   order_id: string
   supplier: string
+  date: string
   items: Array<{
     item_code: string
     item_name: string
@@ -29,11 +31,14 @@ interface Supplier {
 
 export function PurchaseOrdersManager() {
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
+  const [filteredOrders, setFilteredOrders] = useState<PurchaseOrder[]>([])
   const [isLoadingOrders, setIsLoadingOrders] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
   const [showNewOrderModal, setShowNewOrderModal] = useState(false)
   const [showSupplierModal, setShowSupplierModal] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [dateRange, setDateRange] = useState({ from: "", to: "" })
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean
     title: string
@@ -49,6 +54,10 @@ export function PurchaseOrdersManager() {
   useEffect(() => {
     fetchPurchaseOrders()
   }, [])
+
+  useEffect(() => {
+    filterOrders()
+  }, [orders, searchQuery, dateRange])
 
   const fetchPurchaseOrders = async () => {
     try {
@@ -138,6 +147,40 @@ export function PurchaseOrdersManager() {
     })
   }
 
+  const filterOrders = () => {
+    let filtered = [...orders]
+
+    if (searchQuery) {
+      filtered = filtered.filter(order =>
+        order.order_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.supplier.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    }
+
+    if (dateRange.from && dateRange.to) {
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.date)
+        const fromDate = new Date(dateRange.from)
+        const toDate = new Date(dateRange.to)
+        return orderDate >= fromDate && orderDate <= toDate
+      })
+    }
+
+    setFilteredOrders(filtered)
+  }
+
+  const toggleOrderExpansion = (orderId: string) => {
+    setExpandedOrders(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId)
+      } else {
+        newSet.add(orderId)
+      }
+      return newSet
+    })
+  }
+
   return (
     <div className="space-y-4">
       <ConfirmationDialog
@@ -163,6 +206,23 @@ export function PurchaseOrdersManager() {
         </div>
       </div>
 
+      <div className="flex gap-4 items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search orders..."
+            className="input-base w-full pl-10"
+          />
+        </div>
+        <DateRangeFilter
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+        />
+      </div>
+
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -173,7 +233,7 @@ export function PurchaseOrdersManager() {
       <div className="card-base overflow-hidden">
         {isLoadingOrders ? (
           <p className="p-6 text-center text-foreground text-sm">Loading purchase orders...</p>
-        ) : orders.length === 0 ? (
+        ) : filteredOrders.length === 0 ? (
           <p className="p-6 text-center text-foreground text-sm">No purchase orders found</p>
         ) : (
           <div className="overflow-x-auto">
@@ -183,13 +243,14 @@ export function PurchaseOrdersManager() {
                   <th className="table-header-cell w-10"></th>
                   <th className="table-header-cell text-left uppercase">Order ID</th>
                   <th className="table-header-cell text-left uppercase">Supplier</th>
+                  <th className="table-header-cell text-left uppercase">Date</th>
                   <th className="table-header-cell text-right uppercase">Grand Total</th>
                   <th className="table-header-cell text-center uppercase">Status</th>
                   <th className="table-header-cell text-center uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {orders.map((order) => {
+                {filteredOrders.map((order) => {
                   const isExpanded = expandedOrders.has(order.order_id)
                   return (
                     <>
@@ -210,12 +271,16 @@ export function PurchaseOrdersManager() {
                         </td>
                         <td className="table-cell font-mono text-warning">{order.order_id}</td>
                         <td className="table-cell">{order.supplier}</td>
+                        <td className="table-cell">{new Date(order.date).toLocaleDateString()}</td>
                         <td className="table-cell text-right font-semibold">
                           KES {order.grand_total.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="table-cell text-center">
                           <span className={`badge ${
-                            order.status === "To Bill" ? "badge-warning" : "badge-success"
+                            order.status === "Draft" ? "badge-secondary" :
+                            order.status === "To Bill" ? "badge-warning" : 
+                            order.status === "Completed" ? "badge-success" :
+                            "badge-info"
                           }`}>
                             {order.status}
                           </span>
@@ -223,7 +288,7 @@ export function PurchaseOrdersManager() {
                         <td className="table-cell text-center">
                           <TableActionButtons
                             showCancel={true}
-                            showCreateReceipt={true}
+                            showCreateReceipt={order.status !== "Draft"}
                             onCancel={() => handleCancelOrDeleteOrder(order.order_id, order.docstatus)}
                             onCreateReceipt={() => handleCreateReceipt(order.order_id)}
                             docstatus={order.docstatus}
@@ -234,7 +299,7 @@ export function PurchaseOrdersManager() {
                       </tr>
                       {isExpanded && order.items && order.items.length > 0 && (
                         <tr>
-                          <td colSpan={6} className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50">
+                          <td colSpan={7} className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50">
                             <div className="p-4">
                               <h4 className="font-semibold text-sm mb-2">Items:</h4>
                               <table className="w-full text-xs">

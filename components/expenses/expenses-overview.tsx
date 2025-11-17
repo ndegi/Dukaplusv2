@@ -154,12 +154,14 @@ export function ExpensesOverview() {
     }
   }
 
-  const handleDeleteExpense = async () => {
+  const handleCancelOrDeleteExpense = async () => {
     if (!deletingExpense) return
 
     try {
-      const response = await fetch(`/api/expenses/${deletingExpense.expense_name}`, {
-        method: "DELETE",
+      const response = await fetch(`/api/expenses/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expense_name: deletingExpense.expense_name }),
       })
 
       if (response.ok) {
@@ -168,7 +170,7 @@ export function ExpensesOverview() {
         setDeletingExpense(null)
       }
     } catch (error) {
-      console.error("Failed to delete expense:", error)
+      console.error("Failed to cancel/delete expense:", error)
     }
   }
 
@@ -307,11 +309,15 @@ export function ExpensesOverview() {
       <ConfirmationDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        title="Delete Expense?"
-        description={`This action cannot be undone. The expense ${deletingExpense?.expense_name} will be permanently deleted.`}
-        onConfirm={handleDeleteExpense}
+        title={deletingExpense?.status === 0 ? "Delete Expense?" : "Cancel Expense?"}
+        description={
+          deletingExpense?.status === 0
+            ? `This action cannot be undone. The expense ${deletingExpense?.expense_name} will be permanently deleted.`
+            : `Are you sure you want to cancel expense ${deletingExpense?.expense_name}? This action cannot be undone.`
+        }
+        onConfirm={handleCancelOrDeleteExpense}
         variant="danger"
-        confirmText="Delete"
+        confirmText={deletingExpense?.status === 0 ? "Delete" : "Cancel"}
       />
 
       <ConfirmationDialog
@@ -423,22 +429,21 @@ export function ExpensesOverview() {
                           </span>
                         </td>
                         <td className="table-cell">
-                          {expense.status === 0 && (
-                            <TableActionButtons
-                              showEdit={true}
-                              showDelete={true}
-                              showSubmit={true}
-                              onEdit={() => handleEditExpense(expense)}
-                              onDelete={() => {
-                                setDeletingExpense(expense)
-                                setShowDeleteDialog(true)
-                              }}
-                              onSubmit={() => {
-                                setSubmittingExpense(expense)
-                                setShowSubmitDialog(true)
-                              }}
-                            />
-                          )}
+                          <TableActionButtons
+                            showEdit={expense.status === 0}
+                            showCancel={true}
+                            showSubmit={expense.status === 0}
+                            onEdit={() => handleEditExpense(expense)}
+                            onCancel={() => {
+                              setDeletingExpense(expense)
+                              setShowDeleteDialog(true)
+                            }}
+                            onSubmit={() => {
+                              setSubmittingExpense(expense)
+                              setShowSubmitDialog(true)
+                            }}
+                            docstatus={expense.status}
+                          />
                         </td>
                       </tr>
                     ))

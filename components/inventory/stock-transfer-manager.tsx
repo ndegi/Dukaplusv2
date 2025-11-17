@@ -209,11 +209,15 @@ export function StockTransferManager() {
     })
   }
 
-  const handleCancelTransfer = async (transferId: string) => {
+  const handleCancelOrDeleteTransfer = async (transferId: string, docstatus: number) => {
+    const isDraft = docstatus === 0
+
     setConfirmDialog({
       open: true,
-      title: "Cancel Stock Transfer?",
-      description: `Cancel transfer ${transferId}? This action cannot be undone.`,
+      title: isDraft ? "Delete Stock Transfer?" : "Cancel Stock Transfer?",
+      description: isDraft
+        ? `This action will permanently delete transfer ${transferId}.`
+        : `Cancel transfer ${transferId}? This action cannot be undone.`,
       action: async () => {
         try {
           const response = await fetch("/api/inventory/stock-transfer/cancel", {
@@ -225,14 +229,17 @@ export function StockTransferManager() {
           const data = await response.json()
 
           if (response.ok) {
-            setMessage({ type: "success", text: "Stock transfer cancelled successfully" })
+            setMessage({
+              type: "success",
+              text: isDraft ? "Stock transfer deleted successfully" : "Stock transfer cancelled successfully",
+            })
             fetchTransfers()
           } else {
-            setMessage({ type: "error", text: data.message || "Failed to cancel stock transfer" })
+            setMessage({ type: "error", text: data.message || "Failed to cancel/delete stock transfer" })
           }
         } catch (error) {
-          setMessage({ type: "error", text: "Error cancelling stock transfer" })
-          console.error("[DukaPlus] Error cancelling stock transfer:", error)
+          setMessage({ type: "error", text: "Error cancelling/deleting stock transfer" })
+          console.error("[DukaPlus] Error cancelling/deleting stock transfer:", error)
         }
       },
       variant: "danger",
@@ -512,14 +519,16 @@ export function StockTransferManager() {
                           showSubmit={true}
                           showCancel={true}
                           onSubmit={() => handleSubmitTransfer(transfer.material_transfer_id)}
-                          onCancel={() => handleCancelTransfer(transfer.material_transfer_id)}
+                          onCancel={() => handleCancelOrDeleteTransfer(transfer.material_transfer_id, transfer.docstatus)}
+                          docstatus={transfer.docstatus}
                           size="sm"
                         />
                       )}
                       {transfer.docstatus === 1 && (
                         <TableActionButtons
                           showCancel={true}
-                          onCancel={() => handleCancelTransfer(transfer.material_transfer_id)}
+                          onCancel={() => handleCancelOrDeleteTransfer(transfer.material_transfer_id, transfer.docstatus)}
+                          docstatus={transfer.docstatus}
                           size="sm"
                         />
                       )}

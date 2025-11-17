@@ -55,7 +55,7 @@ export function TableActionButtons({
   const buttonPadding = size === "sm" ? "p-1.5" : size === "lg" ? "p-2.5" : "p-2"
 
   const isDraft = docstatus === 0 || status?.toLowerCase() === "draft"
-  const cancelIcon = isDraft ? Trash2 : X
+  const CancelIcon = isDraft ? Trash2 : X
   const cancelLabel = isDraft ? "Delete" : "Cancel"
 
   return (
@@ -171,7 +171,7 @@ export function TableActionButtons({
                 className={`${buttonPadding} hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors text-red-600 dark:text-red-400`}
                 aria-label={cancelLabel}
               >
-                {cancelIcon && <cancelIcon className={iconSize} />}
+                <CancelIcon className={iconSize} />
               </button>
             </TooltipTrigger>
             <TooltipContent>
