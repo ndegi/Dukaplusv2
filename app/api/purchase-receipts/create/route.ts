@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json()
     return NextResponse.json(data, { status: response.status })
   } catch (error) {
-    console.error("[DukaPlus] Create purchase receipt error:", error)
+    console.error("[v0] Create purchase receipt error:", error)
     return NextResponse.json({ message: { message: "Internal server error", status: 500 } }, { status: 500 })
   }
 }

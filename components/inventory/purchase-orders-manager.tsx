@@ -132,7 +132,7 @@ export function PurchaseOrdersManager() {
           }
         } catch (err) {
           alert(`Error ${isDraft ? 'deleting' : 'canceling'} order`)
-          console.error("[DukaPlus] Error:", err)
+          console.error("[v0] Error:", err)
         }
       },
     })
@@ -161,7 +161,7 @@ export function PurchaseOrdersManager() {
           }
         } catch (err) {
           alert("Error creating receipt")
-          console.error("[DukaPlus] Error:", err)
+          console.error("[v0] Error:", err)
         }
       },
     })
@@ -441,7 +441,7 @@ function NewOrderInlineForm({
         setSuppliers(data.suppliers || [])
       }
     } catch (err) {
-      console.error("[DukaPlus] Error fetching suppliers:", err)
+      console.error("[v0] Error fetching suppliers:", err)
     }
   }
 
@@ -454,7 +454,7 @@ function NewOrderInlineForm({
         setProducts(data.products || [])
       }
     } catch (err) {
-      console.error("[DukaPlus] Error fetching products:", err)
+      console.error("[v0] Error fetching products:", err)
     }
   }
 
@@ -561,7 +561,7 @@ function NewOrderInlineForm({
       }
     } catch (err) {
       setError("Error creating purchase order")
-      console.error("[DukaPlus] Error:", err)
+      console.error("[v0] Error:", err)
     } finally {
       setIsSaving(false)
     }
@@ -761,7 +761,7 @@ function NewSupplierInlineForm({ onClose, onSuccess }: { onClose: () => void; on
       }
     } catch (err) {
       setError("Error creating supplier")
-      console.error("[DukaPlus] Error:", err)
+      console.error("[v0] Error:", err)
     } finally {
       setIsSaving(false)
     }

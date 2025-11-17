@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[DukaPlus] Error fetching sales invoices:", error)
+    console.error("[v0] Error fetching sales invoices:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

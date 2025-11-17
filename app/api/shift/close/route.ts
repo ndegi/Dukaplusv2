@@ -25,13 +25,13 @@ export async function POST(req: NextRequest) {
     const data = await response.json()
 
     if (!response.ok) {
-      console.error("[DukaPlus] Close shift error:", data)
+      console.error("[v0] Close shift error:", data)
       return NextResponse.json({ error: "Failed to close shift" }, { status: 500 })
     }
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[DukaPlus] Close shift error:", error)
+    console.error("[v0] Close shift error:", error)
     return NextResponse.json({ error: "Failed to close shift" }, { status: 500 })
   }
 }

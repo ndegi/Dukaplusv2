@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error("[DukaPlus] API Error:", errorData)
+      console.error("[v0] API Error:", errorData)
       return NextResponse.json({ message: `Failed to fetch purchase receipts: ${response.status}` }, { status: response.status })
     }
 
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error("[DukaPlus] Purchase receipts fetch error:", error)
+    console.error("[v0] Purchase receipts fetch error:", error)
     return NextResponse.json(
       { message: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 },

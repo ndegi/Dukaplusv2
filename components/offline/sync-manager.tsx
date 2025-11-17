@@ -10,7 +10,7 @@ export function SyncManager() {
   useEffect(() => {
     // Initialize offline store
     offlineStore.init().catch((error) => {
-      console.error("[DukaPlus] Failed to initialize offline store:", error)
+      console.error("[v0] Failed to initialize offline store:", error)
     })
   }, [])
 
