@@ -272,7 +272,7 @@ export function PurchaseReceiptsManager() {
           const response = await fetch("/api/purchase-receipts/cancel", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ receipt_id: receiptId }),
+            body: JSON.stringify({ purchase_receipt_id: receiptId }),
           })
 
           if (response.ok) {

@@ -523,18 +523,27 @@ function NewOrderInlineForm({
 
       let formattedDate = requiredBy
       if (requiredBy) {
-        const [year, month, day] = requiredBy.split("-")
-        formattedDate = `${day}-${month}-${year}`
+        const dateObj = new Date(requiredBy)
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+        const day = String(dateObj.getDate()).padStart(2, '0')
+        const year = dateObj.getFullYear()
+        formattedDate = `${month}-${day}-${year}`
       }
 
       const response = await fetch("/api/purchase-orders/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ordered_items: items,
+          ordered_items: items.map(item => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            product_name: item.product_name,
+            buying_price: item.buying_price
+          })),
           warehouse_id: warehouseId,
           supplier_id: supplier,
           required_by: formattedDate,
+          ...(editingOrderId && { order_id: editingOrderId })
         }),
       })
 

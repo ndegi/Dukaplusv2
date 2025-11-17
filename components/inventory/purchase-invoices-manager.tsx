@@ -380,6 +380,14 @@ export function PurchaseInvoicesManager() {
     })
   }
 
+  const handleEditInvoice = async (invoiceId: string) => {
+    const invoice = invoices.find(i => i.name === invoiceId)
+    if (invoice) {
+      setSelectedOrderId(invoiceId)
+      setShowCreateForm(true)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <ConfirmationDialog
@@ -543,8 +551,10 @@ export function PurchaseInvoicesManager() {
                           <div className="flex items-center justify-center gap-2">
                             {isDraft && (
                               <TableActionButtons
+                                showEdit={true}
                                 showSubmit={true}
                                 showCancel={true}
+                                onEdit={() => handleEditInvoice(invoice.name)}
                                 onSubmit={() => handleSubmitInvoice(invoice.name)}
                                 onCancel={() => handleCancelOrDeleteInvoice(invoice.name, invoice.docstatus)}
                                 docstatus={invoice.docstatus}
