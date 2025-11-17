@@ -22,14 +22,14 @@ export function useSync() {
 
           if (response.ok) {
             await offlineStore.markTransactionSynced(transaction.id)
-            console.log(`[v0] Synced transaction: ${transaction.id}`)
+            console.log(`[DukaPlus] Synced transaction: ${transaction.id}`)
           }
         } catch (error) {
-          console.error(`[v0] Failed to sync transaction ${transaction.id}:`, error)
+          console.error(`[DukaPlus] Failed to sync transaction ${transaction.id}:`, error)
         }
       }
     } catch (error) {
-      console.error("[v0] Sync error:", error)
+      console.error("[DukaPlus] Sync error:", error)
     }
   }, [])
 
@@ -47,7 +47,7 @@ export function useSync() {
     }, 30000) // Sync every 30 seconds
 
     const handleOnline = () => {
-      console.log("[v0] Going online - triggering sync")
+      console.log("[DukaPlus] Going online - triggering sync")
       syncTransactions()
     }
 

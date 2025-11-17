@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[v0] Error drafting sales invoice:", error)
+    console.error("[DukaPlus] Error drafting sales invoice:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error("[v0] Error fetching draft invoices:", error)
+    console.error("[DukaPlus] Error fetching draft invoices:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

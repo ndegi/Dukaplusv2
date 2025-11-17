@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json()
     return NextResponse.json(data, { status: response.status })
   } catch (error) {
-    console.error("[v0] Cancel purchase invoice error:", error)
+    console.error("[DukaPlus] Cancel purchase invoice error:", error)
     return NextResponse.json(
       { message: { message: "Internal server error", status: 500 } },
       { status: 500 }

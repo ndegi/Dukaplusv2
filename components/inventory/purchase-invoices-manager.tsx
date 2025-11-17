@@ -94,7 +94,7 @@ export function PurchaseInvoicesManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error fetching purchase invoices" })
-      console.error("[v0] Error fetching purchase invoices:", error)
+      console.error("[DukaPlus] Error fetching purchase invoices:", error)
     } finally {
       setIsLoading(false)
     }
@@ -118,7 +118,7 @@ export function PurchaseInvoicesManager() {
         setOrders(ordersToInvoice)
       }
     } catch (error) {
-      console.error("[v0] Error fetching purchase orders:", error)
+      console.error("[DukaPlus] Error fetching purchase orders:", error)
     }
   }
 
@@ -137,7 +137,7 @@ export function PurchaseInvoicesManager() {
         }
       }
     } catch (error) {
-      console.error("[v0] Failed to fetch payment modes:", error)
+      console.error("[DukaPlus] Failed to fetch payment modes:", error)
       // Fallback to hardcoded modes if API fails
       setPaymentModes([
         { mode_of_payment: "Cash" },
@@ -187,7 +187,7 @@ export function PurchaseInvoicesManager() {
           }
         } catch (error) {
           setMessage({ type: "error", text: "Error creating purchase invoice" })
-          console.error("[v0] Error creating purchase invoice:", error)
+          console.error("[DukaPlus] Error creating purchase invoice:", error)
         } finally {
           setIsSubmitting(false)
         }
@@ -219,7 +219,7 @@ export function PurchaseInvoicesManager() {
           }
         } catch (error) {
           setMessage({ type: "error", text: "Error submitting purchase invoice" })
-          console.error("[v0] Error submitting purchase invoice:", error)
+          console.error("[DukaPlus] Error submitting purchase invoice:", error)
         }
       },
       variant: "success",
@@ -253,7 +253,7 @@ export function PurchaseInvoicesManager() {
           }
         } catch (error) {
           setMessage({ type: "error", text: `Error ${isDraft ? 'deleting' : 'canceling'} purchase invoice` })
-          console.error("[v0] Error:", error)
+          console.error("[DukaPlus] Error:", error)
         }
       },
       variant: "danger",
@@ -307,7 +307,7 @@ export function PurchaseInvoicesManager() {
           }
         } catch (error) {
           setMessage({ type: "error", text: "Error recording payment" })
-          console.error("[v0] Error recording payment:", error)
+          console.error("[DukaPlus] Error recording payment:", error)
         }
       },
       variant: "success",

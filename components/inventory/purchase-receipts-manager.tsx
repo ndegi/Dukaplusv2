@@ -103,7 +103,7 @@ export function PurchaseReceiptsManager() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Error fetching purchase receipts" })
-      console.error("[v0] Error fetching purchase receipts:", error)
+      console.error("[DukaPlus] Error fetching purchase receipts:", error)
     } finally {
       setIsLoading(false)
     }
@@ -114,7 +114,7 @@ export function PurchaseReceiptsManager() {
       const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
 
       if (!warehouseId) {
-        console.error("[v0] No warehouse selected")
+        console.error("[DukaPlus] No warehouse selected")
         return
       }
 
@@ -151,7 +151,7 @@ export function PurchaseReceiptsManager() {
         setProducts(data.products)
       }
     } catch (error) {
-      console.error("[v0] Error fetching products:", error)
+      console.error("[DukaPlus] Error fetching products:", error)
     }
   }
 
@@ -225,7 +225,7 @@ export function PurchaseReceiptsManager() {
           }
         } catch (error) {
           setMessage({ type: "error", text: `Error ${actionText}ing purchase receipt` })
-          console.error(`[v0] Error ${actionText}ing purchase receipt:`, error)
+          console.error(`[DukaPlus] Error ${actionText}ing purchase receipt:`, error)
         } finally {
           setIsSubmitting(false)
         }

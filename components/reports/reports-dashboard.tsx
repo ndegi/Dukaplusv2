@@ -109,7 +109,7 @@ export function ReportsDashboard({ user }: { user: User }) {
         return
       }
 
-      console.log("[v0] Fetching all reports data with warehouse:", warehouseId)
+      console.log("[DukaPlus] Fetching all reports data with warehouse:", warehouseId)
 
       const [salesRes, customerRes, stockRes, ledgerRes] = await Promise.all([
         fetch(`/api/reports/sales?warehouse_id=${encodeURIComponent(warehouseId)}`),
@@ -120,25 +120,25 @@ export function ReportsDashboard({ user }: { user: User }) {
 
       if (salesRes.ok) {
         const data = await salesRes.json()
-        console.log("[v0] Sales data received:", data.sales?.length || 0, "records")
+        console.log("[DukaPlus] Sales data received:", data.sales?.length || 0, "records")
         setSalesReports(data.sales || [])
       }
 
       if (customerRes.ok) {
         const data = await customerRes.json()
-        console.log("[v0] Customer data received:", data.customers?.length || 0, "records")
+        console.log("[DukaPlus] Customer data received:", data.customers?.length || 0, "records")
         setCustomerStatements(data.customers || [])
       }
 
       if (stockRes.ok) {
         const data = await stockRes.json()
-        console.log("[v0] Stock balance response:", data)
+        console.log("[DukaPlus] Stock balance response:", data)
         setStockBalance(data.message?.data || data.stock || [])
       }
 
       if (ledgerRes.ok) {
         const data = await ledgerRes.json()
-        console.log("[v0] Stock ledger response:", data)
+        console.log("[DukaPlus] Stock ledger response:", data)
         setStockLedger(data.message?.data || data.stock || [])
       }
 
@@ -798,7 +798,7 @@ function StockLedgerTable({
       const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
       
       if (!warehouseId) {
-        console.error("[v0] No warehouse selected")
+        console.error("[DukaPlus] No warehouse selected")
         setApiData([])
         setIsLoadingApi(false)
         return
@@ -814,20 +814,20 @@ function StockLedgerTable({
         url.searchParams.set('item_code', selectedItemCode)
       }
       
-      console.log("[v0] Fetching stock ledger with params:", { warehouseId, date: dateStr, itemCode: selectedItemCode })
+      console.log("[DukaPlus] Fetching stock ledger with params:", { warehouseId, date: dateStr, itemCode: selectedItemCode })
       
       const response = await fetch(url.toString())
       
       if (response.ok) {
         const result = await response.json()
-        console.log("[v0] Stock ledger API response:", result)
+        console.log("[DukaPlus] Stock ledger API response:", result)
         setApiData(result.message?.data || result.data || [])
       } else {
-        console.error("[v0] Failed to fetch stock ledger:", response.status)
+        console.error("[DukaPlus] Failed to fetch stock ledger:", response.status)
         setApiData([])
       }
     } catch (error) {
-      console.error("[v0] Stock ledger fetch error:", error)
+      console.error("[DukaPlus] Stock ledger fetch error:", error)
       setApiData([])
     } finally {
       setIsLoadingApi(false)

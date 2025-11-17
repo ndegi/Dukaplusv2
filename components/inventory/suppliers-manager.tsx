@@ -49,7 +49,7 @@ export function SuppliersManager() {
       }
     } catch (err) {
       setError("Error fetching suppliers")
-      console.error("[v0] Error fetching suppliers:", err)
+      console.error("[DukaPlus] Error fetching suppliers:", err)
     } finally {
       setIsLoading(false)
     }
@@ -76,7 +76,7 @@ export function SuppliersManager() {
           }
         } catch (err) {
           alert("Error deleting supplier")
-          console.error("[v0] Error:", err)
+          console.error("[DukaPlus] Error:", err)
         }
       },
     })
@@ -212,7 +212,7 @@ function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
       }
     } catch (err) {
       setError("Error creating supplier")
-      console.error("[v0] Error:", err)
+      console.error("[DukaPlus] Error:", err)
     } finally {
       setIsSaving(false)
     }
