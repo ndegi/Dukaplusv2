@@ -132,7 +132,7 @@ export function PurchaseOrdersManager() {
           }
         } catch (err) {
           alert(`Error ${isDraft ? 'deleting' : 'canceling'} order`)
-          console.error("[v0] Error:", err)
+          console.error("[DukaPlus] Error:", err)
         }
       },
     })
@@ -161,7 +161,7 @@ export function PurchaseOrdersManager() {
           }
         } catch (err) {
           alert("Error creating receipt")
-          console.error("[v0] Error:", err)
+          console.error("[DukaPlus] Error:", err)
         }
       },
     })
@@ -329,9 +329,9 @@ export function PurchaseOrdersManager() {
                         </td>
                         <td className="table-cell text-center">
                           <span className={`badge ${order.status === "Draft" ? "badge-secondary" :
-                              order.status === "To Bill" ? "badge-warning" :
-                                order.status === "Completed" ? "badge-success" :
-                                  "badge-info"
+                            order.status === "To Bill" ? "badge-warning" :
+                              order.status === "Completed" ? "badge-success" :
+                                "badge-info"
                             }`}>
                             {order.status}
                           </span>
@@ -449,7 +449,7 @@ function NewOrderInlineForm({
         setSuppliers(data.suppliers || [])
       }
     } catch (err) {
-      console.error("[v0] Error fetching suppliers:", err)
+      console.error("[DukaPlus] Error fetching suppliers:", err)
     }
   }
 
@@ -462,7 +462,7 @@ function NewOrderInlineForm({
         setProducts(data.products || [])
       }
     } catch (err) {
-      console.error("[v0] Error fetching products:", err)
+      console.error("[DukaPlus] Error fetching products:", err)
     }
   }
 
@@ -523,9 +523,9 @@ function NewOrderInlineForm({
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
 
-    console.log("[v0] Submit clicked - Starting validation")
-    console.log("[v0] Supplier:", supplier)
-    console.log("[v0] Items:", items)
+    console.log("[DukaPlus] Submit clicked - Starting validation")
+    console.log("[DukaPlus] Supplier:", supplier)
+    console.log("[DukaPlus] Items:", items)
 
     if (!supplier) {
       setError("Please select a supplier")
@@ -540,7 +540,7 @@ function NewOrderInlineForm({
     const invalidItems = items.filter(i => !i.product_id || !i.product_name || i.quantity <= 0)
     if (invalidItems.length > 0) {
       setError("Please fill in all item details correctly")
-      console.log("[v0] Invalid items found:", invalidItems)
+      console.log("[DukaPlus] Invalid items found:", invalidItems)
       return
     }
 
@@ -580,7 +580,7 @@ function NewOrderInlineForm({
         payload.order_id = editingOrderId
       }
 
-      console.log("[v0] Submitting order with payload:", JSON.stringify(payload, null, 2))
+      console.log("[DukaPlus] Submitting order with payload:", JSON.stringify(payload, null, 2))
 
       const response = await fetch("/api/purchase-orders/create", {
         method: "POST",
@@ -589,21 +589,21 @@ function NewOrderInlineForm({
       })
 
       const data = await response.json()
-      console.log("[v0] Response status:", response.status)
-      console.log("[v0] Response data:", data)
+      console.log("[DukaPlus] Response status:", response.status)
+      console.log("[DukaPlus] Response data:", data)
 
       if (response.ok) {
-        console.log("[v0] Order created successfully!")
+        console.log("[DukaPlus] Order created successfully!")
         onSuccess()
       } else {
         const errorMsg = data.message?.message || data.message || "Failed to create purchase order"
         setError(errorMsg)
-        console.error("[v0] Order creation failed:", errorMsg)
+        console.error("[DukaPlus] Order creation failed:", errorMsg)
       }
     } catch (err) {
       const errorMsg = "Error creating purchase order"
       setError(errorMsg)
-      console.error("[v0] Exception during order creation:", err)
+      console.error("[DukaPlus] Exception during order creation:", err)
     } finally {
       setIsSaving(false)
     }
@@ -809,7 +809,7 @@ function NewSupplierInlineForm({ onClose, onSuccess }: { onClose: () => void; on
       }
     } catch (err) {
       setError("Error creating supplier")
-      console.error("[v0] Error:", err)
+      console.error("[DukaPlus] Error:", err)
     } finally {
       setIsSaving(false)
     }
