@@ -52,7 +52,7 @@ export function PurchaseOrdersManager() {
     open: false,
     title: "",
     description: "",
-    action: () => {},
+    action: () => { },
   })
 
   useEffect(() => {
@@ -109,11 +109,11 @@ export function PurchaseOrdersManager() {
 
   const handleCancelOrDeleteOrder = async (orderId: string, docstatus: number) => {
     const isDraft = docstatus === 0
-    
+
     setConfirmDialog({
       open: true,
       title: isDraft ? "Delete Purchase Order?" : "Cancel Purchase Order?",
-      description: isDraft 
+      description: isDraft
         ? `Delete draft order ${orderId}? This action cannot be undone.`
         : `Cancel order ${orderId}? This action cannot be undone.`,
       action: async () => {
@@ -132,7 +132,7 @@ export function PurchaseOrdersManager() {
           }
         } catch (err) {
           alert(`Error ${isDraft ? 'deleting' : 'canceling'} order`)
-          console.error("[DukaPlus] Error:", err)
+          console.error("[v0] Error:", err)
         }
       },
     })
@@ -161,7 +161,7 @@ export function PurchaseOrdersManager() {
           }
         } catch (err) {
           alert("Error creating receipt")
-          console.error("[DukaPlus] Error:", err)
+          console.error("[v0] Error:", err)
         }
       },
     })
@@ -233,7 +233,7 @@ export function PurchaseOrdersManager() {
       </div>
 
       {showNewSupplierForm && (
-        <NewSupplierInlineForm 
+        <NewSupplierInlineForm
           onClose={() => setShowNewSupplierForm(false)}
           onSuccess={() => {
             setShowNewSupplierForm(false)
@@ -328,12 +328,11 @@ export function PurchaseOrdersManager() {
                           KES {order.grand_total.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="table-cell text-center">
-                          <span className={`badge ${
-                            order.status === "Draft" ? "badge-secondary" :
-                            order.status === "To Bill" ? "badge-warning" : 
-                            order.status === "Completed" ? "badge-success" :
-                            "badge-info"
-                          }`}>
+                          <span className={`badge ${order.status === "Draft" ? "badge-secondary" :
+                              order.status === "To Bill" ? "badge-warning" :
+                                order.status === "Completed" ? "badge-success" :
+                                  "badge-info"
+                            }`}>
                             {order.status}
                           </span>
                         </td>
@@ -394,36 +393,45 @@ export function PurchaseOrdersManager() {
   )
 }
 
-function NewOrderInlineForm({ 
-  onClose, 
+function NewOrderInlineForm({
+  onClose,
   onSuccess,
   editingOrderId,
   editingOrder
-}: { 
+}: {
   onClose: () => void
   onSuccess: () => void
   editingOrderId?: string | null
   editingOrder?: PurchaseOrder
 }) {
-  const [items, setItems] = useState<Array<{ product_id: string; product_name: string; quantity: number; buying_price: number }>>(
-    editingOrder?.items?.map(i => ({
-      product_id: i.item_code,
-      product_name: i.item_name,
-      quantity: i.qty,
-      buying_price: i.rate
-    })) || [{ product_id: "", product_name: "", quantity: 1, buying_price: 0 }]
-  )
+  const [items, setItems] = useState<Array<{ product_id: string; product_name: string; quantity: number; buying_price: number }>>(() => {
+    if (editingOrder?.items && editingOrder.items.length > 0) {
+      return editingOrder.items.map(i => ({
+        product_id: i.item_code,
+        product_name: i.item_name,
+        quantity: i.qty,
+        buying_price: i.rate
+      }))
+    }
+    return [{ product_id: "", product_name: "", quantity: 1, buying_price: 0 }]
+  })
   const [supplier, setSupplier] = useState(editingOrder?.supplier || "")
   const [supplierSearch, setSupplierSearch] = useState(editingOrder?.supplier || "")
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false)
   const [products, setProducts] = useState<any[]>([])
-  const [productSearches, setProductSearches] = useState<string[]>(
-    editingOrder?.items?.map(i => i.item_name) || [""]
-  )
-  const [showProductDropdowns, setShowProductDropdowns] = useState<boolean[]>(
-    editingOrder?.items?.map(() => false) || [false]
-  )
+  const [productSearches, setProductSearches] = useState<string[]>(() => {
+    if (editingOrder?.items && editingOrder.items.length > 0) {
+      return editingOrder.items.map(i => i.item_name)
+    }
+    return [""]
+  })
+  const [showProductDropdowns, setShowProductDropdowns] = useState<boolean[]>(() => {
+    if (editingOrder?.items && editingOrder.items.length > 0) {
+      return editingOrder.items.map(() => false)
+    }
+    return [false]
+  })
   const [requiredBy, setRequiredBy] = useState(editingOrder?.date || "")
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -441,7 +449,7 @@ function NewOrderInlineForm({
         setSuppliers(data.suppliers || [])
       }
     } catch (err) {
-      console.error("[DukaPlus] Error fetching suppliers:", err)
+      console.error("[v0] Error fetching suppliers:", err)
     }
   }
 
@@ -454,17 +462,17 @@ function NewOrderInlineForm({
         setProducts(data.products || [])
       }
     } catch (err) {
-      console.error("[DukaPlus] Error fetching products:", err)
+      console.error("[v0] Error fetching products:", err)
     }
   }
 
-  const filteredSuppliers = suppliers.filter(s => 
+  const filteredSuppliers = suppliers.filter(s =>
     s.supplier_name.toLowerCase().includes(supplierSearch.toLowerCase())
   )
 
   const getFilteredProducts = (search: string) => {
-    return products.filter(p => 
-      p.name.toLowerCase().includes(search.toLowerCase()) || 
+    return products.filter(p =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.id.toLowerCase().includes(search.toLowerCase())
     )
   }
@@ -489,12 +497,13 @@ function NewOrderInlineForm({
 
   const selectProduct = (index: number, product: any) => {
     const existingItemIndex = items.findIndex((item, idx) => idx !== index && item.product_id === product.id)
-    
+
     if (existingItemIndex !== -1) {
-      setError(`"${product.name}" is already in the list. Quantity has been increased.`)
+      setError(`"${product.name}" is already in the list. Quantities merged.`)
       const newItems = [...items]
-      newItems[existingItemIndex].quantity += 1
-      setItems(newItems.filter((_, idx) => idx !== index))
+      newItems[existingItemIndex].quantity += items[index].quantity || 1
+      const updatedItems = newItems.filter((_, idx) => idx !== index)
+      setItems(updatedItems)
       setProductSearches(productSearches.filter((_, idx) => idx !== index))
       setShowProductDropdowns(showProductDropdowns.filter((_, idx) => idx !== index))
       setTimeout(() => setError(null), 3000)
@@ -511,15 +520,40 @@ function NewOrderInlineForm({
     }
   }
 
-  const handleSubmit = async () => {
-    if (!supplier || items.length === 0 || items.some(i => !i.product_id)) {
-      setError("Please fill in all required fields and select valid products")
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+
+    console.log("[v0] Submit clicked - Starting validation")
+    console.log("[v0] Supplier:", supplier)
+    console.log("[v0] Items:", items)
+
+    if (!supplier) {
+      setError("Please select a supplier")
+      return
+    }
+
+    if (items.length === 0) {
+      setError("Please add at least one item")
+      return
+    }
+
+    const invalidItems = items.filter(i => !i.product_id || !i.product_name || i.quantity <= 0)
+    if (invalidItems.length > 0) {
+      setError("Please fill in all item details correctly")
+      console.log("[v0] Invalid items found:", invalidItems)
       return
     }
 
     try {
       setIsSaving(true)
+      setError(null)
       const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
+
+      if (!warehouseId) {
+        setError("No warehouse selected")
+        setIsSaving(false)
+        return
+      }
 
       let formattedDate = ""
       if (requiredBy) {
@@ -546,7 +580,7 @@ function NewOrderInlineForm({
         payload.order_id = editingOrderId
       }
 
-      console.log("[DukaPlus] Creating order with payload:", payload)
+      console.log("[v0] Submitting order with payload:", JSON.stringify(payload, null, 2))
 
       const response = await fetch("/api/purchase-orders/create", {
         method: "POST",
@@ -555,16 +589,21 @@ function NewOrderInlineForm({
       })
 
       const data = await response.json()
-      console.log("[DukaPlus] Order creation response:", data)
+      console.log("[v0] Response status:", response.status)
+      console.log("[v0] Response data:", data)
 
       if (response.ok) {
+        console.log("[v0] Order created successfully!")
         onSuccess()
       } else {
-        setError(data.message?.message || "Failed to create purchase order")
+        const errorMsg = data.message?.message || data.message || "Failed to create purchase order"
+        setError(errorMsg)
+        console.error("[v0] Order creation failed:", errorMsg)
       }
     } catch (err) {
-      setError("Error creating purchase order")
-      console.error("[DukaPlus] Error:", err)
+      const errorMsg = "Error creating purchase order"
+      setError(errorMsg)
+      console.error("[v0] Exception during order creation:", err)
     } finally {
       setIsSaving(false)
     }
@@ -577,10 +616,11 @@ function NewOrderInlineForm({
         <Button onClick={onClose} variant="ghost" size="sm">✕</Button>
       </div>
 
-      <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-800 dark:text-red-200">
-            {error}
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-800 dark:text-red-200 flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
@@ -597,6 +637,7 @@ function NewOrderInlineForm({
               onFocus={() => setShowSupplierDropdown(true)}
               className="input-base w-full pr-10"
               placeholder="Search supplier..."
+              required
             />
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           </div>
@@ -636,7 +677,7 @@ function NewOrderInlineForm({
         <div>
           <div className="flex justify-between items-center mb-2">
             <label className="block text-sm font-medium">Items</label>
-            <Button onClick={addItem} variant="outline" size="sm">
+            <Button type="button" onClick={addItem} variant="outline" size="sm">
               <Plus className="w-4 h-4 mr-1" />
               Add Item
             </Button>
@@ -664,6 +705,7 @@ function NewOrderInlineForm({
                     }}
                     className="input-base w-full"
                     placeholder="Search product..."
+                    required
                   />
                   {showProductDropdowns[index] && getFilteredProducts(productSearches[index] || "").length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -690,6 +732,7 @@ function NewOrderInlineForm({
                   className="input-base w-20"
                   placeholder="Qty"
                   min="1"
+                  required
                 />
                 <input
                   type="number"
@@ -699,9 +742,11 @@ function NewOrderInlineForm({
                   placeholder="Price"
                   min="0"
                   step="0.01"
+                  required
                 />
                 {items.length > 1 && (
                   <button
+                    type="button"
                     onClick={() => removeItem(index)}
                     className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
                   >
@@ -712,20 +757,20 @@ function NewOrderInlineForm({
             ))}
           </div>
         </div>
-      </div>
 
-      <div className="mt-4 flex gap-2">
-        <button onClick={onClose} className="btn-cancel flex-1" disabled={isSaving}>
-          Cancel
-        </button>
-        <button
-          onClick={handleSubmit}
-          className="btn-create flex-1"
-          disabled={isSaving || !supplier || items.length === 0 || items.some(i => !i.product_id)}
-        >
-          {isSaving ? "Creating..." : "Create Order"}
-        </button>
-      </div>
+        <div className="mt-4 flex gap-2">
+          <button type="button" onClick={onClose} className="btn-cancel flex-1" disabled={isSaving}>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="btn-create flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isSaving}
+          >
+            {isSaving ? "Creating..." : editingOrderId ? "Update Order" : "Create Order"}
+          </button>
+        </div>
+      </form>
     </div>
   )
 }
@@ -764,7 +809,7 @@ function NewSupplierInlineForm({ onClose, onSuccess }: { onClose: () => void; on
       }
     } catch (err) {
       setError("Error creating supplier")
-      console.error("[DukaPlus] Error:", err)
+      console.error("[v0] Error:", err)
     } finally {
       setIsSaving(false)
     }
