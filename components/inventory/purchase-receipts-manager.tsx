@@ -80,10 +80,12 @@ export function PurchaseReceiptsManager() {
   })
   const [productSearchTerms, setProductSearchTerms] = useState<string[]>([""])
   const [showProductDropdowns, setShowProductDropdowns] = useState<boolean[]>([false])
+  const [error, setError] = useState<string | null>(null)
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true)
 
   useEffect(() => {
     fetchReceipts()
-    fetchOrders()
+    fetchPurchaseOrders()
     fetchProducts()
   }, [])
 
@@ -107,7 +109,7 @@ export function PurchaseReceiptsManager() {
     }
   }
 
-  const fetchOrders = async () => {
+  const fetchPurchaseOrders = async () => {
     try {
       const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
 
@@ -119,19 +121,23 @@ export function PurchaseReceiptsManager() {
       const response = await fetch(`/api/purchase-orders?warehouse_id=${encodeURIComponent(warehouseId)}`)
       const data = await response.json()
 
-      if (response.ok && data.message?.purchase_orders) {
-        const ordersToReceive = data.message.purchase_orders.filter(
-          (order: PurchaseOrder) => 
-            order.status !== "Draft" && 
-            order.status !== "Completed" && 
-            order.status !== "Received" && 
-            order.status !== "Cancelled"
-        )
-        setOrders(ordersToReceive)
-        console.log("[DukaPlus] Loaded purchase orders for receipts:", ordersToReceive.length)
+      if (response.status === 401 || (data.message && typeof data.message === 'string' && data.message.includes("Unauthorized"))) {
+        sessionStorage.clear()
+        window.location.href = "/login"
+        return
       }
-    } catch (error) {
-      console.error("[DukaPlus] Error fetching purchase orders:", error)
+
+      if (response.ok && data.message?.purchase_orders) {
+        setOrders(data.message.purchase_orders)
+        setError(null)
+      } else {
+        setError(data.message?.message || "Failed to fetch purchase orders")
+      }
+    } catch (err) {
+      setError("Error fetching purchase orders")
+      console.error("[DukaPlus] Error fetching purchase orders:", err)
+    } finally {
+      setIsLoadingOrders(false)
     }
   }
 
@@ -213,7 +219,7 @@ export function PurchaseReceiptsManager() {
             setProductSearchTerms([""])
             setShowProductDropdowns([false])
             fetchReceipts()
-            fetchOrders() // Refresh orders to update available orders
+            fetchPurchaseOrders() // Refresh orders to update available orders
           } else {
             setMessage({ type: "error", text: data.message?.message || `Failed to ${actionText} purchase receipt` })
           }
@@ -437,6 +443,13 @@ export function PurchaseReceiptsManager() {
         </div>
       )}
 
+      {error && (
+        <div className="alert-error flex items-start gap-2">
+          <AlertCircle className="w-5 h-5 text-danger flex-shrink-0" />
+          <p className="text-danger text-sm">{error}</p>
+        </div>
+      )}
+
       <div className="card-base p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
@@ -623,7 +636,7 @@ export function PurchaseReceiptsManager() {
           </div>
         )}
 
-        {isLoading ? (
+        {isLoading || isLoadingOrders ? (
           <p className="text-foreground p-6 text-center">Loading purchase receipts...</p>
         ) : filteredReceipts.length === 0 ? (
           <p className="text-foreground text-center py-8">

@@ -77,13 +77,13 @@ export function PurchaseOrdersManager() {
       const response = await fetch(`/api/purchase-orders?warehouse_id=${encodeURIComponent(warehouseId)}`)
       const data = await response.json()
 
-      if (response.status === 401 || data.message?.includes("Unauthorized") || data.message?.includes("authentication")) {
+      if (response.status === 401 || (typeof data.message === 'string' && data.message.includes("Unauthorized"))) {
         sessionStorage.clear()
         window.location.href = "/login"
         return
       }
 
-      if (data.message?.includes("Failed to fetch warehouses")) {
+      if (typeof data.message === 'string' && data.message.includes("Failed to fetch warehouses")) {
         setError("Failed to fetch warehouses. Please log in again.")
         setTimeout(() => {
           sessionStorage.clear()
@@ -521,7 +521,7 @@ function NewOrderInlineForm({
       setIsSaving(true)
       const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
 
-      let formattedDate = requiredBy
+      let formattedDate = ""
       if (requiredBy) {
         const dateObj = new Date(requiredBy)
         const month = String(dateObj.getMonth() + 1).padStart(2, '0')
@@ -530,21 +530,26 @@ function NewOrderInlineForm({
         formattedDate = `${month}-${day}-${year}`
       }
 
+      const payload: any = {
+        ordered_items: items.map(item => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          product_name: item.product_name,
+          buying_price: item.buying_price
+        })),
+        warehouse_id: warehouseId,
+        supplier_id: supplier,
+        required_by: formattedDate,
+      }
+
+      if (editingOrderId) {
+        payload.order_id = editingOrderId
+      }
+
       const response = await fetch("/api/purchase-orders/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ordered_items: items.map(item => ({
-            product_id: item.product_id,
-            quantity: item.quantity,
-            product_name: item.product_name,
-            buying_price: item.buying_price
-          })),
-          warehouse_id: warehouseId,
-          supplier_id: supplier,
-          required_by: formattedDate,
-          ...(editingOrderId && { order_id: editingOrderId })
-        }),
+        body: JSON.stringify(payload),
       })
 
       const data = await response.json()

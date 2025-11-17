@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
-import { ProductForm } from "./product-form"
+import { ProductFormInline } from "./product-form-inline" // Updated import
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 
 interface Product {
@@ -121,20 +121,30 @@ export function InventoryOverview() {
         </Button>
       </div>
 
-      {/* Product Form Modal */}
+      {/* Product Form Inline View */}
       {showForm && (
-        <ProductForm
-          product={selectedProduct}
-          onClose={() => {
-            setShowForm(false)
-            setSelectedProduct(null)
-          }}
-          onSave={() => {
-            fetchProducts()
-            setShowForm(false)
-            setSelectedProduct(null)
-          }}
-        />
+        <div className="card-base p-6 mb-6 border-2 border-orange-300">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold">{selectedProduct ? "Edit Product" : "Add New Product"}</h3>
+            <Button onClick={() => {
+              setShowForm(false)
+              setSelectedProduct(null)
+            }} variant="ghost" size="sm">✕</Button>
+          </div>
+          
+          <ProductFormInline
+            product={selectedProduct}
+            onClose={() => {
+              setShowForm(false)
+              setSelectedProduct(null)
+            }}
+            onSave={() => {
+              fetchProducts()
+              setShowForm(false)
+              setSelectedProduct(null)
+            }}
+          />
+        </div>
       )}
 
       {/* Products Table */}

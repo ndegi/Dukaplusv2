@@ -380,14 +380,6 @@ export function PurchaseInvoicesManager() {
     })
   }
 
-  const handleEditInvoice = async (invoiceId: string) => {
-    const invoice = invoices.find(i => i.name === invoiceId)
-    if (invoice) {
-      setSelectedOrderId(invoiceId)
-      setShowCreateForm(true)
-    }
-  }
-
   return (
     <div className="space-y-6">
       <ConfirmationDialog
@@ -554,14 +546,17 @@ export function PurchaseInvoicesManager() {
                                 showEdit={true}
                                 showSubmit={true}
                                 showCancel={true}
-                                onEdit={() => handleEditInvoice(invoice.name)}
+                                onEdit={() => {
+                                  // TODO: Implement edit functionality for invoices if needed
+                                  setMessage({ type: "error", text: "Edit functionality coming soon" })
+                                }}
                                 onSubmit={() => handleSubmitInvoice(invoice.name)}
                                 onCancel={() => handleCancelOrDeleteInvoice(invoice.name, invoice.docstatus)}
                                 docstatus={invoice.docstatus}
                                 status={invoice.status}
                               />
                             )}
-                            {isUnpaid && (
+                            {(isUnpaid || invoice.status.toLowerCase() === "partially paid") && (
                               <>
                                 <Button
                                   onClick={() => {
@@ -570,6 +565,7 @@ export function PurchaseInvoicesManager() {
                                   }}
                                   size="sm"
                                   className="btn-success"
+                                  title="Make Payment"
                                 >
                                   <DollarSign className="w-3 h-3 mr-1" />
                                   Pay
@@ -581,6 +577,14 @@ export function PurchaseInvoicesManager() {
                                   status={invoice.status}
                                 />
                               </>
+                            )}
+                            {invoice.status.toLowerCase() === "paid" && (
+                              <TableActionButtons
+                                showCancel={true}
+                                onCancel={() => handleCancelOrDeleteInvoice(invoice.name, invoice.docstatus)}
+                                docstatus={invoice.docstatus}
+                                status={invoice.status}
+                              />
                             )}
                           </div>
                         </td>
@@ -630,12 +634,24 @@ export function PurchaseInvoicesManager() {
       </div>
 
       {/* Payment Modal */}
-      {showPaymentModal && (
+      {showPaymentModal && selectedInvoice && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card rounded-lg w-full max-w-md max-h-[90vh] flex flex-col">
             <div className="p-6 border-b border-border flex-shrink-0">
               <h2 className="text-xl font-bold text-foreground">Record Payment</h2>
               <p className="text-sm text-muted-foreground mt-1">Invoice: {selectedInvoice}</p>
+              {(() => {
+                const currentInvoice = invoices.find(inv => inv.name === selectedInvoice)
+                if (currentInvoice?.items) {
+                  const totalAmount = currentInvoice.items.reduce((sum, item) => sum + item.amount, 0)
+                  return (
+                    <p className="text-sm font-semibold text-warning mt-1">
+                      Invoice Total: KES {totalAmount.toFixed(2)}
+                    </p>
+                  )
+                }
+                return null
+              })()}
             </div>
 
             <div className="p-6 space-y-4 flex-1 overflow-y-auto">

@@ -70,11 +70,11 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         product_cost: product.cost || 0,
         track_inventory: 1,
         stock_quantity: product.quantity,
-        sold_by: "Each",
+        sold_by: product.sold_by || "Each",
         warehouse_id: selectedWarehouse,
         is_purchase_item: 1,
         barcode: product.barcode || "",
-        purpose: "Stock Reconciliation",
+        purpose: product.purpose || "Stock Reconciliation",
         img: product.img || "", // Load existing image
       })
       setImagePreview(product.img || "") // Set preview for existing product
@@ -355,15 +355,16 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
             <div>
               <label className="form-label">Sold By</label>
-              <Input
-                type="text"
+              <select
                 name="sold_by"
                 value={formData.sold_by}
                 onChange={handleChange}
-                placeholder="Each"
                 className="input-base"
                 required
-              />
+              >
+                <option value="Each">Each</option>
+                <option value="Weight">Weight</option>
+              </select>
             </div>
           </div>
 
