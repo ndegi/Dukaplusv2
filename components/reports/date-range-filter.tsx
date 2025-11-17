@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Calendar } from "lucide-react"
+import { Calendar } from 'lucide-react'
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,8 +13,12 @@ interface DateRangeFilterProps {
 
 export function DateRangeFilter({ dateRange, onDateRangeChange }: DateRangeFilterProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [customFrom, setCustomFrom] = useState(dateRange.from.toISOString().split("T")[0])
-  const [customTo, setCustomTo] = useState(dateRange.to.toISOString().split("T")[0])
+  const [customFrom, setCustomFrom] = useState(
+    dateRange?.from instanceof Date ? dateRange.from.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
+  )
+  const [customTo, setCustomTo] = useState(
+    dateRange?.to instanceof Date ? dateRange.to.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
+  )
 
   const handlePreset = (days: number) => {
     const to = new Date()
@@ -37,7 +41,10 @@ export function DateRangeFilter({ dateRange, onDateRangeChange }: DateRangeFilte
     setIsOpen(false)
   }
 
-  const formatDate = (date: Date) => date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  const formatDate = (date: Date) => {
+    if (!(date instanceof Date)) return "Invalid date"
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  }
 
   return (
     <div className="relative">

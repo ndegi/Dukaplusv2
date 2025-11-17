@@ -38,7 +38,10 @@ export function PurchaseOrdersManager() {
   const [showNewOrderModal, setShowNewOrderModal] = useState(false)
   const [showSupplierModal, setShowSupplierModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [dateRange, setDateRange] = useState({ from: "", to: "" })
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    to: new Date(),
+  })
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean
     title: string
@@ -48,7 +51,7 @@ export function PurchaseOrdersManager() {
     open: false,
     title: "",
     description: "",
-    action: () => {},
+    action: () => { },
   })
 
   useEffect(() => {
@@ -89,11 +92,11 @@ export function PurchaseOrdersManager() {
 
   const handleCancelOrDeleteOrder = async (orderId: string, docstatus: number) => {
     const isDraft = docstatus === 0
-    
+
     setConfirmDialog({
       open: true,
       title: isDraft ? "Delete Purchase Order?" : "Cancel Purchase Order?",
-      description: isDraft 
+      description: isDraft
         ? `Delete draft order ${orderId}? This action cannot be undone.`
         : `Cancel order ${orderId}? This action cannot be undone.`,
       action: async () => {
@@ -160,9 +163,7 @@ export function PurchaseOrdersManager() {
     if (dateRange.from && dateRange.to) {
       filtered = filtered.filter(order => {
         const orderDate = new Date(order.date)
-        const fromDate = new Date(dateRange.from)
-        const toDate = new Date(dateRange.to)
-        return orderDate >= fromDate && orderDate <= toDate
+        return orderDate >= dateRange.from && orderDate <= dateRange.to
       })
     }
 
@@ -276,12 +277,11 @@ export function PurchaseOrdersManager() {
                           KES {order.grand_total.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="table-cell text-center">
-                          <span className={`badge ${
-                            order.status === "Draft" ? "badge-secondary" :
-                            order.status === "To Bill" ? "badge-warning" : 
-                            order.status === "Completed" ? "badge-success" :
-                            "badge-info"
-                          }`}>
+                          <span className={`badge ${order.status === "Draft" ? "badge-secondary" :
+                              order.status === "To Bill" ? "badge-warning" :
+                                order.status === "Completed" ? "badge-success" :
+                                  "badge-info"
+                            }`}>
                             {order.status}
                           </span>
                         </td>
@@ -402,13 +402,13 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
     }
   }
 
-  const filteredSuppliers = suppliers.filter(s => 
+  const filteredSuppliers = suppliers.filter(s =>
     s.supplier_name.toLowerCase().includes(supplierSearch.toLowerCase())
   )
 
   const getFilteredProducts = (search: string) => {
-    return products.filter(p => 
-      p.name.toLowerCase().includes(search.toLowerCase()) || 
+    return products.filter(p =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.id.toLowerCase().includes(search.toLowerCase())
     )
   }
@@ -433,7 +433,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
 
   const selectProduct = (index: number, product: any) => {
     const existingItemIndex = items.findIndex((item, idx) => idx !== index && item.product_id === product.id)
-    
+
     if (existingItemIndex !== -1) {
       alert(`"${product.name}" is already in the list. Quantity has been increased.`)
       const newItems = [...items]
@@ -463,7 +463,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
     const confirmed = window.confirm(
       `Create purchase order for ${supplier}?\n\nTotal items: ${items.length}\nRequired by: ${requiredBy || 'Not specified'}`
     )
-    
+
     if (!confirmed) return
 
     try {
@@ -677,7 +677,7 @@ function NewSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
     }
 
     const confirmed = window.confirm(`Add new supplier: ${supplier}?`)
-    
+
     if (!confirmed) return
 
     try {
