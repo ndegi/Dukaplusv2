@@ -75,7 +75,7 @@ export function PurchaseReceiptsManager() {
     open: false,
     title: "",
     description: "",
-    action: () => { },
+    action: () => {},
     variant: "success"
   })
   const [productSearchTerms, setProductSearchTerms] = useState<string[]>([""])
@@ -121,10 +121,10 @@ export function PurchaseReceiptsManager() {
 
       if (response.ok && data.message?.purchase_orders) {
         const ordersToReceive = data.message.purchase_orders.filter(
-          (order: PurchaseOrder) =>
-            order.status !== "Draft" &&
-            order.status !== "Completed" &&
-            order.status !== "Received" &&
+          (order: PurchaseOrder) => 
+            order.status !== "Draft" && 
+            order.status !== "Completed" && 
+            order.status !== "Received" && 
             order.status !== "Cancelled"
         )
         setOrders(ordersToReceive)
@@ -202,9 +202,9 @@ export function PurchaseReceiptsManager() {
           const data = await response.json()
 
           if (response.ok) {
-            setMessage({
-              type: "success",
-              text: data.message?.message || `Purchase receipt ${editingReceiptId ? "updated" : "created"} successfully`
+            setMessage({ 
+              type: "success", 
+              text: data.message?.message || `Purchase receipt ${editingReceiptId ? "updated" : "created"} successfully` 
             })
             setShowCreateForm(false)
             setSelectedOrderId("")
@@ -260,11 +260,11 @@ export function PurchaseReceiptsManager() {
 
   const handleCancelOrDeleteReceipt = async (receiptId: string, docstatus: number) => {
     const isDraft = docstatus === 0
-
+    
     setConfirmDialog({
       open: true,
       title: isDraft ? "Delete Purchase Receipt?" : "Cancel Purchase Receipt?",
-      description: isDraft
+      description: isDraft 
         ? `Delete draft receipt ${receiptId}? This action cannot be undone.`
         : `Cancel receipt ${receiptId}? This action cannot be undone.`,
       action: async () => {
@@ -333,9 +333,9 @@ export function PurchaseReceiptsManager() {
     if (selectedOrderId) {
       return
     }
-
+    
     const existingItemIndex = receiptItems.findIndex((item, idx) => idx !== index && item.item_code === productId)
-
+    
     if (existingItemIndex !== -1) {
       const newItems = [...receiptItems]
       newItems[existingItemIndex].qty += 1
@@ -404,7 +404,7 @@ export function PurchaseReceiptsManager() {
 
   const getFilteredProducts = (searchTerm: string) => {
     if (!searchTerm) return products
-    return products.filter(p =>
+    return products.filter(p => 
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.id.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -443,7 +443,7 @@ export function PurchaseReceiptsManager() {
             <FileText className="w-6 h-6" />
             Purchase Receipts
           </h2>
-          <Button
+          <Button 
             onClick={() => {
               setShowCreateForm(!showCreateForm)
               setEditingReceiptId("")
@@ -451,7 +451,7 @@ export function PurchaseReceiptsManager() {
               setReceiptItems([{ item_code: "", qty: 1 }])
               setProductSearchTerms([""])
               setShowProductDropdowns([false])
-            }}
+            }} 
             className="btn-create"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -604,7 +604,7 @@ export function PurchaseReceiptsManager() {
                 <Button onClick={handleCreateOrUpdateReceipt} disabled={isSubmitting} className="btn-create flex-1">
                   {isSubmitting ? (editingReceiptId ? "Updating..." : "Creating...") : (editingReceiptId ? "Update Receipt" : "Create Receipt")}
                 </Button>
-                <Button
+                <Button 
                   onClick={() => {
                     setShowCreateForm(false)
                     setEditingReceiptId("")
@@ -612,8 +612,8 @@ export function PurchaseReceiptsManager() {
                     setReceiptItems([{ item_code: "", qty: 1 }])
                     setProductSearchTerms([""])
                     setShowProductDropdowns([false])
-                  }}
-                  disabled={isSubmitting}
+                  }} 
+                  disabled={isSubmitting} 
                   className="btn-cancel flex-1"
                 >
                   Cancel
@@ -647,7 +647,7 @@ export function PurchaseReceiptsManager() {
                 {filteredReceipts.map((receipt) => {
                   const isExpanded = expandedReceipts.has(receipt.name)
                   const docstatus = receipt.status.toLowerCase() === "draft" ? 0 : 1
-
+                  
                   return (
                     <>
                       <tr key={receipt.name} className="table-row">

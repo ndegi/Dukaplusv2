@@ -35,8 +35,9 @@ export function PurchaseOrdersManager() {
   const [isLoadingOrders, setIsLoadingOrders] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
-  const [showNewOrderModal, setShowNewOrderModal] = useState(false)
-  const [showSupplierModal, setShowSupplierModal] = useState(false)
+  const [showNewOrderForm, setShowNewOrderForm] = useState(false)
+  const [showNewSupplierForm, setShowNewSupplierForm] = useState(false)
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
@@ -51,7 +52,7 @@ export function PurchaseOrdersManager() {
     open: false,
     title: "",
     description: "",
-    action: () => { },
+    action: () => {},
   })
 
   useEffect(() => {
@@ -76,6 +77,22 @@ export function PurchaseOrdersManager() {
       const response = await fetch(`/api/purchase-orders?warehouse_id=${encodeURIComponent(warehouseId)}`)
       const data = await response.json()
 
+      if (response.status === 401 || data.message?.includes("Unauthorized") || data.message?.includes("authentication")) {
+        sessionStorage.clear()
+        window.location.href = "/login"
+        return
+      }
+
+      if (data.message?.includes("Failed to fetch warehouses")) {
+        setError("Failed to fetch warehouses. Please log in again.")
+        setTimeout(() => {
+          sessionStorage.clear()
+          window.location.href = "/login"
+        }, 2000)
+        setIsLoadingOrders(false)
+        return
+      }
+
       if (response.ok && data.message?.purchase_orders) {
         setOrders(data.message.purchase_orders)
         setError(null)
@@ -92,11 +109,11 @@ export function PurchaseOrdersManager() {
 
   const handleCancelOrDeleteOrder = async (orderId: string, docstatus: number) => {
     const isDraft = docstatus === 0
-
+    
     setConfirmDialog({
       open: true,
       title: isDraft ? "Delete Purchase Order?" : "Cancel Purchase Order?",
-      description: isDraft
+      description: isDraft 
         ? `Delete draft order ${orderId}? This action cannot be undone.`
         : `Cancel order ${orderId}? This action cannot be undone.`,
       action: async () => {
@@ -150,6 +167,11 @@ export function PurchaseOrdersManager() {
     })
   }
 
+  const handleEditOrder = (orderId: string) => {
+    setEditingOrderId(orderId)
+    setShowNewOrderForm(true)
+  }
+
   const filterOrders = () => {
     let filtered = [...orders]
 
@@ -196,16 +218,45 @@ export function PurchaseOrdersManager() {
 
       <div className="flex justify-between items-center">
         <div className="flex gap-2">
-          <Button onClick={() => setShowSupplierModal(true)} variant="outline" size="sm">
+          <Button onClick={() => setShowNewSupplierForm(!showNewSupplierForm)} variant="outline" size="sm">
             <Plus className="w-4 h-4 mr-2" />
-            Add Supplier
+            {showNewSupplierForm ? "Cancel" : "Add Supplier"}
           </Button>
-          <Button onClick={() => setShowNewOrderModal(true)} size="sm" className="bg-orange-500 hover:bg-orange-600">
+          <Button onClick={() => {
+            setEditingOrderId(null)
+            setShowNewOrderForm(!showNewOrderForm)
+          }} size="sm" className="bg-orange-500 hover:bg-orange-600">
             <Plus className="w-4 h-4 mr-2" />
-            New Order
+            {showNewOrderForm ? "Cancel" : "New Order"}
           </Button>
         </div>
       </div>
+
+      {showNewSupplierForm && (
+        <NewSupplierInlineForm 
+          onClose={() => setShowNewSupplierForm(false)}
+          onSuccess={() => {
+            setShowNewSupplierForm(false)
+            fetchPurchaseOrders()
+          }}
+        />
+      )}
+
+      {showNewOrderForm && (
+        <NewOrderInlineForm
+          editingOrderId={editingOrderId}
+          editingOrder={editingOrderId ? orders.find(o => o.order_id === editingOrderId) : undefined}
+          onClose={() => {
+            setShowNewOrderForm(false)
+            setEditingOrderId(null)
+          }}
+          onSuccess={() => {
+            setShowNewOrderForm(false)
+            setEditingOrderId(null)
+            fetchPurchaseOrders()
+          }}
+        />
+      )}
 
       <div className="flex gap-4 items-center">
         <div className="relative flex-1">
@@ -277,16 +328,19 @@ export function PurchaseOrdersManager() {
                           KES {order.grand_total.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="table-cell text-center">
-                          <span className={`badge ${order.status === "Draft" ? "badge-secondary" :
-                              order.status === "To Bill" ? "badge-warning" :
-                                order.status === "Completed" ? "badge-success" :
-                                  "badge-info"
-                            }`}>
+                          <span className={`badge ${
+                            order.status === "Draft" ? "badge-secondary" :
+                            order.status === "To Bill" ? "badge-warning" : 
+                            order.status === "Completed" ? "badge-success" :
+                            "badge-info"
+                          }`}>
                             {order.status}
                           </span>
                         </td>
                         <td className="table-cell text-center">
                           <TableActionButtons
+                            showEdit={order.docstatus === 0}
+                            onEdit={() => handleEditOrder(order.order_id)}
                             showCancel={true}
                             showCreateReceipt={order.status !== "Draft"}
                             onCancel={() => handleCancelOrDeleteOrder(order.order_id, order.docstatus)}
@@ -336,39 +390,41 @@ export function PurchaseOrdersManager() {
           </div>
         )}
       </div>
-
-      {showNewOrderModal && (
-        <NewOrderModal
-          onClose={() => setShowNewOrderModal(false)}
-          onSuccess={() => {
-            setShowNewOrderModal(false)
-            fetchPurchaseOrders()
-          }}
-        />
-      )}
-
-      {showSupplierModal && (
-        <NewSupplierModal
-          onClose={() => setShowSupplierModal(false)}
-          onSuccess={() => setShowSupplierModal(false)}
-        />
-      )}
     </div>
   )
 }
 
-function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function NewOrderInlineForm({ 
+  onClose, 
+  onSuccess,
+  editingOrderId,
+  editingOrder
+}: { 
+  onClose: () => void
+  onSuccess: () => void
+  editingOrderId?: string | null
+  editingOrder?: PurchaseOrder
+}) {
   const [items, setItems] = useState<Array<{ product_id: string; product_name: string; quantity: number; buying_price: number }>>([
-    { product_id: "", product_name: "", quantity: 1, buying_price: 0 }
-  ])
-  const [supplier, setSupplier] = useState("")
-  const [supplierSearch, setSupplierSearch] = useState("")
+    editingOrder?.items?.map(i => ({
+      product_id: i.item_code,
+      product_name: i.item_name,
+      quantity: i.qty,
+      buying_price: i.rate
+    })) || [{ product_id: "", product_name: "", quantity: 1, buying_price: 0 }]
+  ].flat())
+  const [supplier, setSupplier] = useState(editingOrder?.supplier || "")
+  const [supplierSearch, setSupplierSearch] = useState(editingOrder?.supplier || "")
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false)
   const [products, setProducts] = useState<any[]>([])
-  const [productSearches, setProductSearches] = useState<string[]>([""])
-  const [showProductDropdowns, setShowProductDropdowns] = useState<boolean[]>([false])
-  const [requiredBy, setRequiredBy] = useState("")
+  const [productSearches, setProductSearches] = useState<string[]>(
+    editingOrder?.items?.map(i => i.item_name) || [""]
+  )
+  const [showProductDropdowns, setShowProductDropdowns] = useState<boolean[]>(
+    editingOrder?.items?.map(() => false) || [false]
+  )
+  const [requiredBy, setRequiredBy] = useState(editingOrder?.date || "")
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -402,13 +458,13 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
     }
   }
 
-  const filteredSuppliers = suppliers.filter(s =>
+  const filteredSuppliers = suppliers.filter(s => 
     s.supplier_name.toLowerCase().includes(supplierSearch.toLowerCase())
   )
 
   const getFilteredProducts = (search: string) => {
-    return products.filter(p =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
+    return products.filter(p => 
+      p.name.toLowerCase().includes(search.toLowerCase()) || 
       p.id.toLowerCase().includes(search.toLowerCase())
     )
   }
@@ -433,14 +489,15 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
 
   const selectProduct = (index: number, product: any) => {
     const existingItemIndex = items.findIndex((item, idx) => idx !== index && item.product_id === product.id)
-
+    
     if (existingItemIndex !== -1) {
-      alert(`"${product.name}" is already in the list. Quantity has been increased.`)
+      setError(`"${product.name}" is already in the list. Quantity has been increased.`)
       const newItems = [...items]
       newItems[existingItemIndex].quantity += 1
       setItems(newItems.filter((_, idx) => idx !== index))
       setProductSearches(productSearches.filter((_, idx) => idx !== index))
       setShowProductDropdowns(showProductDropdowns.filter((_, idx) => idx !== index))
+      setTimeout(() => setError(null), 3000)
     } else {
       updateItem(index, "product_id", product.id)
       updateItem(index, "product_name", product.name)
@@ -460,15 +517,8 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
       return
     }
 
-    const confirmed = window.confirm(
-      `Create purchase order for ${supplier}?\n\nTotal items: ${items.length}\nRequired by: ${requiredBy || 'Not specified'}`
-    )
-
-    if (!confirmed) return
-
     try {
       setIsSaving(true)
-      setError(null)
       const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
 
       let formattedDate = requiredBy
@@ -504,167 +554,166 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-border sticky top-0 bg-card">
-          <h2 className="text-xl font-bold">New Purchase Order</h2>
-        </div>
+    <div className="card-base p-6 mb-6 border-2 border-orange-300">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-bold">{editingOrderId ? "Edit Purchase Order" : "New Purchase Order"}</h3>
+        <Button onClick={onClose} variant="ghost" size="sm">✕</Button>
+      </div>
 
-        <div className="p-6 space-y-4">
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-800 dark:text-red-200">
-              {error}
-            </div>
-          )}
+      <div className="space-y-4">
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-800 dark:text-red-200">
+            {error}
+          </div>
+        )}
 
+        <div className="relative">
+          <label className="block text-sm font-medium mb-2">Supplier *</label>
           <div className="relative">
-            <label className="block text-sm font-medium mb-2">Supplier *</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={supplierSearch}
-                onChange={(e) => {
-                  setSupplierSearch(e.target.value)
-                  setShowSupplierDropdown(true)
-                }}
-                onFocus={() => setShowSupplierDropdown(true)}
-                className="input-base w-full pr-10"
-                placeholder="Search supplier..."
-              />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            </div>
-            {showSupplierDropdown && filteredSuppliers.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {filteredSuppliers.map((s, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setSupplier(s.supplier_name)
-                      setSupplierSearch(s.supplier_name)
-                      setShowSupplierDropdown(false)
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 flex flex-col"
-                  >
-                    <span className="font-medium">{s.supplier_name}</span>
-                    {s.mobile_number && (
-                      <span className="text-xs text-secondary">{s.mobile_number}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Required By</label>
             <input
-              type="date"
-              value={requiredBy}
-              onChange={(e) => setRequiredBy(e.target.value)}
-              className="input-base w-full"
+              type="text"
+              value={supplierSearch}
+              onChange={(e) => {
+                setSupplierSearch(e.target.value)
+                setShowSupplierDropdown(true)
+              }}
+              onFocus={() => setShowSupplierDropdown(true)}
+              className="input-base w-full pr-10"
+              placeholder="Search supplier..."
             />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium">Items</label>
-              <Button onClick={addItem} variant="outline" size="sm">
-                <Plus className="w-4 h-4 mr-1" />
-                Add Item
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              {items.map((item, index) => (
-                <div key={index} className="flex gap-2 items-start p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg relative">
-                  <div className="flex-1 relative">
-                    <input
-                      type="text"
-                      value={productSearches[index] || ""}
-                      onChange={(e) => {
-                        const newSearches = [...productSearches]
-                        newSearches[index] = e.target.value
-                        setProductSearches(newSearches)
-                        const newDropdowns = [...showProductDropdowns]
-                        newDropdowns[index] = true
-                        setShowProductDropdowns(newDropdowns)
-                      }}
-                      onFocus={() => {
-                        const newDropdowns = [...showProductDropdowns]
-                        newDropdowns[index] = true
-                        setShowProductDropdowns(newDropdowns)
-                      }}
-                      className="input-base w-full"
-                      placeholder="Search product..."
-                    />
-                    {showProductDropdowns[index] && getFilteredProducts(productSearches[index] || "").length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                        {getFilteredProducts(productSearches[index] || "").slice(0, 10).map((p) => (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => selectProduct(index, p)}
-                            className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm"
-                          >
-                            <div className="font-medium">{p.name}</div>
-                            <div className="text-xs text-secondary">
-                              {p.id} • Cost: KES {p.cost?.toFixed(2)} • Stock: {p.quantity}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    onChange={(e) => updateItem(index, "quantity", parseInt(e.target.value) || 0)}
-                    className="input-base w-20"
-                    placeholder="Qty"
-                    min="1"
-                  />
-                  <input
-                    type="number"
-                    value={item.buying_price}
-                    onChange={(e) => updateItem(index, "buying_price", parseFloat(e.target.value) || 0)}
-                    className="input-base w-24"
-                    placeholder="Price"
-                    min="0"
-                    step="0.01"
-                  />
-                  {items.length > 1 && (
-                    <button
-                      onClick={() => removeItem(index)}
-                      className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+          {showSupplierDropdown && filteredSuppliers.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              {filteredSuppliers.map((s, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setSupplier(s.supplier_name)
+                    setSupplierSearch(s.supplier_name)
+                    setShowSupplierDropdown(false)
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 flex flex-col"
+                >
+                  <span className="font-medium">{s.supplier_name}</span>
+                  {s.mobile_number && (
+                    <span className="text-xs text-secondary">{s.mobile_number}</span>
                   )}
-                </div>
+                </button>
               ))}
             </div>
-          </div>
+          )}
         </div>
 
-        <div className="p-6 border-t border-border flex gap-2 sticky bottom-0 bg-card">
-          <button onClick={onClose} className="btn-cancel flex-1" disabled={isSaving}>
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="btn-create flex-1"
-            disabled={isSaving || !supplier || items.length === 0 || items.some(i => !i.product_id)}
-          >
-            {isSaving ? "Creating..." : "Create Order"}
-          </button>
+        <div>
+          <label className="block text-sm font-medium mb-2">Required By</label>
+          <input
+            type="date"
+            value={requiredBy}
+            onChange={(e) => setRequiredBy(e.target.value)}
+            className="input-base w-full"
+          />
         </div>
+
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <label className="block text-sm font-medium">Items</label>
+            <Button onClick={addItem} variant="outline" size="sm">
+              <Plus className="w-4 h-4 mr-1" />
+              Add Item
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {items.map((item, index) => (
+              <div key={index} className="flex gap-2 items-start p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg relative">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={productSearches[index] || ""}
+                    onChange={(e) => {
+                      const newSearches = [...productSearches]
+                      newSearches[index] = e.target.value
+                      setProductSearches(newSearches)
+                      const newDropdowns = [...showProductDropdowns]
+                      newDropdowns[index] = true
+                      setShowProductDropdowns(newDropdowns)
+                    }}
+                    onFocus={() => {
+                      const newDropdowns = [...showProductDropdowns]
+                      newDropdowns[index] = true
+                      setShowProductDropdowns(newDropdowns)
+                    }}
+                    className="input-base w-full"
+                    placeholder="Search product..."
+                  />
+                  {showProductDropdowns[index] && getFilteredProducts(productSearches[index] || "").length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {getFilteredProducts(productSearches[index] || "").slice(0, 10).map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => selectProduct(index, p)}
+                          className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm"
+                        >
+                          <div className="font-medium">{p.name}</div>
+                          <div className="text-xs text-secondary">
+                            {p.id} • Cost: KES {p.cost?.toFixed(2)} • Stock: {p.quantity}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) => updateItem(index, "quantity", parseInt(e.target.value) || 0)}
+                  className="input-base w-20"
+                  placeholder="Qty"
+                  min="1"
+                />
+                <input
+                  type="number"
+                  value={item.buying_price}
+                  onChange={(e) => updateItem(index, "buying_price", parseFloat(e.target.value) || 0)}
+                  className="input-base w-24"
+                  placeholder="Price"
+                  min="0"
+                  step="0.01"
+                />
+                {items.length > 1 && (
+                  <button
+                    onClick={() => removeItem(index)}
+                    className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex gap-2">
+        <button onClick={onClose} className="btn-cancel flex-1" disabled={isSaving}>
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="btn-create flex-1"
+          disabled={isSaving || !supplier || items.length === 0 || items.some(i => !i.product_id)}
+        >
+          {isSaving ? "Creating..." : "Create Order"}
+        </button>
       </div>
     </div>
   )
 }
 
-function NewSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function NewSupplierInlineForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [supplier, setSupplier] = useState("")
   const [mobileNumber, setMobileNumber] = useState("")
   const [isSaving, setIsSaving] = useState(false)
@@ -675,10 +724,6 @@ function NewSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
       setError("Please fill in all required fields")
       return
     }
-
-    const confirmed = window.confirm(`Add new supplier: ${supplier}?`)
-
-    if (!confirmed) return
 
     try {
       setIsSaving(true)
@@ -709,54 +754,53 @@ function NewSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-lg w-full max-w-md">
-        <div className="p-6 border-b border-border">
-          <h2 className="text-xl font-bold">Add Supplier</h2>
-        </div>
+    <div className="card-base p-6 mb-6 border-2 border-green-300">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-bold">Add Supplier</h3>
+        <Button onClick={onClose} variant="ghost" size="sm">✕</Button>
+      </div>
 
-        <div className="p-6 space-y-4">
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-800 dark:text-red-200">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Supplier Name</label>
-            <input
-              type="text"
-              value={supplier}
-              onChange={(e) => setSupplier(e.target.value)}
-              className="input-base w-full"
-              placeholder="Enter supplier name"
-            />
+      <div className="space-y-4">
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-800 dark:text-red-200">
+            {error}
           </div>
+        )}
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Mobile Number</label>
-            <input
-              type="tel"
-              value={mobileNumber}
-              onChange={(e) => setMobileNumber(e.target.value)}
-              className="input-base w-full"
-              placeholder="0700000000"
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium mb-2">Supplier Name *</label>
+          <input
+            type="text"
+            value={supplier}
+            onChange={(e) => setSupplier(e.target.value)}
+            className="input-base w-full"
+            placeholder="Enter supplier name"
+          />
         </div>
 
-        <div className="p-6 border-t border-border flex gap-2">
-          <button onClick={onClose} className="btn-cancel flex-1" disabled={isSaving}>
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="btn-create flex-1"
-            disabled={isSaving || !supplier || !mobileNumber}
-          >
-            {isSaving ? "Adding..." : "Add Supplier"}
-          </button>
+        <div>
+          <label className="block text-sm font-medium mb-2">Mobile Number *</label>
+          <input
+            type="tel"
+            value={mobileNumber}
+            onChange={(e) => setMobileNumber(e.target.value)}
+            className="input-base w-full"
+            placeholder="0700000000"
+          />
         </div>
+      </div>
+
+      <div className="mt-4 flex gap-2">
+        <button onClick={onClose} className="btn-cancel flex-1" disabled={isSaving}>
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="btn-create flex-1"
+          disabled={isSaving || !supplier || !mobileNumber}
+        >
+          {isSaving ? "Adding..." : "Add Supplier"}
+        </button>
       </div>
     </div>
   )
