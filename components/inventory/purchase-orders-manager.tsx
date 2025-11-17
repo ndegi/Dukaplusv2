@@ -132,7 +132,7 @@ export function PurchaseOrdersManager() {
           }
         } catch (err) {
           alert(`Error ${isDraft ? 'deleting' : 'canceling'} order`)
-          console.error("[v0] Error:", err)
+          console.error("[DukaPlus] Error:", err)
         }
       },
     })
@@ -161,7 +161,7 @@ export function PurchaseOrdersManager() {
           }
         } catch (err) {
           alert("Error creating receipt")
-          console.error("[v0] Error:", err)
+          console.error("[DukaPlus] Error:", err)
         }
       },
     })
@@ -405,14 +405,14 @@ function NewOrderInlineForm({
   editingOrderId?: string | null
   editingOrder?: PurchaseOrder
 }) {
-  const [items, setItems] = useState<Array<{ product_id: string; product_name: string; quantity: number; buying_price: number }>>([
+  const [items, setItems] = useState<Array<{ product_id: string; product_name: string; quantity: number; buying_price: number }>>(
     editingOrder?.items?.map(i => ({
       product_id: i.item_code,
       product_name: i.item_name,
       quantity: i.qty,
       buying_price: i.rate
     })) || [{ product_id: "", product_name: "", quantity: 1, buying_price: 0 }]
-  ].flat())
+  )
   const [supplier, setSupplier] = useState(editingOrder?.supplier || "")
   const [supplierSearch, setSupplierSearch] = useState(editingOrder?.supplier || "")
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -441,7 +441,7 @@ function NewOrderInlineForm({
         setSuppliers(data.suppliers || [])
       }
     } catch (err) {
-      console.error("[v0] Error fetching suppliers:", err)
+      console.error("[DukaPlus] Error fetching suppliers:", err)
     }
   }
 
@@ -454,7 +454,7 @@ function NewOrderInlineForm({
         setProducts(data.products || [])
       }
     } catch (err) {
-      console.error("[v0] Error fetching products:", err)
+      console.error("[DukaPlus] Error fetching products:", err)
     }
   }
 
@@ -513,7 +513,7 @@ function NewOrderInlineForm({
 
   const handleSubmit = async () => {
     if (!supplier || items.length === 0 || items.some(i => !i.product_id)) {
-      setError("Please fill in all required fields")
+      setError("Please fill in all required fields and select valid products")
       return
     }
 
@@ -546,6 +546,8 @@ function NewOrderInlineForm({
         payload.order_id = editingOrderId
       }
 
+      console.log("[DukaPlus] Creating order with payload:", payload)
+
       const response = await fetch("/api/purchase-orders/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -553,6 +555,7 @@ function NewOrderInlineForm({
       })
 
       const data = await response.json()
+      console.log("[DukaPlus] Order creation response:", data)
 
       if (response.ok) {
         onSuccess()
@@ -561,7 +564,7 @@ function NewOrderInlineForm({
       }
     } catch (err) {
       setError("Error creating purchase order")
-      console.error("[v0] Error:", err)
+      console.error("[DukaPlus] Error:", err)
     } finally {
       setIsSaving(false)
     }
@@ -761,7 +764,7 @@ function NewSupplierInlineForm({ onClose, onSuccess }: { onClose: () => void; on
       }
     } catch (err) {
       setError("Error creating supplier")
-      console.error("[v0] Error:", err)
+      console.error("[DukaPlus] Error:", err)
     } finally {
       setIsSaving(false)
     }
