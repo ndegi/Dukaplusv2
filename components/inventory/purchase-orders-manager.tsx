@@ -329,9 +329,9 @@ export function PurchaseOrdersManager() {
                         </td>
                         <td className="table-cell text-center">
                           <span className={`badge ${order.status === "Draft" ? "badge-secondary" :
-                            order.status === "To Bill" ? "badge-warning" :
-                              order.status === "Completed" ? "badge-success" :
-                                "badge-info"
+                              order.status === "To Bill" ? "badge-warning" :
+                                order.status === "Completed" ? "badge-success" :
+                                  "badge-info"
                             }`}>
                             {order.status}
                           </span>
@@ -508,16 +508,44 @@ function NewOrderInlineForm({
       setShowProductDropdowns(showProductDropdowns.filter((_, idx) => idx !== index))
       setTimeout(() => setError(null), 3000)
     } else {
-      updateItem(index, "product_id", product.id)
-      updateItem(index, "product_name", product.name)
-      updateItem(index, "buying_price", product.cost || 0)
+      const newItems = [...items]
+      newItems[index] = {
+        ...newItems[index],
+        product_id: product.id,
+        product_name: product.name,
+        buying_price: product.cost || 0
+      }
+      setItems(newItems)
+
       const newSearches = [...productSearches]
       newSearches[index] = product.name
       setProductSearches(newSearches)
+
       const newDropdowns = [...showProductDropdowns]
       newDropdowns[index] = false
       setShowProductDropdowns(newDropdowns)
     }
+  }
+
+  const handleProductSearchChange = (index: number, searchValue: string) => {
+    const newSearches = [...productSearches]
+    newSearches[index] = searchValue
+    setProductSearches(newSearches)
+
+    if (items[index].product_name && searchValue !== items[index].product_name) {
+      const newItems = [...items]
+      newItems[index] = {
+        ...newItems[index],
+        product_id: "",
+        product_name: "",
+        buying_price: 0
+      }
+      setItems(newItems)
+    }
+
+    const newDropdowns = [...showProductDropdowns]
+    newDropdowns[index] = true
+    setShowProductDropdowns(newDropdowns)
   }
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -539,8 +567,13 @@ function NewOrderInlineForm({
 
     const invalidItems = items.filter(i => !i.product_id || !i.product_name || i.quantity <= 0)
     if (invalidItems.length > 0) {
-      setError("Please fill in all item details correctly")
       console.log("[DukaPlus] Invalid items found:", invalidItems)
+      const emptyProducts = items.filter(i => !i.product_id || !i.product_name)
+      if (emptyProducts.length > 0) {
+        setError("Please select a product from the dropdown for all items")
+      } else {
+        setError("Please ensure all items have valid quantities")
+      }
       return
     }
 
@@ -690,21 +723,21 @@ function NewOrderInlineForm({
                   <input
                     type="text"
                     value={productSearches[index] || ""}
-                    onChange={(e) => {
-                      const newSearches = [...productSearches]
-                      newSearches[index] = e.target.value
-                      setProductSearches(newSearches)
-                      const newDropdowns = [...showProductDropdowns]
-                      newDropdowns[index] = true
-                      setShowProductDropdowns(newDropdowns)
-                    }}
+                    onChange={(e) => handleProductSearchChange(index, e.target.value)}
                     onFocus={() => {
                       const newDropdowns = [...showProductDropdowns]
                       newDropdowns[index] = true
                       setShowProductDropdowns(newDropdowns)
                     }}
+                    onBlur={() => {
+                      setTimeout(() => {
+                        const newDropdowns = [...showProductDropdowns]
+                        newDropdowns[index] = false
+                        setShowProductDropdowns(newDropdowns)
+                      }, 200)
+                    }}
                     className="input-base w-full"
-                    placeholder="Search product..."
+                    placeholder="Search and select product..."
                     required
                   />
                   {showProductDropdowns[index] && getFilteredProducts(productSearches[index] || "").length > 0 && (
