@@ -46,7 +46,7 @@ export function PurchaseInvoicesManager() {
   const [isLoading, setIsLoading] = useState(true)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [showPaymentView, setShowPaymentView] = useState(false)
   const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null)
   const [expandedInvoices, setExpandedInvoices] = useState<Set<string>>(new Set())
   const [selectedOrderId, setSelectedOrderId] = useState("")
@@ -298,7 +298,7 @@ export function PurchaseInvoicesManager() {
 
           if (response.ok) {
             setMessage({ type: "success", text: "Payment recorded successfully" })
-            setShowPaymentModal(false)
+            setShowPaymentView(false)
             setSelectedInvoice(null)
             setPayments([{ id: 1, mode: paymentModes[0]?.mode_of_payment || "Cash", amount: "" }])
             fetchInvoices()
@@ -493,6 +493,134 @@ export function PurchaseInvoicesManager() {
           </div>
         )}
 
+        {/* Inline Payment View Card */}
+        {showPaymentView && selectedInvoice && (
+          <div className="mb-6 p-4 border border-border rounded-lg bg-muted/50">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Record Payment</h3>
+                <p className="text-sm text-muted-foreground mt-1">Invoice: {selectedInvoice}</p>
+                {(() => {
+                  const currentInvoice = invoices.find(inv => inv.name === selectedInvoice)
+                  if (currentInvoice?.items) {
+                    const totalAmount = currentInvoice.items.reduce((sum, item) => sum + item.amount, 0)
+                    return (
+                      <p className="text-sm font-semibold text-warning mt-1">
+                        Invoice Total: KES {totalAmount.toFixed(2)}
+                      </p>
+                    )
+                  }
+                  return null
+                })()}
+              </div>
+              <button
+                onClick={() => {
+                  setShowPaymentView(false)
+                  setSelectedInvoice(null)
+                }}
+                className="p-2 hover:bg-muted rounded transition-colors"
+                title="Close"
+              >
+                <ChevronUp className="w-5 h-5 text-foreground" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-semibold text-foreground">Payment Methods</label>
+                <Button 
+                  type="button" 
+                  onClick={addPayment} 
+                  size="sm" 
+                  className="btn-success text-xs h-8 px-3"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {payments.map((payment) => (
+                  <div key={payment.id} className="p-3 border border-border rounded-lg space-y-3">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="form-label text-xs">Payment Mode</label>
+                        <select
+                          value={payment.mode}
+                          onChange={(e) => updatePayment(payment.id, 'mode', e.target.value)}
+                          className="input-base w-full text-sm"
+                        >
+                          {paymentModes.length > 0 ? (
+                            paymentModes.map((mode) => (
+                              <option key={mode.mode_of_payment} value={mode.mode_of_payment}>
+                                {mode.mode_of_payment}
+                              </option>
+                            ))
+                          ) : (
+                            <>
+                              <option value="Cash">Cash</option>
+                              <option value="Mpesa">M-Pesa</option>
+                            </>
+                          )}
+                        </select>
+                      </div>
+                      {payments.length > 1 && (
+                        <Button
+                          type="button"
+                          onClick={() => removePayment(payment.id)}
+                          size="sm"
+                          variant="ghost"
+                          className="action-btn-delete h-8 w-8 p-0 self-end"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">Amount (KES)</label>
+                      <input
+                        type="number"
+                        value={payment.amount}
+                        onChange={(e) => updatePayment(payment.id, 'amount', e.target.value)}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        className="input-base w-full"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-semibold text-foreground">
+                  Total Payment: KES {getTotalPayment().toFixed(2)}
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  onClick={() => {
+                    setShowPaymentView(false)
+                    setSelectedInvoice(null)
+                    setPayments([{ id: 1, mode: paymentModes[0]?.mode_of_payment || "Cash", amount: "" }])
+                  }} 
+                  className="btn-cancel flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handlePaymentSubmit} 
+                  className="btn-success flex-1"
+                  disabled={getTotalPayment() <= 0}
+                >
+                  Record Payment
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isLoading ? (
           <p className="text-foreground p-6 text-center">Loading purchase invoices...</p>
         ) : filteredInvoices.length === 0 ? (
@@ -562,7 +690,7 @@ export function PurchaseInvoicesManager() {
                                 <Button
                                   onClick={() => {
                                     setSelectedInvoice(invoice.name)
-                                    setShowPaymentModal(true)
+                                    setShowPaymentView(true)
                                   }}
                                   size="sm"
                                   className="btn-success"
@@ -636,124 +764,6 @@ export function PurchaseInvoicesManager() {
           </div>
         )}
       </div>
-
-      {/* Payment Modal */}
-      {showPaymentModal && selectedInvoice && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-lg w-full max-w-md max-h-[90vh] flex flex-col">
-            <div className="p-6 border-b border-border flex-shrink-0">
-              <h2 className="text-xl font-bold text-foreground">Record Payment</h2>
-              <p className="text-sm text-muted-foreground mt-1">Invoice: {selectedInvoice}</p>
-              {(() => {
-                const currentInvoice = invoices.find(inv => inv.name === selectedInvoice)
-                if (currentInvoice?.items) {
-                  const totalAmount = currentInvoice.items.reduce((sum, item) => sum + item.amount, 0)
-                  return (
-                    <p className="text-sm font-semibold text-warning mt-1">
-                      Invoice Total: KES {totalAmount.toFixed(2)}
-                    </p>
-                  )
-                }
-                return null
-              })()}
-            </div>
-
-            <div className="p-6 space-y-4 flex-1 overflow-y-auto">
-              <div className="flex justify-between items-center">
-                <label className="text-sm font-semibold text-foreground">Payment Methods</label>
-                <Button 
-                  type="button" 
-                  onClick={addPayment} 
-                  size="sm" 
-                  className="btn-success text-xs h-8 px-3"
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Add
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                {payments.map((payment) => (
-                  <div key={payment.id} className="p-3 border border-border rounded-lg space-y-3">
-                    <div className="flex gap-2">
-                      <div className="flex-1">
-                        <label className="form-label text-xs">Payment Mode</label>
-                        <select
-                          value={payment.mode}
-                          onChange={(e) => updatePayment(payment.id, 'mode', e.target.value)}
-                          className="input-base w-full text-sm"
-                        >
-                          {paymentModes.length > 0 ? (
-                            paymentModes.map((mode) => (
-                              <option key={mode.mode_of_payment} value={mode.mode_of_payment}>
-                                {mode.mode_of_payment}
-                              </option>
-                            ))
-                          ) : (
-                            <>
-                              <option value="Cash">Cash</option>
-                              <option value="Mpesa">M-Pesa</option>
-                            </>
-                          )}
-                        </select>
-                      </div>
-                      {payments.length > 1 && (
-                        <Button
-                          type="button"
-                          onClick={() => removePayment(payment.id)}
-                          size="sm"
-                          variant="ghost"
-                          className="action-btn-delete h-8 w-8 p-0 self-end"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                    <div>
-                      <label className="form-label text-xs">Amount (KES)</label>
-                      <input
-                        type="number"
-                        value={payment.amount}
-                        onChange={(e) => updatePayment(payment.id, 'amount', e.target.value)}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                        className="input-base w-full"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm font-semibold text-foreground">
-                  Total Payment: KES {getTotalPayment().toFixed(2)}
-                </p>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-border flex gap-2 flex-shrink-0">
-              <Button 
-                onClick={() => {
-                  setShowPaymentModal(false)
-                  setSelectedInvoice(null)
-                  setPayments([{ id: 1, mode: paymentModes[0]?.mode_of_payment || "Cash", amount: "" }])
-                }} 
-                className="btn-cancel flex-1"
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handlePaymentSubmit} 
-                className="btn-success flex-1"
-                disabled={getTotalPayment() <= 0}
-              >
-                Record Payment
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

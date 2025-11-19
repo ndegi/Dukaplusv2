@@ -179,28 +179,28 @@ export function ReportsDashboard({ user }: { user: User }) {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-slate-800 dark:bg-slate-800 border border-slate-700">
+        <TabsList className="grid w-full grid-cols-4 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600">
           <TabsTrigger
             value="sales"
-            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
+            className="text-slate-700 dark:text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
           >
             Sales Report
           </TabsTrigger>
           <TabsTrigger
             value="customers"
-            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
+            className="text-slate-700 dark:text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
           >
             Customers
           </TabsTrigger>
           <TabsTrigger
             value="stock"
-            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
+            className="text-slate-700 dark:text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
           >
             Stock Balance
           </TabsTrigger>
           <TabsTrigger
             value="ledger"
-            className="text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
+            className="text-slate-700 dark:text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
           >
             Stock Ledger
           </TabsTrigger>
@@ -423,7 +423,7 @@ function SalesReportTable({
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
+          <thead className="bg-slate-100 dark:bg-slate-700 border-b border-gray-200 dark:border-slate-700">
             <tr>
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Invoice</th>
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Date</th>
@@ -572,7 +572,7 @@ function CustomerStatementTable({
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
+          <thead className="bg-slate-100 dark:bg-slate-700 border-b border-gray-200 dark:border-slate-700">
             <tr>
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Invoice</th>
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Customer</th>
@@ -710,7 +710,7 @@ function StockBalanceTable({
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
+          <thead className="bg-slate-100 dark:bg-slate-700 border-b border-gray-200 dark:border-slate-700">
             <tr>
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Item Code</th>
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Item Name</th>
@@ -942,7 +942,7 @@ function StockLedgerTable({
 
       <div className="overflow-x-auto">
         <table className="w-full text-xs sm:text-sm">
-          <thead className="bg-gray-100 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
+          <thead className="bg-slate-100 dark:bg-slate-700 border-b border-gray-200 dark:border-slate-700">
             <tr>
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Item Code</th>
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Item Name</th>

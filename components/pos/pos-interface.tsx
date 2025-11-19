@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { ProductBrowser } from "./product-browser"
 import { CartSummary } from "./cart-summary"
-import { PaymentModal } from "./payment-modal"
+import { PaymentForm } from "./payment-form"
 import { offlineStore } from "@/lib/db/offline-store"
 
 interface User {
@@ -26,6 +26,8 @@ interface CartItem {
 interface Customer {
   id: string
   name: string
+  account_credit?: number
+  loyalty_points?: number
 }
 
 export function POSInterface({
@@ -48,6 +50,8 @@ export function POSInterface({
   const [mobileNumber, setMobileNumber] = useState("")
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null)
   const [invoiceOutstandingAmount, setInvoiceOutstandingAmount] = useState<number | null>(null)
+  const [customerCredit, setCustomerCredit] = useState(0)
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0)
 
   useEffect(() => {
     const initCart = async () => {
@@ -68,7 +72,7 @@ export function POSInterface({
         const data = await response.json()
         setCustomers(data.customers || [])
       } catch (error) {
-        console.error("[DukaPlus] Failed to fetch customers:", error)
+        console.error("[v0] Failed to fetch customers:", error)
       }
     }
 
@@ -77,7 +81,7 @@ export function POSInterface({
 
   useEffect(() => {
     offlineStore.saveCart(cart).catch((error) => {
-      console.error("[DukaPlus] Failed to save cart:", error)
+      console.error("[v0] Failed to save cart:", error)
     })
   }, [cart])
 
@@ -91,6 +95,8 @@ export function POSInterface({
       if (selectedCustomer === "Walk In" || selectedCustomer === "walk-in") {
         setCustomerName("Walk In")
         setMobileNumber("")
+        setCustomerCredit(0)
+        setLoyaltyPoints(0)
         return
       }
 
@@ -102,14 +108,18 @@ export function POSInterface({
           if (response.ok) {
             const data = await response.json()
             const fullCustomer = data.customers?.find(
-              (c: any) => (c.customer_id || c.customer_name) === selectedCustomer,
+              (c: any) => (c.customer_id || c.customer_name) === selectedCustomer || c.customer_name === selectedCustomer,
             )
             if (fullCustomer) {
-              setMobileNumber(fullCustomer.mobile_number || "")
+              const mobile = fullCustomer.mobile_number || fullCustomer.mobile_no || fullCustomer.phone || fullCustomer.mobile || ""
+              setMobileNumber(mobile)
+              setCustomerCredit(fullCustomer.account_credit || 0)
+              setLoyaltyPoints(fullCustomer.loyalty_points || 0)
+              console.log("[v0] Customer info updated:", { name: fullCustomer.customer_name, mobile })
             }
           }
         } catch (error) {
-          console.error("[DukaPlus] Failed to fetch customer details:", error)
+          console.error("[v0] Failed to fetch customer details:", error)
         }
       } else {
         setCustomerName(selectedCustomer)
@@ -151,7 +161,7 @@ export function POSInterface({
     if (pendingInvoice) {
       try {
         const invoice = JSON.parse(pendingInvoice)
-        console.log("[DukaPlus] Loading pending invoice payment:", invoice)
+        console.log("[v0] Loading pending invoice payment:", invoice)
         setCustomerName(invoice.customer_name || "Walk In")
         setMobileNumber(invoice.mobile_number || "")
         setPendingInvoiceId(invoice.sales_id)
@@ -159,13 +169,13 @@ export function POSInterface({
         setShowPayment(true)
         sessionStorage.removeItem("pending_invoice_payment")
       } catch (err) {
-        console.error("[DukaPlus] Failed to load pending invoice:", err)
+        console.error("[v0] Failed to load pending invoice:", err)
       }
     }
   }, [])
 
   const addToCart = (product: any) => {
-    console.log("[DukaPlus] Adding product to cart:", product.name, "all_selling_prices:", product.all_selling_prices)
+    console.log("[v0] Adding product to cart:", product.name, "all_selling_prices:", product.all_selling_prices)
 
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id)
@@ -198,7 +208,7 @@ export function POSInterface({
         all_selling_prices: prices,
       }
 
-      console.log("[DukaPlus] New cart item:", newItem)
+      console.log("[v0] New cart item:", newItem)
       return [...prevCart, newItem]
     })
   }
@@ -231,39 +241,22 @@ export function POSInterface({
   const clearCart = () => {
     setCart([])
     offlineStore.clearCart().catch((error) => {
-      console.error("[DukaPlus] Failed to clear cart:", error)
+      console.error("[v0] Failed to clear cart:", error)
     })
     setShowPayment(false)
     setPendingInvoiceId(null)
     setInvoiceOutstandingAmount(null)
   }
 
-  return (
-    <div className="flex flex-col lg:flex-row h-full gap-0 lg:gap-0 bg-gray-50 dark:bg-gray-900">
-      <div className="w-full lg:w-1/2 overflow-y-auto order-2 lg:order-1 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700">
-        <ProductBrowser onAddToCart={addToCart} searchTerm={searchTerm} />
-      </div>
-
-      <div className="w-full lg:w-1/2 bg-white dark:bg-gray-800 overflow-y-auto flex flex-col order-1 lg:order-2">
-        <CartSummary
-          cart={cart}
-          totalAmount={totalAmount}
-          onUpdateQuantity={updateCartItem}
-          onRemoveItem={removeFromCart}
-          onCheckout={() => setShowPayment(true)}
-          onClearCart={clearCart}
-          warehouse={user.warehouse}
-          user={user.name}
-          customerName={customerName}
-          mobileNumber={mobileNumber}
-        />
-      </div>
-
-      {showPayment && (
-        <PaymentModal
-          totalAmount={invoiceOutstandingAmount !== null ? invoiceOutstandingAmount : cart.reduce((sum, item) => sum + item.subtotal, 0)}
+  if (showPayment) {
+    return (
+      <div className="h-full bg-slate-50 dark:bg-slate-800 overflow-y-auto">
+        <PaymentForm
+          totalAmount={invoiceOutstandingAmount !== null ? invoiceOutstandingAmount : totalAmount}
           itemCount={cart.length}
           cartItems={cart}
+          invoiceId={pendingInvoiceId || undefined}
+          isInvoicePayment={!!pendingInvoiceId}
           onClose={() => {
             setShowPayment(false)
             setPendingInvoiceId(null)
@@ -277,10 +270,36 @@ export function POSInterface({
           }}
           customerName={customerName}
           mobileNumber={mobileNumber}
-          invoiceId={pendingInvoiceId || undefined}
-          isInvoicePayment={!!pendingInvoiceId}
+          customerCredit={customerCredit}
+          loyaltyPoints={loyaltyPoints}
+          mode="inline"
         />
-      )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col lg:flex-row h-full gap-0 lg:gap-0 bg-slate-50 dark:bg-slate-800">
+      <div className="w-full lg:w-1/2 overflow-y-auto order-2 lg:order-1 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-slate-700">
+        <ProductBrowser onAddToCart={addToCart} searchTerm={searchTerm} />
+      </div>
+
+      <div className="w-full lg:w-1/2 bg-white dark:bg-slate-800 overflow-y-auto flex flex-col order-1 lg:order-2">
+        <CartSummary
+          cart={cart}
+          totalAmount={totalAmount}
+          onUpdateQuantity={updateCartItem}
+          onRemoveItem={removeFromCart}
+          onCheckout={() => setShowPayment(true)}
+          onClearCart={clearCart}
+          warehouse={user.warehouse}
+          user={user.name}
+          customerName={customerName}
+          mobileNumber={mobileNumber}
+          customerCredit={customerCredit}
+          loyaltyPoints={loyaltyPoints}
+        />
+      </div>
     </div>
   )
 }

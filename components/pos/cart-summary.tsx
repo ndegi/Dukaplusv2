@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faTrashAlt, faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
 import { formatCurrency, formatNumber } from "@/lib/utils/format"
-import { PaymentModal } from "@/components/pos/payment-modal"
+import { PaymentForm } from "@/components/pos/payment-form"
 
 interface CartItem {
   id: string
@@ -31,6 +31,8 @@ interface CartSummaryProps {
   user?: string
   customerName?: string
   mobileNumber?: string
+  customerCredit?: number
+  loyaltyPoints?: number
 }
 
 export function CartSummary({
@@ -44,6 +46,8 @@ export function CartSummary({
   user = "",
   customerName = "Walk In",
   mobileNumber = "",
+  customerCredit = 0,
+  loyaltyPoints = 0,
 }: CartSummaryProps) {
   const [queuedCount, setQueuedCount] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -51,11 +55,6 @@ export function CartSummary({
   const [draftReceipts, setDraftReceipts] = useState<any[]>([])
   const [showQueueModal, setShowQueueModal] = useState(false)
   const [actualWarehouse, setActualWarehouse] = useState("")
-  const [paymentModalData, setPaymentModalData] = useState<{
-    salesId: string
-    total: number
-    items: any[]
-  } | null>(null)
 
   useEffect(() => {
     const storedWarehouse = sessionStorage.getItem("selected_warehouse")
@@ -164,7 +163,6 @@ export function CartSummary({
 
   const handleLoadDraft = (draft: any) => {
     if (draft.status === "paid" || draft.status === 1) {
-      // If already paid, load into cart
       onClearCart()
 
       if (draft.items && Array.isArray(draft.items)) {
@@ -186,12 +184,27 @@ export function CartSummary({
 
       setShowQueueModal(false)
     } else {
-      // If unpaid, show payment modal for completing the receipt
-      setPaymentModalData({
-        salesId: draft.sales_id,
-        total: draft.total_amount || 0,
-        items: draft.items || [],
-      })
+      onClearCart()
+
+      if (draft.items && Array.isArray(draft.items)) {
+        const loadEvent = new CustomEvent("loadDraftItems", {
+          detail: {
+            items: draft.items.map((item: any) => ({
+              item_code: item.item_code,
+              item_name: item.item_name,
+              qty: item.qty,
+              rate: item.rate,
+              amount: item.amount,
+            })),
+            customer: draft.customer || "Walk In",
+            mobile: draft.store_mobile_number || "",
+          },
+        })
+        window.dispatchEvent(loadEvent)
+      }
+
+      setShowQueueModal(false)
+      setTimeout(() => onCheckout(), 100)
     }
   }
 
@@ -215,7 +228,6 @@ export function CartSummary({
 
   return (
     <div className="flex flex-col h-full bg-card">
-      {/* Error message */}
       {error && (
         <div className="mx-4 mt-3 alert-error flex items-start gap-2">
           <FontAwesomeIcon icon={faExclamationCircle} className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" />
@@ -386,33 +398,6 @@ export function CartSummary({
               </Button>
             </div>
           </div>
-        </div>
-      )}
-
-      {paymentModalData && (
-        <div className="fixed inset-0 z-50">
-          <PaymentModal
-            totalAmount={paymentModalData.total}
-            itemCount={paymentModalData.items.length}
-            cartItems={paymentModalData.items.map((item: any) => ({
-              id: item.item_code,
-              name: item.item_name,
-              price: item.rate,
-              quantity: item.qty,
-              subtotal: item.amount,
-            }))}
-            invoiceId={paymentModalData.salesId}
-            isInvoicePayment={true}
-            onClose={() => {
-              setPaymentModalData(null)
-              setShowQueueModal(false)
-            }}
-            onSuccess={() => {
-              setPaymentModalData(null)
-              setShowQueueModal(false)
-              fetchDraftReceipts()
-            }}
-          />
         </div>
       )}
     </div>

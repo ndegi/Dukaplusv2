@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
+import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -20,6 +21,7 @@ export function WarehouseSwitcher({ onSuccess, onCancel }: WarehouseSwitcherProp
   const [selectedWarehouse, setSelectedWarehouse] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     fetchWarehouses()
@@ -41,6 +43,15 @@ export function WarehouseSwitcher({ onSuccess, onCancel }: WarehouseSwitcherProp
           : {},
       })
 
+      if (response.status === 401) {
+        console.log("[DukaPlus] Warehouse fetch returned 401, redirecting to login")
+        sessionStorage.removeItem("tenant_credentials")
+        sessionStorage.removeItem("selected_warehouse")
+        localStorage.clear()
+        router.push("/login?sessionExpired=true")
+        return
+      }
+
       const data = await response.json()
 
       if (response.ok && data.message?.warehouses) {
@@ -54,7 +65,7 @@ export function WarehouseSwitcher({ onSuccess, onCancel }: WarehouseSwitcherProp
       }
     } catch (err) {
       setError("Error loading warehouses")
-      console.error(err)
+      console.error("[DukaPlus] Warehouse fetch error:", err)
     } finally {
       setIsLoading(false)
     }

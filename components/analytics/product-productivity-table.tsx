@@ -67,7 +67,7 @@ export function ProductProductivityTable({ dateRange, warehouse, isLoading = fal
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+            <thead className="bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-700">
               <tr>
                 <th className="text-left p-3 text-slate-700 dark:text-slate-300 font-semibold">Product Code</th>
                 <th className="text-left p-3 text-slate-700 dark:text-slate-300 font-semibold">Product Name</th>

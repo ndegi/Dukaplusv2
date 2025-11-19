@@ -52,7 +52,7 @@ export function PurchaseOrdersManager() {
     open: false,
     title: "",
     description: "",
-    action: () => { },
+    action: () => {},
   })
 
   useEffect(() => {
@@ -109,11 +109,11 @@ export function PurchaseOrdersManager() {
 
   const handleCancelOrDeleteOrder = async (orderId: string, docstatus: number) => {
     const isDraft = docstatus === 0
-
+    
     setConfirmDialog({
       open: true,
       title: isDraft ? "Delete Purchase Order?" : "Cancel Purchase Order?",
-      description: isDraft
+      description: isDraft 
         ? `Delete draft order ${orderId}? This action cannot be undone.`
         : `Cancel order ${orderId}? This action cannot be undone.`,
       action: async () => {
@@ -233,7 +233,7 @@ export function PurchaseOrdersManager() {
       </div>
 
       {showNewSupplierForm && (
-        <NewSupplierInlineForm
+        <NewSupplierInlineForm 
           onClose={() => setShowNewSupplierForm(false)}
           onSuccess={() => {
             setShowNewSupplierForm(false)
@@ -328,11 +328,12 @@ export function PurchaseOrdersManager() {
                           KES {order.grand_total.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="table-cell text-center">
-                          <span className={`badge ${order.status === "Draft" ? "badge-secondary" :
-                              order.status === "To Bill" ? "badge-warning" :
-                                order.status === "Completed" ? "badge-success" :
-                                  "badge-info"
-                            }`}>
+                          <span className={`badge ${
+                            order.status === "Draft" ? "badge-secondary" :
+                            order.status === "To Bill" ? "badge-warning" : 
+                            order.status === "Completed" ? "badge-success" :
+                            "badge-info"
+                          }`}>
                             {order.status}
                           </span>
                         </td>
@@ -393,12 +394,12 @@ export function PurchaseOrdersManager() {
   )
 }
 
-function NewOrderInlineForm({
-  onClose,
+function NewOrderInlineForm({ 
+  onClose, 
   onSuccess,
   editingOrderId,
   editingOrder
-}: {
+}: { 
   onClose: () => void
   onSuccess: () => void
   editingOrderId?: string | null
@@ -466,13 +467,13 @@ function NewOrderInlineForm({
     }
   }
 
-  const filteredSuppliers = suppliers.filter(s =>
+  const filteredSuppliers = suppliers.filter(s => 
     s.supplier_name.toLowerCase().includes(supplierSearch.toLowerCase())
   )
 
   const getFilteredProducts = (search: string) => {
-    return products.filter(p =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
+    return products.filter(p => 
+      p.name.toLowerCase().includes(search.toLowerCase()) || 
       p.id.toLowerCase().includes(search.toLowerCase())
     )
   }
@@ -497,7 +498,7 @@ function NewOrderInlineForm({
 
   const selectProduct = (index: number, product: any) => {
     const existingItemIndex = items.findIndex((item, idx) => idx !== index && item.product_id === product.id)
-
+    
     if (existingItemIndex !== -1) {
       setError(`"${product.name}" is already in the list. Quantities merged.`)
       const newItems = [...items]
@@ -516,11 +517,11 @@ function NewOrderInlineForm({
         buying_price: product.cost || 0
       }
       setItems(newItems)
-
+      
       const newSearches = [...productSearches]
       newSearches[index] = product.name
       setProductSearches(newSearches)
-
+      
       const newDropdowns = [...showProductDropdowns]
       newDropdowns[index] = false
       setShowProductDropdowns(newDropdowns)
@@ -531,7 +532,7 @@ function NewOrderInlineForm({
     const newSearches = [...productSearches]
     newSearches[index] = searchValue
     setProductSearches(newSearches)
-
+    
     if (items[index].product_name && searchValue !== items[index].product_name) {
       const newItems = [...items]
       newItems[index] = {
@@ -542,7 +543,7 @@ function NewOrderInlineForm({
       }
       setItems(newItems)
     }
-
+    
     const newDropdowns = [...showProductDropdowns]
     newDropdowns[index] = true
     setShowProductDropdowns(newDropdowns)
@@ -550,21 +551,21 @@ function NewOrderInlineForm({
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-
+    
     console.log("[DukaPlus] Submit clicked - Starting validation")
     console.log("[DukaPlus] Supplier:", supplier)
     console.log("[DukaPlus] Items:", items)
-
+    
     if (!supplier) {
       setError("Please select a supplier")
       return
     }
-
+    
     if (items.length === 0) {
       setError("Please add at least one item")
       return
     }
-
+    
     const invalidItems = items.filter(i => !i.product_id || !i.product_name || i.quantity <= 0)
     if (invalidItems.length > 0) {
       console.log("[DukaPlus] Invalid items found:", invalidItems)
