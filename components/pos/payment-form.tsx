@@ -226,12 +226,30 @@ export function PaymentForm({
     const hasTriedSTK =
       stkStatus[payment.id] !== undefined && stkStatus[payment.id] !== null;
     const isSTKSuccess = stkStatus[payment.id] === "success";
+    const isProcessingSTK = stkStatus[payment.id] === "processing";
 
-    // If it's Mpesa/Till AND user tried STK push BUT it's not confirmed, block completion
-    return isMpesaOrTill && hasTriedSTK && !isSTKSuccess;
+    // Block if:
+    // 1. It's Mpesa/Till AND
+    // 2. User initiated STK push AND
+    // 3. It's still processing (not success or failure)
+    return isMpesaOrTill && hasTriedSTK && isProcessingSTK;
   });
 
   const canComplete = isPaymentComplete && !hasUnconfirmedSTKPayments;
+
+  console.log("[DukaPlus] Payment state:", {
+    totalPaid,
+    remaining,
+    isPaymentComplete,
+    hasUnconfirmedSTKPayments,
+    canComplete,
+    stkStatus,
+    splitPayments: splitPayments.map((p) => ({
+      mode: p.mode,
+      amount: p.amount,
+      isPaid: p.isPaid,
+    })),
+  });
 
   const addPaymentSplit = () => {
     const newId = Math.max(...splitPayments.map((p) => p.id), 0) + 1;
@@ -357,10 +375,7 @@ export function PaymentForm({
 
   const printReceipt = async (salesId: string) => {
     try {
-      console.log(
-        "[DukaPlus] Printing receipt to 192.168.1.100 for sale:",
-        salesId
-      );
+      console.log("[DukaPlus] Printing receipt to 192.168.1.100 for sale:", salesId);
       // Network print command - adjust based on your printer setup
       const printWindow = window.open("", "_blank");
       if (printWindow) {
