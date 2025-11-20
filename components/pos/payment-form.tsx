@@ -219,8 +219,19 @@ export function PaymentForm({
   const remaining = totalAmount - totalPaid;
   const isPaymentComplete = Math.abs(remaining) < 0.01;
 
-  // This enables offline Mpesa/Till payments without requiring STK push confirmation
-  const canComplete = isPaymentComplete;
+  const hasUnconfirmedSTKPayments = splitPayments.some((payment) => {
+    const isMpesaOrTill =
+      payment.mode.toLowerCase().includes("mpesa") ||
+      payment.mode.toLowerCase().includes("till");
+    const hasTriedSTK =
+      stkStatus[payment.id] !== undefined && stkStatus[payment.id] !== null;
+    const isSTKSuccess = stkStatus[payment.id] === "success";
+
+    // If it's Mpesa/Till AND user tried STK push BUT it's not confirmed, block completion
+    return isMpesaOrTill && hasTriedSTK && !isSTKSuccess;
+  });
+
+  const canComplete = isPaymentComplete && !hasUnconfirmedSTKPayments;
 
   const addPaymentSplit = () => {
     const newId = Math.max(...splitPayments.map((p) => p.id), 0) + 1;
@@ -346,7 +357,10 @@ export function PaymentForm({
 
   const printReceipt = async (salesId: string) => {
     try {
-      console.log("[DukaPlus] Printing receipt to 192.168.1.100 for sale:", salesId);
+      console.log(
+        "[DukaPlus] Printing receipt to 192.168.1.100 for sale:",
+        salesId
+      );
       // Network print command - adjust based on your printer setup
       const printWindow = window.open("", "_blank");
       if (printWindow) {
