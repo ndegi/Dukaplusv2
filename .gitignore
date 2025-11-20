@@ -1,52 +1,49 @@
-# Node
+# Dependencies
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+*.lcov
+.nyc_output
 
 # Next.js
 .next/
 out/
 build/
+dist/
 
-# Production and environment variables
+# Production
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Environment variables
 .env
-.env.local
+.env*.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env.*.local
 
-# Logs
-logs
-*.log
-.pnpm-debug.log
+# Vercel
+.vercel
 
-# OS files
-.DS_Store
-Thumbs.db
+# Typescript
+*.tsbuildinfo
+next-env.d.ts
 
-# Editors and IDEs
+# IDE
 .vscode/
 .idea/
-
-# Build/test output
-dist/
-coverage/
-
-# Caches
-.cache/
-.cache-loader/
-.parcel-cache/
-.eslintcache
-*.tsbuildinfo
+*.swp
+*.swo
+*~
+.DS_Store
 
 # Misc
-*.tgz
-*.zip
-
-# Deployment platforms
-.vercel/
-.netlify/
-
+.turbo
+*.pem
