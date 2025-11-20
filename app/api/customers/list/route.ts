@@ -29,7 +29,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch customers" }, { status: 500 })
     }
 
-    return NextResponse.json({ customers: data.message?.customers || [] })
+    const customers = (data.message?.customers || []).map((customer: any) => ({
+      ...customer,
+      mobile_number: customer.mobile_number || customer.mobile_no || customer.phone || customer.mobile || "",
+    }))
+
+    return NextResponse.json({ customers })
   } catch (error) {
     console.error("[DukaPlus] Get customers error:", error)
     return NextResponse.json({ error: "Failed to fetch customers" }, { status: 500 })

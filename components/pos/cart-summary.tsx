@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faTrashAlt, faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
 import { formatCurrency, formatNumber } from "@/lib/utils/format"
-import { PaymentForm } from "@/components/pos/payment-form"
 
 interface CartItem {
   id: string
@@ -177,6 +176,7 @@ export function CartSummary({
             })),
             customer: draft.customer || "Walk In",
             mobile: draft.store_mobile_number || "",
+            draftId: draft.sales_id, // Pass draft ID for deletion
           },
         })
         window.dispatchEvent(loadEvent)
@@ -198,6 +198,7 @@ export function CartSummary({
             })),
             customer: draft.customer || "Walk In",
             mobile: draft.store_mobile_number || "",
+            draftId: draft.sales_id, // Pass draft ID for deletion
           },
         })
         window.dispatchEvent(loadEvent)
@@ -225,6 +226,15 @@ export function CartSummary({
       onUpdateQuantity(itemId, item.quantity, newPrice, item.unit_of_measure)
     }
   }
+
+  useEffect(() => {
+    const handleDraftCompleted = () => {
+      fetchDraftReceipts()
+    }
+
+    window.addEventListener("draftCompleted", handleDraftCompleted)
+    return () => window.removeEventListener("draftCompleted", handleDraftCompleted)
+  }, [actualWarehouse])
 
   return (
     <div className="flex flex-col h-full bg-card">

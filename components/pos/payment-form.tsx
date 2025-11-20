@@ -28,6 +28,15 @@ interface PaymentModeOption {
   value: string;
 }
 
+interface PaymentSplit {
+  id: number;
+  mode: string;
+  amount: number;
+  isPaid: boolean;
+  phone?: string;
+  reference?: string;
+}
+
 interface PaymentFormProps {
   totalAmount: number;
   itemCount: number;
@@ -41,15 +50,7 @@ interface PaymentFormProps {
   customerCredit?: number;
   loyaltyPoints?: number;
   mode?: "inline" | "modal";
-}
-
-interface PaymentSplit {
-  id: number;
-  mode: string;
-  amount: number;
-  reference?: string;
-  phone?: string;
-  isPaid?: boolean;
+  draftId?: string;
 }
 
 export function PaymentForm({
@@ -65,6 +66,7 @@ export function PaymentForm({
   customerCredit = 0,
   loyaltyPoints = 0,
   mode = "inline",
+  draftId,
 }: PaymentFormProps) {
   const [paymentModes, setPaymentModes] = useState<PaymentMode[]>([]);
   const [paymentModeOptions, setPaymentModeOptions] = useState<
@@ -560,7 +562,7 @@ export function PaymentForm({
           product_price: item.price,
         })),
         payment_details: splitPayments.map((payment) => ({
-          mode_of_payment: payment.mode, // Now sends "Credit" when Credit is selected
+          mode_of_payment: payment.mode,
           amount: payment.amount,
           reference: payment.reference,
         })),
@@ -574,6 +576,7 @@ export function PaymentForm({
         sales_date: formattedDate,
         credit_used: creditAmount,
         loyalty_points_redeemed: redeemPoints,
+        ...(draftId && { draft_id: draftId }),
       };
 
       const response = await fetch("/api/sales/invoice", {
@@ -587,6 +590,12 @@ export function PaymentForm({
         const salesId = data.message?.sales_id || data.sales_id;
 
         setMessage({ type: "success", text: "Payment processed successfully" });
+
+        if (draftId) {
+          window.dispatchEvent(
+            new CustomEvent("draftCompleted", { detail: { draftId } })
+          );
+        }
 
         if (autoPrint && salesId) {
           await printReceipt(salesId);
@@ -1040,16 +1049,16 @@ export function PaymentForm({
             <Button
               onClick={onClose}
               disabled={isProcessing}
-              variant="secondary"
-              className="h-11 text-sm font-semibold"
+              variant="outline"
+              className="h-11 text-sm font-semibold border-2 border-red-300 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 hover:text-red-700 bg-transparent"
             >
               Cancel
             </Button>
             <Button
               onClick={saveDraft}
               disabled={isProcessing || cartItems.length === 0}
-              variant="secondary"
-              className="h-11 text-sm font-semibold"
+              variant="outline"
+              className="h-11 text-sm font-semibold border-2 border-amber-300 hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 text-amber-600 hover:text-amber-700 bg-transparent"
             >
               <Save className="w-4 h-4 mr-1.5" />
               Draft
@@ -1061,7 +1070,7 @@ export function PaymentForm({
                 !canComplete ||
                 (!hasActiveShift && !isInvoicePayment)
               }
-              className="h-11 text-sm font-semibold bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+              className="h-11 text-sm font-semibold bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <CheckCircle className="w-4 h-4 mr-1.5" />
               {isProcessing
@@ -1070,7 +1079,7 @@ export function PaymentForm({
                 ? "No Shift"
                 : canComplete
                 ? "Complete"
-                : `KES ${remaining.toFixed(2)}`}
+                : `KES ${Math.abs(remaining).toFixed(2)}`}
             </Button>
           </div>
         </div>

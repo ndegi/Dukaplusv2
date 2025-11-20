@@ -50,6 +50,7 @@ export function POSInterface({
   const [mobileNumber, setMobileNumber] = useState("")
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null)
   const [invoiceOutstandingAmount, setInvoiceOutstandingAmount] = useState<number | null>(null)
+  const [draftId, setDraftId] = useState<string | null>(null)
   const [customerCredit, setCustomerCredit] = useState(0)
   const [loyaltyPoints, setLoyaltyPoints] = useState(0)
 
@@ -72,7 +73,7 @@ export function POSInterface({
         const data = await response.json()
         setCustomers(data.customers || [])
       } catch (error) {
-        console.error("[v0] Failed to fetch customers:", error)
+        console.error("[DukaPlus] Failed to fetch customers:", error)
       }
     }
 
@@ -81,7 +82,7 @@ export function POSInterface({
 
   useEffect(() => {
     offlineStore.saveCart(cart).catch((error) => {
-      console.error("[v0] Failed to save cart:", error)
+      console.error("[DukaPlus] Failed to save cart:", error)
     })
   }, [cart])
 
@@ -97,6 +98,7 @@ export function POSInterface({
         setMobileNumber("")
         setCustomerCredit(0)
         setLoyaltyPoints(0)
+        console.log("[DukaPlus] Reset to Walk In customer")
         return
       }
 
@@ -108,20 +110,51 @@ export function POSInterface({
           if (response.ok) {
             const data = await response.json()
             const fullCustomer = data.customers?.find(
-              (c: any) => (c.customer_id || c.customer_name) === selectedCustomer || c.customer_name === selectedCustomer,
+              (c: any) =>
+                (c.customer_id || c.customer_name) === selectedCustomer || c.customer_name === selectedCustomer,
             )
             if (fullCustomer) {
-              const mobile = fullCustomer.mobile_number || fullCustomer.mobile_no || fullCustomer.phone || fullCustomer.mobile || ""
+              // Try multiple field names for mobile number
+              const mobile =
+                fullCustomer.mobile_number ||
+                fullCustomer.mobile_no ||
+                fullCustomer.phone ||
+                fullCustomer.mobile ||
+                fullCustomer.contact_mobile ||
+                ""
+
+              console.log("[DukaPlus] Customer data from API:", {
+                name: fullCustomer.customer_name,
+                mobileFields: {
+                  mobile_number: fullCustomer.mobile_number,
+                  mobile_no: fullCustomer.mobile_no,
+                  phone: fullCustomer.phone,
+                  mobile: fullCustomer.mobile,
+                  contact_mobile: fullCustomer.contact_mobile,
+                },
+                selectedMobile: mobile,
+              })
+
               setMobileNumber(mobile)
               setCustomerCredit(fullCustomer.account_credit || 0)
               setLoyaltyPoints(fullCustomer.loyalty_points || 0)
-              console.log("[v0] Customer info updated:", { name: fullCustomer.customer_name, mobile })
+              console.log("[DukaPlus] POS Interface updated customer info:", {
+                name: fullCustomer.customer_name,
+                mobile,
+                credit: fullCustomer.account_credit,
+                points: fullCustomer.loyalty_points,
+              })
+            } else {
+              console.log("[DukaPlus] Customer not found in API response")
             }
+          } else {
+            console.error("[DukaPlus] Failed to fetch customer list")
           }
         } catch (error) {
-          console.error("[v0] Failed to fetch customer details:", error)
+          console.error("[DukaPlus] Failed to fetch customer details:", error)
         }
       } else {
+        console.log("[DukaPlus] Customer not found in local state, using selected name:", selectedCustomer)
         setCustomerName(selectedCustomer)
       }
     }
@@ -131,12 +164,13 @@ export function POSInterface({
 
   useEffect(() => {
     const handleLoadDraftItems = (event: any) => {
-      const { items, customer, mobile } = event.detail
+      const { items, customer, mobile, draftId } = event.detail
 
       setCart([])
 
       if (customer) setCustomerName(customer)
       if (mobile) setMobileNumber(mobile)
+      if (draftId) setDraftId(draftId)
 
       items.forEach((item: any) => {
         const cartItem: CartItem = {
@@ -161,7 +195,7 @@ export function POSInterface({
     if (pendingInvoice) {
       try {
         const invoice = JSON.parse(pendingInvoice)
-        console.log("[v0] Loading pending invoice payment:", invoice)
+        console.log("[DukaPlus] Loading pending invoice payment:", invoice)
         setCustomerName(invoice.customer_name || "Walk In")
         setMobileNumber(invoice.mobile_number || "")
         setPendingInvoiceId(invoice.sales_id)
@@ -169,13 +203,13 @@ export function POSInterface({
         setShowPayment(true)
         sessionStorage.removeItem("pending_invoice_payment")
       } catch (err) {
-        console.error("[v0] Failed to load pending invoice:", err)
+        console.error("[DukaPlus] Failed to load pending invoice:", err)
       }
     }
   }, [])
 
   const addToCart = (product: any) => {
-    console.log("[v0] Adding product to cart:", product.name, "all_selling_prices:", product.all_selling_prices)
+    console.log("[DukaPlus] Adding product to cart:", product.name, "all_selling_prices:", product.all_selling_prices)
 
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id)
@@ -208,7 +242,7 @@ export function POSInterface({
         all_selling_prices: prices,
       }
 
-      console.log("[v0] New cart item:", newItem)
+      console.log("[DukaPlus] New cart item:", newItem)
       return [...prevCart, newItem]
     })
   }
@@ -241,11 +275,12 @@ export function POSInterface({
   const clearCart = () => {
     setCart([])
     offlineStore.clearCart().catch((error) => {
-      console.error("[v0] Failed to clear cart:", error)
+      console.error("[DukaPlus] Failed to clear cart:", error)
     })
     setShowPayment(false)
     setPendingInvoiceId(null)
     setInvoiceOutstandingAmount(null)
+    setDraftId(null)
   }
 
   if (showPayment) {
@@ -261,18 +296,21 @@ export function POSInterface({
             setShowPayment(false)
             setPendingInvoiceId(null)
             setInvoiceOutstandingAmount(null)
+            setDraftId(null)
           }}
           onSuccess={() => {
             clearCart()
             setShowPayment(false)
             setPendingInvoiceId(null)
             setInvoiceOutstandingAmount(null)
+            setDraftId(null)
           }}
           customerName={customerName}
           mobileNumber={mobileNumber}
           customerCredit={customerCredit}
           loyaltyPoints={loyaltyPoints}
           mode="inline"
+          draftId={draftId || undefined}
         />
       </div>
     )
