@@ -2,9 +2,9 @@
 
 import { useAuth } from "@/hooks/use-auth"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { AlertCircle, Download, Eye, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar } from 'lucide-react'
+import { AlertCircle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
@@ -76,7 +76,7 @@ export default function SalesPage() {
   const [isCancelling, setIsCancelling] = useState(false)
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
-    to: new Date()
+    to: new Date(),
   })
   const [showDatePicker, setShowDatePicker] = useState(false)
 
@@ -157,21 +157,19 @@ export default function SalesPage() {
     const searchLower = searchTerm.toLowerCase()
     const itemDate = new Date(`${item.date} ${item.time}`)
     const matchesDate = itemDate >= dateRange.from && itemDate <= dateRange.to
-    
+
     if (activeTab === "receipts") {
       const receipt = item as SalesReceipt
-      const matchesSearch = (
+      const matchesSearch =
         receipt.sales_id.toLowerCase().includes(searchLower) ||
         receipt.customer.toLowerCase().includes(searchLower) ||
         receipt.sales_owner.toLowerCase().includes(searchLower)
-      )
       return matchesSearch && matchesDate
     } else {
       const invoice = item as SalesInvoice
-      const matchesSearch = (
+      const matchesSearch =
         invoice.sales_id.toLowerCase().includes(searchLower) ||
         invoice.customer_name.toLowerCase().includes(searchLower)
-      )
       return matchesSearch && matchesDate
     }
   })
@@ -261,7 +259,7 @@ export default function SalesPage() {
   }
 
   const toggleRowExpansion = (id: string) => {
-    setExpandedRows(prev => {
+    setExpandedRows((prev) => {
       const newSet = new Set(prev)
       if (newSet.has(id)) {
         newSet.delete(id)
@@ -270,6 +268,20 @@ export default function SalesPage() {
       }
       return newSet
     })
+  }
+
+  const getStatusBadgeColor = (status: string) => {
+    const normalizedStatus = status.toLowerCase()
+    if (normalizedStatus === "paid" || normalizedStatus === "completed") {
+      return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+    } else if (normalizedStatus.includes("partly") || normalizedStatus === "partial") {
+      return "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400"
+    } else if (normalizedStatus === "unpaid" || normalizedStatus === "pending") {
+      return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+    } else if (normalizedStatus === "overdue") {
+      return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400"
+    }
+    return "bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400"
   }
 
   if (isLoading || !user) {
@@ -353,36 +365,76 @@ export default function SalesPage() {
                 >
                   <Calendar className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">
-                    {dateRange.from.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {dateRange.to.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {dateRange.from.toLocaleDateString("en-US", { month: "short", day: "numeric" })} -{" "}
+                    {dateRange.to.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   </span>
                 </Button>
-                
+
                 {showDatePicker && (
                   <div className="absolute top-full right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-50 p-4 space-y-3 min-w-64">
-                    <button onClick={() => {
-                      const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 7)
-                      setDateRange({ from, to }); setShowDatePicker(false)
-                    }} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm">Last 7 days</button>
-                    <button onClick={() => {
-                      const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 30)
-                      setDateRange({ from, to }); setShowDatePicker(false)
-                    }} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm">Last 30 days</button>
-                    <button onClick={() => {
-                      const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 90)
-                      setDateRange({ from, to }); setShowDatePicker(false)
-                    }} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm">Last 90 days</button>
+                    <button
+                      onClick={() => {
+                        const to = new Date()
+                        const from = new Date()
+                        from.setDate(from.getDate() - 7)
+                        setDateRange({ from, to })
+                        setShowDatePicker(false)
+                      }}
+                      className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm"
+                    >
+                      Last 7 days
+                    </button>
+                    <button
+                      onClick={() => {
+                        const to = new Date()
+                        const from = new Date()
+                        from.setDate(from.getDate() - 30)
+                        setDateRange({ from, to })
+                        setShowDatePicker(false)
+                      }}
+                      className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm"
+                    >
+                      Last 30 days
+                    </button>
+                    <button
+                      onClick={() => {
+                        const to = new Date()
+                        const from = new Date()
+                        from.setDate(from.getDate() - 90)
+                        setDateRange({ from, to })
+                        setShowDatePicker(false)
+                      }}
+                      className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm"
+                    >
+                      Last 90 days
+                    </button>
                     <div className="border-t border-border pt-3 space-y-2">
                       <p className="text-xs text-muted-foreground font-semibold uppercase">Custom Range</p>
                       <div>
                         <label className="text-xs text-muted-foreground">From</label>
-                        <Input type="date" value={dateRange.from.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, from: new Date(e.target.value)})} className="input-base text-sm h-8" />
+                        <Input
+                          type="date"
+                          value={dateRange.from.toISOString().split("T")[0]}
+                          onChange={(e) => setDateRange({ ...dateRange, from: new Date(e.target.value) })}
+                          className="input-base text-sm h-8"
+                        />
                       </div>
                       <div>
                         <label className="text-xs text-muted-foreground">To</label>
-                        <Input type="date" value={dateRange.to.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, to: new Date(e.target.value)})} className="input-base text-sm h-8" />
+                        <Input
+                          type="date"
+                          value={dateRange.to.toISOString().split("T")[0]}
+                          onChange={(e) => setDateRange({ ...dateRange, to: new Date(e.target.value) })}
+                          className="input-base text-sm h-8"
+                        />
                       </div>
                     </div>
-                    <button onClick={() => setShowDatePicker(false)} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm border-t border-border pt-2">Close</button>
+                    <button
+                      onClick={() => setShowDatePicker(false)}
+                      className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm border-t border-border pt-2"
+                    >
+                      Close
+                    </button>
                   </div>
                 )}
               </div>
@@ -508,7 +560,9 @@ export default function SalesPage() {
                                       <tbody>
                                         {receipt.receipt_items.map((lineItem, idx) => (
                                           <tr key={idx} className="border-b border-slate-200 dark:border-slate-700">
-                                            <td className="p-2 font-mono text-muted-foreground">{lineItem.item_code}</td>
+                                            <td className="p-2 font-mono text-muted-foreground">
+                                              {lineItem.item_code}
+                                            </td>
                                             <td className="p-2 text-foreground">{lineItem.item_name}</td>
                                             <td className="p-2 text-right text-foreground">{lineItem.quantity}</td>
                                             <td className="p-2 text-right text-muted-foreground">
@@ -574,7 +628,9 @@ export default function SalesPage() {
                                 })}
                               </td>
                               <td className="px-2 sm:px-4 py-3 text-center">
-                                <span className="px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
+                                <span
+                                  className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadgeColor(invoice.status)}`}
+                                >
                                   {invoice.status}
                                 </span>
                               </td>
@@ -615,7 +671,9 @@ export default function SalesPage() {
                                       <tbody>
                                         {invoice.invoice_items.map((lineItem, idx) => (
                                           <tr key={idx} className="border-b border-slate-200 dark:border-slate-700">
-                                            <td className="p-2 font-mono text-muted-foreground">{lineItem.item_code}</td>
+                                            <td className="p-2 font-mono text-muted-foreground">
+                                              {lineItem.item_code}
+                                            </td>
                                             <td className="p-2 text-foreground">{lineItem.item_name}</td>
                                             <td className="p-2 text-right text-foreground">{lineItem.quantity}</td>
                                             <td className="p-2 text-right text-muted-foreground">
