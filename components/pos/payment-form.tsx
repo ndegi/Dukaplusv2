@@ -375,10 +375,7 @@ export function PaymentForm({
 
   const printReceipt = async (salesId: string) => {
     try {
-      console.log(
-        "[DukaPlus] Printing receipt to 192.168.1.100 for sale:",
-        salesId
-      );
+      console.log("[DukaPlus] Printing receipt to 192.168.1.100 for sale:", salesId);
       // Network print command - adjust based on your printer setup
       const printWindow = window.open("", "_blank");
       if (printWindow) {
@@ -597,14 +594,11 @@ export function PaymentForm({
 
       // Include draft_id if completing a draft to ensure backend removes it from queue
       if (draftId) {
-        payload.draft_id = draftId;
-        console.log("[DukaPlus] Completing draft invoice:", draftId);
+        payload.sales_id = draftId;
+        console.log("[DukaPlus] Completing draft invoice with sales_id:", draftId);
       }
 
-      console.log(
-        "[DukaPlus] Payment payload:",
-        JSON.stringify(payload, null, 2)
-      );
+      console.log("[DukaPlus] Payment payload:", JSON.stringify(payload, null, 2));
 
       const response = await fetch("/api/sales/invoice", {
         method: "POST",
@@ -621,10 +615,11 @@ export function PaymentForm({
 
         if (draftId) {
           console.log(
-            "[DukaPlus] Draft completed successfully, dispatching event to clear from queue"
+            "[DukaPlus] Draft completed successfully, removing from queue:",
+            draftId
           );
           window.dispatchEvent(
-            new CustomEvent("draftCompleted", { detail: { draftId } })
+            new CustomEvent("draftCompleted", { detail: { sales_id: draftId } })
           );
         }
 

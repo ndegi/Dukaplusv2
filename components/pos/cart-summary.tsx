@@ -236,6 +236,27 @@ export function CartSummary({
     return () => window.removeEventListener("draftCompleted", handleDraftCompleted)
   }, [actualWarehouse])
 
+  useEffect(() => {
+    const handleDraftCompletedWithId = (event: CustomEvent) => {
+      const { sales_id } = event.detail
+      console.log("[DukaPlus] Cart Summary received draftCompleted event for:", sales_id)
+
+      // Remove the completed draft from local state immediately
+      setDraftReceipts((prevDrafts) => {
+        const filtered = prevDrafts.filter((draft) => draft.sales_id !== sales_id)
+        console.log("[DukaPlus] Removed draft from queue. Before:", prevDrafts.length, "After:", filtered.length)
+        setQueuedCount(filtered.length)
+        return filtered
+      })
+
+      // Also refresh from server to ensure consistency
+      setTimeout(() => fetchDraftReceipts(), 1000)
+    }
+
+    window.addEventListener("draftCompleted", handleDraftCompletedWithId as EventListener)
+    return () => window.removeEventListener("draftCompleted", handleDraftCompletedWithId as EventListener)
+  }, [])
+
   return (
     <div className="flex flex-col h-full bg-card">
       {error && (
