@@ -23,6 +23,11 @@ interface PaymentMode {
   type?: string;
 }
 
+interface PaymentModeOption {
+  label: string;
+  value: string;
+}
+
 interface PaymentFormProps {
   totalAmount: number;
   itemCount: number;
@@ -62,6 +67,9 @@ export function PaymentForm({
   mode = "inline",
 }: PaymentFormProps) {
   const [paymentModes, setPaymentModes] = useState<PaymentMode[]>([]);
+  const [paymentModeOptions, setPaymentModeOptions] = useState<
+    PaymentModeOption[]
+  >([]);
   const [splitPayments, setSplitPayments] = useState<PaymentSplit[]>([
     { id: 1, mode: "Cash", amount: totalAmount, isPaid: false },
   ]);
@@ -89,7 +97,7 @@ export function PaymentForm({
   const pointsToEarn = Math.floor(totalAmount * 0.1);
 
   useEffect(() => {
-    console.log("[DukaPlus] PaymentForm received customer data:", {
+    console.log("[v0] PaymentForm received customer data:", {
       name: initialCustomerName,
       mobile: initialMobileNumber,
       hasValue: !!initialMobileNumber,
@@ -127,7 +135,7 @@ export function PaymentForm({
         }
       }
     } catch (error) {
-      console.error("[DukaPlus] Failed to check shift status:", error);
+      console.error("[v0] Failed to check shift status:", error);
     } finally {
       setShiftCheckComplete(true);
     }
@@ -146,11 +154,23 @@ export function PaymentForm({
         const modesList = Array.isArray(modes) ? modes : [];
 
         const modesWithCredit = [...modesList];
-        if (!modesWithCredit.find((m) => m.mode_of_payment === "Credit")) {
-          modesWithCredit.push({ mode_of_payment: "Credit" });
+        if (
+          !modesWithCredit.find(
+            (m) => m.mode_of_payment.toLowerCase() === "credit"
+          )
+        ) {
+          modesWithCredit.push({ mode_of_payment: "credit" });
         }
 
         setPaymentModes(modesWithCredit);
+
+        const options: PaymentModeOption[] = modesWithCredit.map((mode) => ({
+          label:
+            mode.mode_of_payment === "credit" ? "Credit" : mode.mode_of_payment,
+          value: mode.mode_of_payment,
+        }));
+        setPaymentModeOptions(options);
+
         if (modesWithCredit.length > 0) {
           setSplitPayments([
             {
@@ -163,14 +183,22 @@ export function PaymentForm({
         }
       }
     } catch (error) {
-      console.error("[DukaPlus] Failed to fetch payment modes:", error);
-      setPaymentModes([
+      console.error("[v0] Failed to fetch payment modes:", error);
+      const fallbackModes = [
         { mode_of_payment: "Cash" },
         { mode_of_payment: "Mpesa" },
         { mode_of_payment: "Card" },
-        { mode_of_payment: "Credit" },
+        { mode_of_payment: "credit" },
         { mode_of_payment: "Paid to Till" },
-      ]);
+      ];
+      setPaymentModes(fallbackModes);
+
+      const options: PaymentModeOption[] = fallbackModes.map((mode) => ({
+        label:
+          mode.mode_of_payment === "credit" ? "Credit" : mode.mode_of_payment,
+        value: mode.mode_of_payment,
+      }));
+      setPaymentModeOptions(options);
     }
   };
 
@@ -276,7 +304,7 @@ export function PaymentForm({
         setMessage({ type: "error", text: data.message || "STK Push failed" });
       }
     } catch (error) {
-      console.error("[DukaPlus] STK Push error:", error);
+      console.error("[v0] STK Push error:", error);
       setMessage({ type: "error", text: "Failed to initiate STK Push" });
     } finally {
       setIsProcessing(false);
@@ -285,7 +313,7 @@ export function PaymentForm({
 
   const printReceipt = async (salesId: string) => {
     try {
-      console.log("[DukaPlus] Printing receipt to 192.168.1.100 for sale:", salesId);
+      console.log("[v0] Printing receipt to 192.168.1.100 for sale:", salesId);
       // Network print command - adjust based on your printer setup
       const printWindow = window.open("", "_blank");
       if (printWindow) {
@@ -304,20 +332,20 @@ export function PaymentForm({
           </html>
         `);
       }
-      console.log("[DukaPlus] Print job sent successfully");
+      console.log("[v0] Print job sent successfully");
     } catch (error) {
-      console.error("[DukaPlus] Failed to print receipt:", error);
+      console.error("[v0] Failed to print receipt:", error);
     }
   };
 
   const sendReceipt = async (salesId: string, mobile: string) => {
     if (!mobile) {
-      console.log("[DukaPlus] No mobile number provided, skipping send");
+      console.log("[v0] No mobile number provided, skipping send");
       return;
     }
 
     try {
-      console.log("[DukaPlus] Sending receipt to customer:", mobile);
+      console.log("[v0] Sending receipt to customer:", mobile);
       const response = await fetch("/api/sales/send-receipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -329,13 +357,13 @@ export function PaymentForm({
 
       const data = await response.json();
       if (response.ok) {
-        console.log("[DukaPlus] Receipt sent successfully");
+        console.log("[v0] Receipt sent successfully");
         setMessage({ type: "success", text: "Receipt sent to customer" });
       } else {
-        console.error("[DukaPlus] Failed to send receipt:", data.message);
+        console.error("[v0] Failed to send receipt:", data.message);
       }
     } catch (error) {
-      console.error("[DukaPlus] Error sending receipt:", error);
+      console.error("[v0] Error sending receipt:", error);
     }
   };
 
@@ -390,7 +418,7 @@ export function PaymentForm({
         });
       }
     } catch (error) {
-      console.error("[DukaPlus] Error saving draft:", error);
+      console.error("[v0] Error saving draft:", error);
       setMessage({ type: "error", text: "Failed to save to queue" });
     } finally {
       setIsProcessing(false);
@@ -454,7 +482,7 @@ export function PaymentForm({
           });
         }
       } catch (error) {
-        console.error("[DukaPlus] Payment error:", error);
+        console.error("[v0] Payment error:", error);
         setMessage({
           type: "error",
           text: "An error occurred while processing payment",
@@ -535,7 +563,7 @@ export function PaymentForm({
         setMessage({ type: "error", text: data.message || "Payment failed" });
       }
     } catch (error) {
-      console.error("[DukaPlus] Payment error:", error);
+      console.error("[v0] Payment error:", error);
       setMessage({
         type: "error",
         text: "An error occurred while processing payment",
@@ -716,12 +744,9 @@ export function PaymentForm({
                             }
                             className="w-full h-9 px-2.5 rounded-md border border-input bg-background text-foreground text-sm focus:ring-2 focus:ring-orange-500"
                           >
-                            {paymentModes.map((mode) => (
-                              <option
-                                key={mode.mode_of_payment}
-                                value={mode.mode_of_payment}
-                              >
-                                {mode.mode_of_payment}
+                            {paymentModeOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
                               </option>
                             ))}
                           </select>
