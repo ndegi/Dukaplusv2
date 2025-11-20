@@ -155,7 +155,7 @@ export default function RegisterPage() {
                 <label className="form-label">Full Name *</label>
                 <Input
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="Enter your full name"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   disabled={isLoading || isLoadingData}
@@ -168,7 +168,7 @@ export default function RegisterPage() {
                 <label className="form-label">Email Address *</label>
                 <Input
                   type="email"
-                  placeholder="john@example.com"
+                  placeholder="Enter your email address "
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   disabled={isLoading || isLoadingData}
@@ -181,7 +181,7 @@ export default function RegisterPage() {
                 <label className="form-label">Mobile Number *</label>
                 <Input
                   type="tel"
-                  placeholder="+254XXXXXXXXX"
+                  placeholder="Enter your mobile number"
                   value={formData.mobileNumber}
                   onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
                   disabled={isLoading || isLoadingData}
