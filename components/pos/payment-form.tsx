@@ -74,7 +74,9 @@ export function PaymentForm({
     new Date().toISOString().split("T")[0]
   );
   const [customerNameState, setCustomerName] = useState(initialCustomerName);
-  const [mobileNumberState, setMobileNumber] = useState(initialMobileNumber);
+  const [mobileNumberState, setMobileNumber] = useState(
+    initialMobileNumber || ""
+  );
   const [location, setLocation] = useState("");
   const [shiftCheckComplete, setShiftCheckComplete] = useState(false);
   const [hasActiveShift, setHasActiveShift] = useState(false);
@@ -93,13 +95,8 @@ export function PaymentForm({
       hasValue: !!initialMobileNumber,
     });
 
-    if (initialCustomerName) {
-      setCustomerName(initialCustomerName);
-    }
-    if (initialMobileNumber) {
-      setMobileNumber(initialMobileNumber);
-      console.log("[v0] Mobile number updated to:", initialMobileNumber);
-    }
+    setCustomerName(initialCustomerName);
+    setMobileNumber(initialMobileNumber || "");
   }, [initialCustomerName, initialMobileNumber]);
 
   useEffect(() => {
@@ -960,7 +957,7 @@ export function PaymentForm({
             <Button
               onClick={onClose}
               disabled={isProcessing}
-              variant="outline"
+              variant="secondary"
               className="h-11 text-sm font-semibold"
             >
               Cancel
@@ -968,7 +965,7 @@ export function PaymentForm({
             <Button
               onClick={saveDraft}
               disabled={isProcessing || cartItems.length === 0}
-              variant="outline"
+              variant="secondary"
               className="h-11 text-sm font-semibold"
             >
               <Save className="w-4 h-4 mr-1.5" />
