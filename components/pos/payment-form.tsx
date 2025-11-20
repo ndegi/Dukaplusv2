@@ -375,7 +375,10 @@ export function PaymentForm({
 
   const printReceipt = async (salesId: string) => {
     try {
-      console.log("[DukaPlus] Printing receipt to 192.168.1.100 for sale:", salesId);
+      console.log(
+        "[DukaPlus] Printing receipt to 192.168.1.100 for sale:",
+        salesId
+      );
       // Network print command - adjust based on your printer setup
       const printWindow = window.open("", "_blank");
       if (printWindow) {
@@ -517,7 +520,7 @@ export function PaymentForm({
             payment_details: splitPayments.map((payment) => ({
               mode_of_payment: payment.mode,
               amount: payment.amount,
-              reference: payment.reference,
+              reference: payment.reference || "",
             })),
           }),
         });
@@ -568,7 +571,7 @@ export function PaymentForm({
       const [year, month, day] = salesDate.split("-");
       const formattedDate = `${day}-${month}-${year}`;
 
-      const payload = {
+      const payload: any = {
         invoice_items: cartItems.map((item) => ({
           product_id: item.id,
           quantity: item.quantity,
@@ -578,7 +581,7 @@ export function PaymentForm({
         payment_details: splitPayments.map((payment) => ({
           mode_of_payment: payment.mode,
           amount: payment.amount,
-          reference: payment.reference,
+          reference: payment.reference || "",
         })),
         warehouse_id: warehouse,
         customer_name: customerNameState,
@@ -590,8 +593,18 @@ export function PaymentForm({
         sales_date: formattedDate,
         credit_used: creditAmount,
         loyalty_points_redeemed: redeemPoints,
-        ...(draftId && { draft_id: draftId }),
       };
+
+      // Include draft_id if completing a draft to ensure backend removes it from queue
+      if (draftId) {
+        payload.draft_id = draftId;
+        console.log("[DukaPlus] Completing draft invoice:", draftId);
+      }
+
+      console.log(
+        "[DukaPlus] Payment payload:",
+        JSON.stringify(payload, null, 2)
+      );
 
       const response = await fetch("/api/sales/invoice", {
         method: "POST",
@@ -601,11 +614,15 @@ export function PaymentForm({
 
       const data = await response.json();
       if (response.ok) {
-        const salesId = data.message?.sales_id || data.sales_id;
+        const salesId =
+          data.sales_id || data.message?.sales_id || data.data?.sales_id;
 
         setMessage({ type: "success", text: "Payment processed successfully" });
 
         if (draftId) {
+          console.log(
+            "[DukaPlus] Draft completed successfully, dispatching event to clear from queue"
+          );
           window.dispatchEvent(
             new CustomEvent("draftCompleted", { detail: { draftId } })
           );
