@@ -78,6 +78,12 @@ export function PaymentForm({
     text: string;
   } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [stkProcessing, setStkProcessing] = useState<{
+    [key: number]: boolean;
+  }>({});
+  const [stkStatus, setStkStatus] = useState<{
+    [key: number]: "processing" | "success" | "failure" | null;
+  }>({});
   const [salesDate, setSalesDate] = useState(
     new Date().toISOString().split("T")[0]
   );
@@ -270,44 +276,75 @@ export function PaymentForm({
       return;
     }
 
-    setMessage(null);
-    setIsProcessing(true);
+    // Set processing state for this specific payment
+    setStkProcessing((prev) => ({ ...prev, [paymentId]: true }));
+    setStkStatus((prev) => ({ ...prev, [paymentId]: "processing" }));
+    setMessage({
+      type: "success",
+      text: "Processing M-Pesa payment. Please check your phone...",
+    });
 
     try {
       const response = await fetch("/api/payments/mpesa/stk-push", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone: phoneNumber,
-          amount: payment.amount,
-          tillNumber: payment.mode.toLowerCase().includes("till")
-            ? "Till"
-            : undefined,
+          mobile_number: phoneNumber,
+          payment_details: [
+            {
+              mode_of_payment: payment.mode,
+              amount: payment.amount,
+            },
+          ],
         }),
       });
 
       const data = await response.json();
+      console.log("[DukaPlus] STK Push API Response:", data);
 
-      if (response.ok) {
+      // Check response status like React Native code
+      if (response.ok && data.message?.status === 200) {
+        // Payment successful
+        setStkStatus((prev) => ({ ...prev, [paymentId]: "success" }));
         setMessage({
           type: "success",
-          text: "STK Push sent! Check your phone to complete payment.",
+          text: "Payment successful! M-Pesa payment confirmed.",
         });
+
+        // Mark payment as paid
         setSplitPayments(
           splitPayments.map((p) =>
             p.id === paymentId
-              ? { ...p, isPaid: true, reference: data.checkoutRequestId }
+              ? {
+                  ...p,
+                  isPaid: true,
+                  reference:
+                    data.checkoutRequestId || data.message?.transaction_id,
+                }
               : p
           )
         );
       } else {
-        setMessage({ type: "error", text: data.message || "STK Push failed" });
+        // Payment failed
+        setStkStatus((prev) => ({ ...prev, [paymentId]: "failure" }));
+        const errorMessage =
+          data.message?.message ||
+          data.message ||
+          "STK Push failed. Please try again.";
+        setMessage({ type: "error", text: errorMessage });
       }
     } catch (error) {
       console.error("[DukaPlus] STK Push error:", error);
-      setMessage({ type: "error", text: "Failed to initiate STK Push" });
+      setStkStatus((prev) => ({ ...prev, [paymentId]: "failure" }));
+      setMessage({
+        type: "error",
+        text: "Failed to initiate STK Push. Please check your connection.",
+      });
     } finally {
-      setIsProcessing(false);
+      // Clear processing state after a delay to show status
+      setTimeout(() => {
+        setStkProcessing((prev) => ({ ...prev, [paymentId]: false }));
+      }, 1000);
     }
   };
 
@@ -725,6 +762,8 @@ export function PaymentForm({
                   const isMpesaOrTill =
                     payment.mode.toLowerCase().includes("mpesa") ||
                     payment.mode.toLowerCase().includes("till");
+                  const isProcessingSTK = stkProcessing[payment.id];
+                  const stkState = stkStatus[payment.id];
 
                   return (
                     <div
@@ -794,15 +833,31 @@ export function PaymentForm({
                                     }
                                     placeholder="07XXXXXXXX"
                                     className="h-9 flex-1 text-sm"
+                                    disabled={isProcessingSTK}
                                   />
                                   <Button
                                     type="button"
                                     onClick={() => handleSTKPush(payment.id)}
-                                    disabled={isProcessing}
-                                    className="bg-orange-600 hover:bg-orange-700 text-white h-9 px-2.5 text-xs whitespace-nowrap"
+                                    disabled={isProcessingSTK}
+                                    className={`h-9 px-2.5 text-xs whitespace-nowrap ${
+                                      stkState === "processing"
+                                        ? "bg-yellow-600 hover:bg-yellow-700"
+                                        : stkState === "failure"
+                                        ? "bg-red-600 hover:bg-red-700"
+                                        : "bg-orange-600 hover:bg-orange-700"
+                                    } text-white`}
                                   >
-                                    <Smartphone className="w-3.5 h-3.5 mr-1" />
-                                    STK
+                                    {stkState === "processing" ? (
+                                      <>
+                                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1" />
+                                        Processing
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Smartphone className="w-3.5 h-3.5 mr-1" />
+                                        STK
+                                      </>
+                                    )}
                                   </Button>
                                 </>
                               ) : (
