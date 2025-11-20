@@ -1,13 +1,14 @@
 "use client"
 
 import type React from "react"
+import Link from "next/link"
 
 import { useState } from "react"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { loginUser } from "@/lib/api/auth"
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Warehouse {
@@ -155,10 +156,20 @@ export function LoginForm() {
         {isLoading ? "Signing in..." : "Sign In"}
       </Button>
 
-      <div className="text-center">
-        <button type="button" className="text-sm text-warning hover:text-orange-300 transition-colors">
-          Forgot password?
-        </button>
+      <div className="space-y-2">
+        <div className="text-center">
+          <Link href="/forgot-password" className="text-sm text-warning hover:text-orange-300 transition-colors">
+            Forgot password?
+          </Link>
+        </div>
+        <div className="text-center pt-2 border-t">
+          <p className="text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <Link href="/register" className="text-primary hover:underline font-semibold">
+              Register here
+            </Link>
+          </p>
+        </div>
       </div>
     </form>
   )

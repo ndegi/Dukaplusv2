@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useCurrency } from "@/hooks/use-currency"
 
 interface SalesChartProps {
   dateRange: { from: Date; to: Date }
@@ -8,6 +9,8 @@ interface SalesChartProps {
 }
 
 export function SalesChart({ dateRange, isLoading }: SalesChartProps) {
+  const { formatCurrency } = useCurrency()
+
   const [data, setData] = useState<any[]>([])
 
   useEffect(() => {
@@ -37,7 +40,7 @@ export function SalesChart({ dateRange, isLoading }: SalesChartProps) {
             <div key={item.date} className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-slate-300">{item.date}</span>
-                <span className="font-semibold text-orange-400">KES {item.sales.toLocaleString()}</span>
+                <span className="font-semibold text-orange-400">{formatCurrency(item.sales)}</span>
               </div>
               <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
                 <div

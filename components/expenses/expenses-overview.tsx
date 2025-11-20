@@ -11,9 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { DateRangeFilter } from "@/components/reports/date-range-filter"
-import { Plus, ChevronLeft, ChevronRight, ChevronFirst, ChevronLast, Search } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, ChevronFirst, ChevronLast, Search } from "lucide-react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
+import { useCurrency } from "@/hooks/use-currency"
 
 interface Expense {
   expense_name: string
@@ -63,6 +64,8 @@ export function ExpensesOverview() {
     from.setDate(from.getDate() - 30) // Default to last 30 days
     return { from, to }
   })
+
+  const { formatCurrency, currency } = useCurrency()
 
   useEffect(() => {
     fetchExpenses()
@@ -274,16 +277,16 @@ export function ExpensesOverview() {
       }
     } else {
       if (currentPage <= 3) {
-        pages.push(1, 2, 3, 4, '...', totalPages)
+        pages.push(1, 2, 3, 4, "...", totalPages)
       } else if (currentPage >= totalPages - 2) {
-        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+        pages.push(1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
       } else {
-        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages)
+        pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages)
       }
     }
 
     return pages.map((page, index) => {
-      if (page === '...') {
+      if (page === "...") {
         return (
           <span key={`ellipsis-${index}`} className="px-3 py-1 text-muted-foreground">
             ...
@@ -415,11 +418,7 @@ export function ExpensesOverview() {
                         <td className="table-cell">{expense.expense_name}</td>
                         <td className="table-cell">{expense.expense_category}</td>
                         <td className="table-cell text-warning font-semibold">
-                          KES{" "}
-                          {expense.expense_amount.toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                          {formatCurrency(expense.expense_amount)}
                         </td>
                         <td className="table-cell-secondary">{expense.date}</td>
                         <td className="table-cell-secondary">{expense.mode_of_payment}</td>
@@ -455,15 +454,11 @@ export function ExpensesOverview() {
             {totalPages > 1 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border">
                 <div className="text-sm text-muted-foreground">
-                  Showing {startIndex + 1} to {Math.min(endIndex, filteredExpenses.length)} of {filteredExpenses.length} expenses
+                  Showing {startIndex + 1} to {Math.min(endIndex, filteredExpenses.length)} of {filteredExpenses.length}{" "}
+                  expenses
                 </div>
                 <div className="flex gap-1 items-center">
-                  <Button
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                    variant="outline"
-                    size="sm"
-                  >
+                  <Button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} variant="outline" size="sm">
                     <ChevronFirst className="w-4 h-4" />
                   </Button>
                   <Button
@@ -524,7 +519,7 @@ export function ExpensesOverview() {
             </div>
 
             <div className="space-y-2">
-              <Label className="form-label">Amount (KES)</Label>
+              <Label className="form-label">Amount ({currency.code})</Label>
               <Input
                 type="number"
                 min="0"

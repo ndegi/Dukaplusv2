@@ -1,10 +1,11 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { SyncManager } from "@/components/offline/sync-manager"
 import { OfflineIndicator } from "@/components/offline/offline-indicator"
 import { ThemeProvider } from "next-themes"
+import { CurrencyProvider } from "@/lib/contexts/currency-context"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { rel: "icon", url: "/favicon.png" },
-      { rel: "icon", url: "/icon.ico", sizes: "any" }
+      { rel: "icon", url: "/icon.ico", sizes: "any" },
     ],
     apple: "/icon.png",
   },
@@ -36,12 +37,12 @@ export default function RootLayout({
       </head>
       <body className={`font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <SyncManager />
-          <OfflineIndicator />
-          <div suppressHydrationWarning>
-            {children}
-          </div>
-          <Analytics />
+          <CurrencyProvider>
+            <SyncManager />
+            <OfflineIndicator />
+            <div suppressHydrationWarning>{children}</div>
+            <Analytics />
+          </CurrencyProvider>
         </ThemeProvider>
       </body>
     </html>

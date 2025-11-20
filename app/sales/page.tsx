@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { Input } from "@/components/ui/input"
+import { useCurrency } from "@/lib/contexts/currency-context"
 
 interface SalesReceipt {
   sales_id: string
@@ -79,6 +80,7 @@ export default function SalesPage() {
     to: new Date(),
   })
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const { currency } = useCurrency()
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -512,14 +514,14 @@ export default function SalesPage() {
                               </td>
                               <td className="px-2 sm:px-4 py-3 text-foreground">{receipt.customer}</td>
                               <td className="px-2 sm:px-4 py-3 text-right text-foreground font-semibold">
-                                KES{" "}
+                                {currency}{" "}
                                 {receipt.total_amount.toLocaleString("en-KE", {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                                 })}
                               </td>
                               <td className="px-2 sm:px-4 py-3 text-right text-muted-foreground">
-                                KES{" "}
+                                {currency}{" "}
                                 {receipt.discount_amount.toLocaleString("en-KE", {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
@@ -566,10 +568,10 @@ export default function SalesPage() {
                                             <td className="p-2 text-foreground">{lineItem.item_name}</td>
                                             <td className="p-2 text-right text-foreground">{lineItem.quantity}</td>
                                             <td className="p-2 text-right text-muted-foreground">
-                                              KES {lineItem.rate.toFixed(2)}
+                                              {currency} {lineItem.rate.toFixed(2)}
                                             </td>
                                             <td className="p-2 text-right font-semibold text-foreground">
-                                              KES {lineItem.amount.toFixed(2)}
+                                              {currency} {lineItem.amount.toFixed(2)}
                                             </td>
                                           </tr>
                                         ))}
@@ -607,21 +609,21 @@ export default function SalesPage() {
                               </td>
                               <td className="px-2 sm:px-4 py-3 text-foreground">{invoice.customer_name}</td>
                               <td className="px-2 sm:px-4 py-3 text-right text-foreground font-semibold">
-                                KES{" "}
+                                {currency}{" "}
                                 {invoice.total_amount.toLocaleString("en-KE", {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                                 })}
                               </td>
                               <td className="px-2 sm:px-4 py-3 text-right text-red-600 dark:text-red-400 font-semibold">
-                                KES{" "}
+                                {currency}{" "}
                                 {invoice.outstanding_amount.toLocaleString("en-KE", {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                                 })}
                               </td>
                               <td className="px-2 sm:px-4 py-3 text-right text-muted-foreground">
-                                KES{" "}
+                                {currency}{" "}
                                 {invoice.discount_amount.toLocaleString("en-KE", {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
@@ -677,10 +679,10 @@ export default function SalesPage() {
                                             <td className="p-2 text-foreground">{lineItem.item_name}</td>
                                             <td className="p-2 text-right text-foreground">{lineItem.quantity}</td>
                                             <td className="p-2 text-right text-muted-foreground">
-                                              KES {lineItem.rate.toFixed(2)}
+                                              {currency} {lineItem.rate.toFixed(2)}
                                             </td>
                                             <td className="p-2 text-right font-semibold text-foreground">
-                                              KES {lineItem.amount.toFixed(2)}
+                                              {currency} {lineItem.amount.toFixed(2)}
                                             </td>
                                           </tr>
                                         ))}

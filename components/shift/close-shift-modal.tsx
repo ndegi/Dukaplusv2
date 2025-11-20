@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { AlertCircle, CheckCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle } from "lucide-react"
+import { useCurrency } from "@/hooks/use-currency"
 
 interface PaymentMode {
   mode_of_payment: string
@@ -39,6 +40,7 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingData, setIsLoadingData] = useState(true)
+  const { formatCurrency } = useCurrency()
 
   useEffect(() => {
     fetchInitialData()
@@ -62,51 +64,57 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
         const shiftsData = await shiftsResponse.json()
         console.log("[DukaPlus] Close shift - fetched shifts:", shiftsData)
         const shifts = shiftsData.message?.shifts || []
-        
+
         // Find the open shift (status = 0)
         const openShift = shifts.find((shift: any) => shift.status === 0)
         if (openShift) {
           setShiftName(openShift.shift_name)
-          
+
           const shiftDetailsFromApi = openShift.details || []
           console.log("[DukaPlus] Close shift - shift details:", shiftDetailsFromApi)
-          
+
           if (shiftDetailsFromApi.length > 0) {
             // Map shift details to include expected amounts
             const detailsWithExpected = shiftDetailsFromApi.map((detail: ShiftDetail) => ({
               mode_of_payment: detail.mode_of_payment,
               closing_amount: 0,
-              expected_amount: detail.expected_closing_balance || 0
+              expected_amount: detail.expected_closing_balance || 0,
             }))
             setShiftDetails(detailsWithExpected)
           } else if (modesData) {
             // Fallback to payment modes if no shift details
             const modes = modesData.modes || []
-            setShiftDetails(modes.map((mode: PaymentMode) => ({ 
-              mode_of_payment: mode.mode_of_payment, 
-              closing_amount: 0,
-              expected_amount: 0
-            })))
+            setShiftDetails(
+              modes.map((mode: PaymentMode) => ({
+                mode_of_payment: mode.mode_of_payment,
+                closing_amount: 0,
+                expected_amount: 0,
+              })),
+            )
           }
         } else {
           // No open shift found, use payment modes
           if (modesData) {
             const modes = modesData.modes || []
-            setShiftDetails(modes.map((mode: PaymentMode) => ({ 
-              mode_of_payment: mode.mode_of_payment, 
-              closing_amount: 0,
-              expected_amount: 0
-            })))
+            setShiftDetails(
+              modes.map((mode: PaymentMode) => ({
+                mode_of_payment: mode.mode_of_payment,
+                closing_amount: 0,
+                expected_amount: 0,
+              })),
+            )
           } else {
             const modesResponse2 = await fetch("/api/payments/modes")
             if (modesResponse2.ok) {
               const modesData2 = await modesResponse2.json()
               const modes = modesData2.modes || []
-              setShiftDetails(modes.map((mode: PaymentMode) => ({ 
-                mode_of_payment: mode.mode_of_payment, 
-                closing_amount: 0,
-                expected_amount: 0
-              })))
+              setShiftDetails(
+                modes.map((mode: PaymentMode) => ({
+                  mode_of_payment: mode.mode_of_payment,
+                  closing_amount: 0,
+                  expected_amount: 0,
+                })),
+              )
             }
           }
         }
@@ -188,7 +196,11 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
               ) : (
                 <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-danger flex-shrink-0" />
               )}
-              <p className={message.type === "success" ? "text-success text-xs sm:text-sm" : "text-danger text-xs sm:text-sm"}>
+              <p
+                className={
+                  message.type === "success" ? "text-success text-xs sm:text-sm" : "text-danger text-xs sm:text-sm"
+                }
+              >
                 {message.text}
               </p>
             </div>
@@ -201,7 +213,7 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
           ) : (
             <div className="space-y-3 sm:space-y-4">
               <p className="text-xs sm:text-sm text-muted-foreground">
-                {shiftDetails.length > 0 
+                {shiftDetails.length > 0
                   ? `Enter actual closing amounts for all ${shiftDetails.length} payment modes:`
                   : "Enter closing amounts for each payment mode:"}
               </p>
@@ -212,8 +224,9 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
                       <div className="flex items-center justify-between">
                         <label className="form-label text-xs sm:text-sm font-semibold">{detail.mode_of_payment}</label>
                         <span className="text-xs text-muted-foreground">
-                          Expected: <span className="font-semibold text-foreground">
-                            KES {(detail.expected_amount ?? 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          Expected:{" "}
+                          <span className="font-semibold text-foreground">
+                            {formatCurrency(detail.expected_amount ?? 0)}
                           </span>
                         </span>
                       </div>
@@ -226,21 +239,25 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
                         className="input-base text-sm"
                       />
                       {detail.closing_amount > 0 && (
-                        <p className={`text-xs ${
-                          detail.closing_amount === detail.expected_amount 
-                            ? 'text-success' 
-                            : Math.abs(detail.closing_amount - (detail.expected_amount ?? 0)) < 1
-                            ? 'text-warning'
-                            : 'text-danger'
-                        }`}>
-                          Difference: KES {(detail.closing_amount - (detail.expected_amount ?? 0)).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <p
+                          className={`text-xs ${
+                            detail.closing_amount === detail.expected_amount
+                              ? "text-success"
+                              : Math.abs(detail.closing_amount - (detail.expected_amount ?? 0)) < 1
+                                ? "text-warning"
+                                : "text-danger"
+                          }`}
+                        >
+                          {formatCurrency(detail.closing_amount - (detail.expected_amount ?? 0))}
                         </p>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-xs sm:text-sm">No payment modes available. Please check your connection.</p>
+                <p className="text-muted-foreground text-xs sm:text-sm">
+                  No payment modes available. Please check your connection.
+                </p>
               )}
             </div>
           )}

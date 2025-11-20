@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useCurrency } from "@/hooks/use-currency"
 
 interface Product {
   name: string
@@ -13,6 +14,8 @@ interface TopProductsProps {
 }
 
 export function TopProducts({ isLoading }: TopProductsProps) {
+  const { formatCurrency } = useCurrency()
+
   const [products, setProducts] = useState<Product[]>([
     { name: "Cappuccino", quantity: 234, revenue: 58500 },
     { name: "Espresso", quantity: 189, revenue: 37800 },
@@ -43,7 +46,7 @@ export function TopProducts({ isLoading }: TopProductsProps) {
                   <p className="text-xs text-slate-500">{product.quantity} units sold</p>
                 </div>
               </div>
-              <p className="text-sm font-semibold text-green-400">KES {product.revenue.toLocaleString()}</p>
+              <p className="text-sm font-semibold text-green-400">{formatCurrency(product.revenue)}</p>
             </div>
           ))}
         </div>

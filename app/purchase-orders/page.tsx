@@ -2,12 +2,13 @@
 
 import { useAuth } from "@/hooks/use-auth"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { AlertCircle, Plus, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
+import { AlertCircle, Plus, ChevronDown, ChevronUp, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
+import { useCurrency } from "@/hooks/use-currency"
 
 interface PurchaseOrder {
   order_id: string
@@ -32,6 +33,7 @@ interface Supplier {
 export default function PurchaseOrdersPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  const { formatCurrency } = useCurrency()
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [isLoadingOrders, setIsLoadingOrders] = useState(true)
@@ -92,7 +94,7 @@ export default function PurchaseOrdersPage() {
   }
 
   const toggleOrderExpansion = (orderId: string) => {
-    setExpandedOrders(prev => {
+    setExpandedOrders((prev) => {
       const newSet = new Set(prev)
       if (newSet.has(orderId)) {
         newSet.delete(orderId)
@@ -219,11 +221,7 @@ export default function PurchaseOrdersPage() {
                           <td className="table-cell font-mono text-warning">{order.order_id}</td>
                           <td className="table-cell">{order.supplier}</td>
                           <td className="px-4 py-3 text-right text-warning font-semibold">
-                            KES{" "}
-                            {order.grand_total.toLocaleString("en-KE", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
+                            {formatCurrency(order.grand_total)}
                           </td>
                           <td className="px-4 py-3 text-center">
                             {order.status === "To Bill" ? (
@@ -250,11 +248,21 @@ export default function PurchaseOrdersPage() {
                                 <table className="w-full text-xs">
                                   <thead className="bg-muted">
                                     <tr>
-                                      <th className="p-2 text-left text-xs font-semibold text-muted-foreground">Item Code</th>
-                                      <th className="p-2 text-left text-xs font-semibold text-muted-foreground">Item Name</th>
-                                      <th className="p-2 text-right text-xs font-semibold text-muted-foreground">Quantity</th>
-                                      <th className="p-2 text-right text-xs font-semibold text-muted-foreground">Rate</th>
-                                      <th className="p-2 text-right text-xs font-semibold text-muted-foreground">Amount</th>
+                                      <th className="p-2 text-left text-xs font-semibold text-muted-foreground">
+                                        Item Code
+                                      </th>
+                                      <th className="p-2 text-left text-xs font-semibold text-muted-foreground">
+                                        Item Name
+                                      </th>
+                                      <th className="p-2 text-right text-xs font-semibold text-muted-foreground">
+                                        Quantity
+                                      </th>
+                                      <th className="p-2 text-right text-xs font-semibold text-muted-foreground">
+                                        Rate
+                                      </th>
+                                      <th className="p-2 text-right text-xs font-semibold text-muted-foreground">
+                                        Amount
+                                      </th>
                                     </tr>
                                   </thead>
                                   <tbody>
@@ -264,10 +272,10 @@ export default function PurchaseOrdersPage() {
                                         <td className="p-2 text-foreground">{item.item_name}</td>
                                         <td className="p-2 text-right text-foreground">{item.qty}</td>
                                         <td className="p-2 text-right text-muted-foreground">
-                                          KES {item.rate.toFixed(2)}
+                                          {formatCurrency(item.rate)}
                                         </td>
                                         <td className="p-2 text-right font-semibold text-foreground">
-                                          KES {item.amount.toFixed(2)}
+                                          {formatCurrency(item.amount)}
                                         </td>
                                       </tr>
                                     ))}
@@ -310,9 +318,9 @@ export default function PurchaseOrdersPage() {
 }
 
 function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [items, setItems] = useState<Array<{ product_id: string; product_name: string; quantity: number; buying_price: number }>>([
-    { product_id: "", product_name: "", quantity: 1, buying_price: 0 }
-  ])
+  const [items, setItems] = useState<
+    Array<{ product_id: string; product_name: string; quantity: number; buying_price: number }>
+  >([{ product_id: "", product_name: "", quantity: 1, buying_price: 0 }])
   const [supplier, setSupplier] = useState("")
   const [requiredBy, setRequiredBy] = useState("")
   const [isSaving, setIsSaving] = useState(false)
@@ -428,7 +436,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
                   <input
                     type="number"
                     value={item.quantity}
-                    onChange={(e) => updateItem(index, "quantity", parseInt(e.target.value) || 0)}
+                    onChange={(e) => updateItem(index, "quantity", Number.parseInt(e.target.value) || 0)}
                     className="input-base w-20"
                     placeholder="Qty"
                     min="1"
@@ -436,7 +444,7 @@ function NewOrderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
                   <input
                     type="number"
                     value={item.buying_price}
-                    onChange={(e) => updateItem(index, "buying_price", parseFloat(e.target.value) || 0)}
+                    onChange={(e) => updateItem(index, "buying_price", Number.parseFloat(e.target.value) || 0)}
                     className="input-base w-24"
                     placeholder="Price"
                     min="0"

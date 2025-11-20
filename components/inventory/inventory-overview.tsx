@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Plus, ChevronLeft, ChevronRight } from "lucide-react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
-import { ProductFormInline } from "./product-form-inline" // Updated import
+import { ProductFormInline } from "./product-form-inline"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
+import { useCurrency } from "@/lib/contexts/currency-context"
 
 interface Product {
   id: string
@@ -21,7 +22,7 @@ interface Product {
   barcode: string | null
   colorCode: string
   description: string
-  img?: string // Added image field
+  img?: string
   lastUpdated: string
   status: "in_stock" | "low_stock" | "out_of_stock"
 }
@@ -36,6 +37,7 @@ export function InventoryOverview() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+  const { currency } = useCurrency()
 
   useEffect(() => {
     fetchProducts()
@@ -126,12 +128,18 @@ export function InventoryOverview() {
         <div className="card-base p-6 mb-6 border-2 border-orange-300">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold">{selectedProduct ? "Edit Product" : "Add New Product"}</h3>
-            <Button onClick={() => {
-              setShowForm(false)
-              setSelectedProduct(null)
-            }} variant="ghost" size="sm">✕</Button>
+            <Button
+              onClick={() => {
+                setShowForm(false)
+                setSelectedProduct(null)
+              }}
+              variant="ghost"
+              size="sm"
+            >
+              ✕
+            </Button>
           </div>
-          
+
           <ProductFormInline
             product={selectedProduct}
             onClose={() => {
@@ -176,8 +184,12 @@ export function InventoryOverview() {
                       <td className="table-cell-secondary font-mono">{product.sku}</td>
                       <td className="table-cell-secondary">{product.category}</td>
                       <td className="table-cell text-center font-semibold">{product.quantity.toFixed(1)}</td>
-                      <td className="table-cell-secondary text-center">KES {product.cost.toFixed(2)}</td>
-                      <td className="table-cell-secondary text-center">KES {product.price.toFixed(2)}</td>
+                      <td className="table-cell-secondary text-center">
+                        {currency} {product.cost.toFixed(2)}
+                      </td>
+                      <td className="table-cell-secondary text-center">
+                        {currency} {product.price.toFixed(2)}
+                      </td>
                       <td className="px-4 py-3 text-sm text-center">
                         <span
                           className={

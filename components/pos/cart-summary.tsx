@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faTrashAlt, faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
 import { formatCurrency, formatNumber } from "@/lib/utils/format"
+import { useCurrency } from "@/lib/contexts/currency-context"
 
 interface CartItem {
   id: string
@@ -54,6 +55,7 @@ export function CartSummary({
   const [draftReceipts, setDraftReceipts] = useState<any[]>([])
   const [showQueueModal, setShowQueueModal] = useState(false)
   const [actualWarehouse, setActualWarehouse] = useState("")
+  const { currency } = useCurrency()
 
   useEffect(() => {
     const storedWarehouse = sessionStorage.getItem("selected_warehouse")
@@ -360,7 +362,7 @@ export function CartSummary({
       <div className="border-t border-border px-4 py-3 space-y-2 bg-card">
         <div className="flex justify-between items-center mb-3">
           <span className="text-sm font-semibold text-foreground">Total: ({cart.length} items)</span>
-          <span className="text-lg font-bold text-success">{formatCurrency(totalAmount)}</span>
+          <span className="text-lg font-bold text-success">{formatCurrency(totalAmount, currency)}</span>
         </div>
 
         <Button
@@ -368,7 +370,7 @@ export function CartSummary({
           disabled={cart.length === 0 || isProcessing}
           className="w-full btn-success h-12 text-base uppercase rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          CHECKOUT ({formatCurrency(totalAmount)})
+          CHECKOUT ({formatCurrency(totalAmount, currency)})
         </Button>
 
         <div className="grid grid-cols-2 gap-2">
@@ -413,7 +415,7 @@ export function CartSummary({
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-success">
-                        KES {draft.total_amount?.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
+                        {currency} {draft.total_amount?.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
                       </p>
                       <p className="text-xs text-muted-foreground mt-2">
                         {draft.status === "paid" || draft.status === 1 ? "✓ Paid" : "Pending"}

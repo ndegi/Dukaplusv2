@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { useCurrency } from "@/lib/contexts/currency-context"
 
 interface SellingPrice {
   unit_of_measure: string
@@ -21,6 +22,8 @@ interface CartItemEditorProps {
 }
 
 export function CartItemEditor({ isOpen, onClose, item, sellingPrices, onUpdate }: CartItemEditorProps) {
+  const { currency } = useCurrency()
+
   const [quantity, setQuantity] = useState(item?.quantity || 1)
   const [price, setPrice] = useState(item?.price || 0)
   const [selectedUnit, setSelectedUnit] = useState(item?.unit_of_measure || sellingPrices[0]?.unit_of_measure)
@@ -42,11 +45,9 @@ export function CartItemEditor({ isOpen, onClose, item, sellingPrices, onUpdate 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="dialog-content">
         <DialogHeader>
-          {/* Using dialog-title semantic class */}
           <DialogTitle className="dialog-title">Edit Item: {item?.name}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          {/* Unit of Measure Selection */}
           <div className="space-y-2">
             <Label className="form-label">Unit of Measure</Label>
             <Select value={selectedUnit} onValueChange={handleUnitChange}>
@@ -56,14 +57,13 @@ export function CartItemEditor({ isOpen, onClose, item, sellingPrices, onUpdate 
               <SelectContent className="dialog-content">
                 {sellingPrices.map((sp) => (
                   <SelectItem key={sp.unit_of_measure} value={sp.unit_of_measure}>
-                    {sp.unit_of_measure} - KES {sp.unit_selling_price.toFixed(2)}
+                    {sp.unit_of_measure} - {currency} {sp.unit_selling_price.toFixed(2)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Quantity */}
           <div className="space-y-2">
             <Label className="form-label">Quantity</Label>
             <Input
@@ -75,9 +75,8 @@ export function CartItemEditor({ isOpen, onClose, item, sellingPrices, onUpdate 
             />
           </div>
 
-          {/* Price Adjustment */}
           <div className="space-y-2">
-            <Label className="form-label">Unit Price (KES)</Label>
+            <Label className="form-label">Unit Price ({currency})</Label>
             <Input
               type="number"
               min="0"
@@ -88,11 +87,12 @@ export function CartItemEditor({ isOpen, onClose, item, sellingPrices, onUpdate 
             />
           </div>
 
-          {/* Summary */}
           <div className="card-base p-3 space-y-1">
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>Subtotal:</span>
-              <span className="text-warning font-semibold">KES {(quantity * price).toFixed(2)}</span>
+              <span className="text-warning font-semibold">
+                {currency} {(quantity * price).toFixed(2)}
+              </span>
             </div>
           </div>
 

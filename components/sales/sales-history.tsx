@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
-import { AlertCircle, Search, Calendar } from 'lucide-react'
+import { AlertCircle, Search, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useCurrency } from "@/lib/contexts/currency-context"
 
 interface Transaction {
   id: string
@@ -16,6 +17,8 @@ interface Transaction {
 }
 
 export function SalesHistory() {
+  const { currency } = useCurrency()
+
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -24,7 +27,7 @@ export function SalesHistory() {
   const [totalSales, setTotalSales] = useState(0)
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
-    to: new Date()
+    to: new Date(),
   })
   const [showDatePicker, setShowDatePicker] = useState(false)
 
@@ -37,10 +40,10 @@ export function SalesHistory() {
       const matchesSearch =
         transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         transaction.paymentMethod.toLowerCase().includes(searchTerm.toLowerCase())
-      
+
       const transactionDate = new Date(transaction.date)
       const matchesDate = transactionDate >= dateRange.from && transactionDate <= dateRange.to
-      
+
       return matchesSearch && matchesDate
     })
     setFilteredTransactions(filtered)
@@ -97,13 +100,15 @@ export function SalesHistory() {
 
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
           <p className="text-slate-400 text-sm mb-1">Total Sales</p>
-          <p className="text-3xl font-bold text-orange-400">KES {totalSales.toFixed(2)}</p>
+          <p className="text-3xl font-bold text-orange-400">
+            {currency} {totalSales.toFixed(2)}
+          </p>
         </div>
 
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
           <p className="text-slate-400 text-sm mb-1">Average Transaction</p>
           <p className="text-3xl font-bold text-green-400">
-            KES {(transactions.length > 0 ? totalSales / transactions.length : 0).toFixed(2)}
+            {currency} {(transactions.length > 0 ? totalSales / transactions.length : 0).toFixed(2)}
           </p>
         </div>
       </div>
@@ -127,21 +132,76 @@ export function SalesHistory() {
           >
             <Calendar className="w-4 h-4 mr-2" />
             <span className="text-sm">
-              {dateRange.from.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {dateRange.to.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {dateRange.from.toLocaleDateString("en-US", { month: "short", day: "numeric" })} -{" "}
+              {dateRange.to.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             </span>
           </Button>
-          
+
           {showDatePicker && (
             <div className="absolute top-full right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-50 p-4 space-y-3 min-w-64">
-              <button onClick={() => { const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 7); setDateRange({ from, to }); setShowDatePicker(false) }} className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300">Last 7 days</button>
-              <button onClick={() => { const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 30); setDateRange({ from, to }); setShowDatePicker(false) }} className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300">Last 30 days</button>
-              <button onClick={() => { const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 90); setDateRange({ from, to }); setShowDatePicker(false) }} className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300">Last 90 days</button>
+              <button
+                onClick={() => {
+                  const to = new Date()
+                  const from = new Date()
+                  from.setDate(from.getDate() - 7)
+                  setDateRange({ from, to })
+                  setShowDatePicker(false)
+                }}
+                className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300"
+              >
+                Last 7 days
+              </button>
+              <button
+                onClick={() => {
+                  const to = new Date()
+                  const from = new Date()
+                  from.setDate(from.getDate() - 30)
+                  setDateRange({ from, to })
+                  setShowDatePicker(false)
+                }}
+                className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300"
+              >
+                Last 30 days
+              </button>
+              <button
+                onClick={() => {
+                  const to = new Date()
+                  const from = new Date()
+                  from.setDate(from.getDate() - 90)
+                  setDateRange({ from, to })
+                  setShowDatePicker(false)
+                }}
+                className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300"
+              >
+                Last 90 days
+              </button>
               <div className="border-t border-slate-700 pt-3 space-y-2">
                 <p className="text-xs text-slate-400 font-semibold uppercase">Custom Range</p>
-                <div><label className="text-xs text-slate-400">From</label><Input type="date" value={dateRange.from.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, from: new Date(e.target.value)})} className="bg-slate-700 border-slate-600 text-white text-sm h-8" /></div>
-                <div><label className="text-xs text-slate-400">To</label><Input type="date" value={dateRange.to.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, to: new Date(e.target.value)})} className="bg-slate-700 border-slate-600 text-white text-sm h-8" /></div>
+                <div>
+                  <label className="text-xs text-slate-400">From</label>
+                  <Input
+                    type="date"
+                    value={dateRange.from.toISOString().split("T")[0]}
+                    onChange={(e) => setDateRange({ ...dateRange, from: new Date(e.target.value) })}
+                    className="bg-slate-700 border-slate-600 text-white text-sm h-8"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400">To</label>
+                  <Input
+                    type="date"
+                    value={dateRange.to.toISOString().split("T")[0]}
+                    onChange={(e) => setDateRange({ ...dateRange, to: new Date(e.target.value) })}
+                    className="bg-slate-700 border-slate-600 text-white text-sm h-8"
+                  />
+                </div>
               </div>
-              <button onClick={() => setShowDatePicker(false)} className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300 border-t border-slate-700 pt-2">Close</button>
+              <button
+                onClick={() => setShowDatePicker(false)}
+                className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300 border-t border-slate-700 pt-2"
+              >
+                Close
+              </button>
             </div>
           )}
         </div>
@@ -190,7 +250,7 @@ export function SalesHistory() {
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-400">{transaction.items}</td>
                     <td className="px-6 py-4 text-sm font-semibold text-orange-400">
-                      KES{" "}
+                      {currency}{" "}
                       {transaction.amount.toLocaleString("en-US", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,

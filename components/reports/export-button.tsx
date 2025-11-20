@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
 import { useState } from "react"
+import { useCurrency } from "@/hooks/use-currency"
 
 interface ExportButtonProps {
   reportData: any
@@ -11,6 +12,7 @@ interface ExportButtonProps {
 
 export function ExportButton({ reportData, dateRange }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false)
+  const { formatCurrency, currency } = useCurrency()
 
   const handleExport = async () => {
     setIsExporting(true)
@@ -22,10 +24,10 @@ export function ExportButton({ reportData, dateRange }: ExportButtonProps) {
         [`Period: ${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}`],
         [],
         ["Metric", "Value"],
-        ["Total Sales", `KES ${reportData?.totalSales?.toFixed(2) || 0}`],
+        ["Total Sales", `${currency.code} ${reportData?.totalSales?.toFixed(2) || 0}`],
         ["Total Transactions", reportData?.totalTransactions || 0],
-        ["Average Transaction", `KES ${reportData?.averageTransaction?.toFixed(2) || 0}`],
-        ["Today's Sales", `KES ${reportData?.todaySales?.toFixed(2) || 0}`],
+        ["Average Transaction", `${currency.code} ${reportData?.averageTransaction?.toFixed(2) || 0}`],
+        ["Today's Sales", `${currency.code} ${reportData?.todaySales?.toFixed(2) || 0}`],
       ]
         .map((row) => row.join(","))
         .join("\n")

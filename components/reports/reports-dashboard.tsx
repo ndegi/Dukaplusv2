@@ -4,11 +4,12 @@ import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DateRangeFilter } from "./date-range-filter"
 import { ExportButton } from "./export-button"
-import { AlertCircle, ChevronLeft, ChevronRight, Search, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { AlertCircle, ChevronLeft, ChevronRight, Search, ChevronsLeft, ChevronsRight } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useCurrency } from "@/hooks/use-currency"
 
 interface User {
   id: string
@@ -100,9 +101,9 @@ export function ReportsDashboard({ user }: { user: User }) {
   const fetchAllReports = async () => {
     try {
       setIsLoading(true)
-      
+
       const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
-      
+
       if (!warehouseId) {
         setError("Please select a warehouse first")
         setIsLoading(false)
@@ -207,33 +208,53 @@ export function ReportsDashboard({ user }: { user: User }) {
         </TabsList>
 
         <TabsContent value="sales">
-          <SalesReportTable data={salesReports} isLoading={isLoading} dateRange={dateRange} onDateRangeChange={setDateRange} />
+          <SalesReportTable
+            data={salesReports}
+            isLoading={isLoading}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
         </TabsContent>
 
         <TabsContent value="customers">
-          <CustomerStatementTable data={customerStatements} isLoading={isLoading} dateRange={dateRange} onDateRangeChange={setDateRange} />
+          <CustomerStatementTable
+            data={customerStatements}
+            isLoading={isLoading}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
         </TabsContent>
 
         <TabsContent value="stock">
-          <StockBalanceTable data={stockBalance} isLoading={isLoading} dateRange={dateRange} onDateRangeChange={setDateRange} />
+          <StockBalanceTable
+            data={stockBalance}
+            isLoading={isLoading}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
         </TabsContent>
 
         <TabsContent value="ledger">
-          <StockLedgerTable data={stockLedger} isLoading={isLoading} dateRange={dateRange} onDateRangeChange={setDateRange} />
+          <StockLedgerTable
+            data={stockLedger}
+            isLoading={isLoading}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
         </TabsContent>
       </Tabs>
     </div>
   )
 }
 
-function EnhancedPagination({ 
-  currentPage, 
-  totalPages, 
+function EnhancedPagination({
+  currentPage,
+  totalPages,
   onPageChange,
   startIndex,
   endIndex,
-  totalRecords
-}: { 
+  totalRecords,
+}: {
   currentPage: number
   totalPages: number
   onPageChange: (page: number) => void
@@ -243,21 +264,21 @@ function EnhancedPagination({
 }) {
   const getPageNumbers = () => {
     const pages: (number | string)[] = []
-    
+
     if (totalPages <= 7) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i)
       }
     } else {
       if (currentPage <= 3) {
-        pages.push(1, 2, 3, 4, '...', totalPages)
+        pages.push(1, 2, 3, 4, "...", totalPages)
       } else if (currentPage >= totalPages - 2) {
-        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+        pages.push(1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
       } else {
-        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages)
+        pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages)
       }
     }
-    
+
     return pages
   }
 
@@ -266,7 +287,7 @@ function EnhancedPagination({
       <div className="text-sm text-gray-600 dark:text-gray-400">
         Showing {startIndex + 1} to {Math.min(endIndex, totalRecords)} of {totalRecords} records
       </div>
-      
+
       <div className="flex items-center gap-1">
         {/* First page */}
         <Button
@@ -278,7 +299,7 @@ function EnhancedPagination({
         >
           <ChevronsLeft className="w-4 h-4" />
         </Button>
-        
+
         {/* Previous page */}
         <Button
           onClick={() => onPageChange(currentPage - 1)}
@@ -291,25 +312,23 @@ function EnhancedPagination({
         </Button>
 
         {/* Page numbers */}
-        {getPageNumbers().map((page, idx) => (
-          page === '...' ? (
-            <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">...</span>
+        {getPageNumbers().map((page, idx) =>
+          page === "..." ? (
+            <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">
+              ...
+            </span>
           ) : (
             <Button
               key={page}
               onClick={() => onPageChange(page as number)}
               variant={currentPage === page ? "default" : "outline"}
               size="sm"
-              className={`h-8 w-8 p-0 ${
-                currentPage === page 
-                  ? "bg-orange-500 hover:bg-orange-600 text-white" 
-                  : ""
-              }`}
+              className={`h-8 w-8 p-0 ${currentPage === page ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
             >
               {page}
             </Button>
-          )
-        ))}
+          ),
+        )}
 
         {/* Next page */}
         <Button
@@ -337,12 +356,12 @@ function EnhancedPagination({
   )
 }
 
-function SalesReportTable({ 
-  data, 
+function SalesReportTable({
+  data,
   isLoading,
   dateRange,
-  onDateRangeChange
-}: { 
+  onDateRangeChange,
+}: {
   data: SalesReportItem[]
   isLoading: boolean
   dateRange: { from: Date; to: Date }
@@ -351,6 +370,7 @@ function SalesReportTable({
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
   const itemsPerPage = 10
+  const { formatCurrency } = useCurrency()
 
   if (isLoading) {
     return <div className="text-foreground p-6 text-center">Loading sales report...</div>
@@ -362,14 +382,15 @@ function SalesReportTable({
     const toDate = new Date(dateRange.to)
     fromDate.setHours(0, 0, 0, 0)
     toDate.setHours(23, 59, 59, 999)
-    
+
     const dateMatch = itemDate >= fromDate && itemDate <= toDate
-    
-    const searchMatch = searchTerm === "" || 
-      (item.sales_invoice?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
-      (item.customer?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
-      (item.warehouse?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
-    
+
+    const searchMatch =
+      searchTerm === "" ||
+      (item.sales_invoice?.toLowerCase() ?? "").includes(searchTerm.toLowerCase()) ||
+      (item.customer?.toLowerCase() ?? "").includes(searchTerm.toLowerCase()) ||
+      (item.warehouse?.toLowerCase() ?? "").includes(searchTerm.toLowerCase())
+
     return dateMatch && searchMatch
   })
 
@@ -386,20 +407,16 @@ function SalesReportTable({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border-b border-gray-200 dark:border-slate-700">
         <div className="bg-orange-500/10 dark:bg-orange-500/10 border border-orange-500/20 dark:border-orange-500/20 rounded-lg p-3">
           <p className="text-gray-600 dark:text-gray-400 text-sm">Total Revenue</p>
-          <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
-            KES {totalSales.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
+          <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(totalSales)}</p>
         </div>
         <div className="bg-green-500/10 dark:bg-green-500/10 border border-green-500/20 dark:border-green-500/20 rounded-lg p-3">
           <p className="text-gray-600 dark:text-gray-400 text-sm">Total Profit</p>
-          <p className="text-xl font-bold text-green-600 dark:text-green-400">
-            KES {profitTotal.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
+          <p className="text-xl font-bold text-green-600 dark:text-green-400">{formatCurrency(profitTotal)}</p>
         </div>
         <div className="bg-blue-500/10 dark:bg-blue-500/10 border border-blue-500/20 dark:border-blue-500/20 rounded-lg p-3">
           <p className="text-gray-600 dark:text-gray-400 text-sm">Outstanding</p>
           <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-            KES {filteredData.reduce((sum, item) => sum + item.outstanding_amount, 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatCurrency(filteredData.reduce((sum, item) => sum + item.outstanding_amount, 0))}
           </p>
         </div>
       </div>
@@ -446,14 +463,10 @@ function SalesReportTable({
                 <td className="p-3 text-gray-600 dark:text-gray-400">{row.customer}</td>
                 <td className="p-3 text-gray-600 dark:text-gray-400">{row.warehouse}</td>
                 <td className="p-3 text-right text-orange-600 dark:text-orange-400 font-semibold">
-                  KES {row.grand_total.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatCurrency(row.grand_total)}
                 </td>
-                <td className="p-3 text-right text-gray-600 dark:text-gray-400">
-                  KES {row.cash.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
-                <td className="p-3 text-right text-gray-600 dark:text-gray-400">
-                  KES {row.mpesa.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
+                <td className="p-3 text-right text-gray-600 dark:text-gray-400">{formatCurrency(row.cash)}</td>
+                <td className="p-3 text-right text-gray-600 dark:text-gray-400">{formatCurrency(row.mpesa)}</td>
                 <td className="p-3">
                   <span
                     className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -485,12 +498,12 @@ function SalesReportTable({
   )
 }
 
-function CustomerStatementTable({ 
-  data, 
+function CustomerStatementTable({
+  data,
   isLoading,
   dateRange,
-  onDateRangeChange
-}: { 
+  onDateRangeChange,
+}: {
   data: CustomerStatement[]
   isLoading: boolean
   dateRange: { from: Date; to: Date }
@@ -499,6 +512,7 @@ function CustomerStatementTable({
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
   const itemsPerPage = 10
+  const { formatCurrency } = useCurrency()
 
   if (isLoading) {
     return <div className="text-foreground p-6 text-center">Loading customer statements...</div>
@@ -510,14 +524,15 @@ function CustomerStatementTable({
     const toDate = new Date(dateRange.to)
     fromDate.setHours(0, 0, 0, 0)
     toDate.setHours(23, 59, 59, 999)
-    
+
     const dateMatch = itemDate >= fromDate && itemDate <= toDate
-    
-    const searchMatch = searchTerm === "" ||
-      (item.sales_invoice?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
-      (item.customer_name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
-      (item.warehouse?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
-    
+
+    const searchMatch =
+      searchTerm === "" ||
+      (item.sales_invoice?.toLowerCase() ?? "").includes(searchTerm.toLowerCase()) ||
+      (item.customer_name?.toLowerCase() ?? "").includes(searchTerm.toLowerCase()) ||
+      (item.warehouse?.toLowerCase() ?? "").includes(searchTerm.toLowerCase())
+
     return dateMatch && searchMatch
   })
 
@@ -535,21 +550,15 @@ function CustomerStatementTable({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border-b border-gray-200 dark:border-slate-700">
         <div className="bg-blue-500/10 dark:bg-blue-500/10 border border-blue-500/20 dark:border-blue-500/20 rounded-lg p-3">
           <p className="text-gray-600 dark:text-gray-400 text-sm">Total Invoiced</p>
-          <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-            KES {totalInvoiced.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
+          <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(totalInvoiced)}</p>
         </div>
         <div className="bg-green-500/10 dark:bg-green-500/10 border border-green-500/20 dark:border-green-500/20 rounded-lg p-3">
           <p className="text-gray-600 dark:text-gray-400 text-sm">Total Paid</p>
-          <p className="text-xl font-bold text-green-600 dark:text-green-400">
-            KES {totalPaid.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
+          <p className="text-xl font-bold text-green-600 dark:text-green-400">{formatCurrency(totalPaid)}</p>
         </div>
         <div className="bg-red-500/10 dark:bg-red-500/10 border border-red-500/20 dark:border-red-500/20 rounded-lg p-3">
           <p className="text-gray-600 dark:text-gray-400 text-sm">Outstanding</p>
-          <p className="text-xl font-bold text-red-600 dark:text-red-400">
-            KES {totalOutstanding.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
+          <p className="text-xl font-bold text-red-600 dark:text-red-400">{formatCurrency(totalOutstanding)}</p>
         </div>
       </div>
 
@@ -593,13 +602,13 @@ function CustomerStatementTable({
                 <td className="p-3 text-gray-600 dark:text-gray-400">{row.customer_name}</td>
                 <td className="p-3 text-gray-600 dark:text-gray-400">{row.posting_date}</td>
                 <td className="p-3 text-right text-blue-600 dark:text-blue-400 font-semibold">
-                  KES {row.invoice_amount.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatCurrency(row.invoice_amount)}
                 </td>
                 <td className="p-3 text-right text-green-600 dark:text-green-400 font-semibold">
-                  KES {row.paid_amount.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatCurrency(row.paid_amount)}
                 </td>
                 <td className="p-3 text-right text-orange-600 dark:text-orange-400 font-semibold">
-                  KES {row.outstanding_amount.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatCurrency(row.outstanding_amount)}
                 </td>
                 <td className="p-3">
                   <span
@@ -632,12 +641,12 @@ function CustomerStatementTable({
   )
 }
 
-function StockBalanceTable({ 
-  data, 
+function StockBalanceTable({
+  data,
   isLoading,
   dateRange,
-  onDateRangeChange
-}: { 
+  onDateRangeChange,
+}: {
   data: StockBalanceItem[]
   isLoading: boolean
   dateRange: { from: Date; to: Date }
@@ -646,6 +655,7 @@ function StockBalanceTable({
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
   const itemsPerPage = 10
+  const { formatCurrency } = useCurrency()
 
   if (isLoading) {
     return <div className="text-foreground p-6 text-center">Loading stock balance...</div>
@@ -654,10 +664,10 @@ function StockBalanceTable({
   const filteredData = data.filter((item) => {
     const searchLower = searchTerm.toLowerCase()
     return (
-      (item.item_code?.toLowerCase() ?? '').includes(searchLower) ||
-      (item.item_name?.toLowerCase() ?? '').includes(searchLower) ||
-      (item.warehouse?.toLowerCase() ?? '').includes(searchLower) ||
-      (item.item_group?.toLowerCase() ?? '').includes(searchLower)
+      (item.item_code?.toLowerCase() ?? "").includes(searchLower) ||
+      (item.item_name?.toLowerCase() ?? "").includes(searchLower) ||
+      (item.warehouse?.toLowerCase() ?? "").includes(searchLower) ||
+      (item.item_group?.toLowerCase() ?? "").includes(searchLower)
     )
   })
 
@@ -679,15 +689,11 @@ function StockBalanceTable({
         </div>
         <div className="bg-green-500/10 dark:bg-green-500/10 border border-green-500/20 dark:border-green-500/20 rounded-lg p-3">
           <p className="text-gray-600 dark:text-gray-400 text-sm">Stock Value</p>
-          <p className="text-xl font-bold text-green-600 dark:text-green-400">
-            KES {totalStockValue.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
+          <p className="text-xl font-bold text-green-600 dark:text-green-400">{formatCurrency(totalStockValue)}</p>
         </div>
         <div className="bg-orange-500/10 dark:bg-orange-500/10 border border-orange-500/20 dark:border-orange-500/20 rounded-lg p-3">
           <p className="text-gray-600 dark:text-gray-400 text-sm">Amount Sold</p>
-          <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
-            KES {totalAmountSold.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
+          <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(totalAmountSold)}</p>
         </div>
       </div>
 
@@ -734,19 +740,22 @@ function StockBalanceTable({
                 <td className="p-3 text-gray-600 dark:text-gray-400">{row.item_group}</td>
                 <td className="p-3 text-gray-600 dark:text-gray-400">{row.warehouse}</td>
                 <td className="p-3 text-right text-gray-600 dark:text-gray-400">
-                  {(row.opening_stock || 0).toLocaleString('en-KE')}
+                  {(row.opening_stock || 0).toLocaleString("en-KE")}
                 </td>
                 <td className="p-3 text-right text-green-600 dark:text-green-400">
-                  {(row.qty_in || 0).toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  {(row.qty_in || 0).toLocaleString("en-KE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                 </td>
                 <td className="p-3 text-right text-red-600 dark:text-red-400">
-                  {(row.qty_out || 0).toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  {(row.qty_out || 0).toLocaleString("en-KE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                 </td>
                 <td className="p-3 text-right text-blue-600 dark:text-blue-400 font-semibold">
-                  {(row.balance_stock || 0).toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  {(row.balance_stock || 0).toLocaleString("en-KE", {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  })}
                 </td>
                 <td className="p-3 text-right text-orange-600 dark:text-orange-400 font-semibold">
-                  KES {(row.stock_value || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatCurrency(row.stock_value || 0)}
                 </td>
               </tr>
             ))}
@@ -768,12 +777,12 @@ function StockBalanceTable({
   )
 }
 
-function StockLedgerTable({ 
-  data, 
+function StockLedgerTable({
+  data,
   isLoading,
   dateRange,
-  onDateRangeChange
-}: { 
+  onDateRangeChange,
+}: {
   data: StockLedgerItem[]
   isLoading: boolean
   dateRange: { from: Date; to: Date }
@@ -786,6 +795,7 @@ function StockLedgerTable({
   const [apiData, setApiData] = useState<StockLedgerItem[]>([])
   const [isLoadingApi, setIsLoadingApi] = useState(false)
   const itemsPerPage = 10
+  const { formatCurrency } = useCurrency()
 
   useEffect(() => {
     fetchStockLedger()
@@ -794,30 +804,30 @@ function StockLedgerTable({
   const fetchStockLedger = async () => {
     try {
       setIsLoadingApi(true)
-      
+
       const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
-      
+
       if (!warehouseId) {
         console.error("[DukaPlus] No warehouse selected")
         setApiData([])
         setIsLoadingApi(false)
         return
       }
-      
-      const dateStr = `${selectedDate.getDate().toString().padStart(2, '0')}-${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}-${selectedDate.getFullYear()}`
-      
-      const url = new URL('/api/reports/stock-ledger', window.location.origin)
-      url.searchParams.set('warehouse_id', warehouseId)
-      url.searchParams.set('date', dateStr)
-      
+
+      const dateStr = `${selectedDate.getDate().toString().padStart(2, "0")}-${(selectedDate.getMonth() + 1).toString().padStart(2, "0")}-${selectedDate.getFullYear()}`
+
+      const url = new URL("/api/reports/stock-ledger", window.location.origin)
+      url.searchParams.set("warehouse_id", warehouseId)
+      url.searchParams.set("date", dateStr)
+
       if (selectedItemCode) {
-        url.searchParams.set('item_code', selectedItemCode)
+        url.searchParams.set("item_code", selectedItemCode)
       }
-      
+
       console.log("[DukaPlus] Fetching stock ledger with params:", { warehouseId, date: dateStr, itemCode: selectedItemCode })
-      
+
       const response = await fetch(url.toString())
-      
+
       if (response.ok) {
         const result = await response.json()
         console.log("[DukaPlus] Stock ledger API response:", result)
@@ -840,17 +850,17 @@ function StockLedgerTable({
     return <div className="text-foreground p-6 text-center">Loading stock ledger...</div>
   }
 
-  const uniqueItemCodes = Array.from(new Set(data.map(item => item.item_code).filter(Boolean)))
-    .sort()
+  const uniqueItemCodes = Array.from(new Set(data.map((item) => item.item_code).filter(Boolean))).sort()
 
   const filteredData = dataSource.filter((item) => {
     const searchLower = searchTerm.toLowerCase()
-    const searchMatch = searchTerm === "" ||
-      (item.item_code?.toLowerCase() ?? '').includes(searchLower) ||
-      (item.item_name?.toLowerCase() ?? '').includes(searchLower) ||
-      (item.item_group?.toLowerCase() ?? '').includes(searchLower) ||
-      (item.voucher_no?.toLowerCase() ?? '').includes(searchLower)
-    
+    const searchMatch =
+      searchTerm === "" ||
+      (item.item_code?.toLowerCase() ?? "").includes(searchLower) ||
+      (item.item_name?.toLowerCase() ?? "").includes(searchLower) ||
+      (item.item_group?.toLowerCase() ?? "").includes(searchLower) ||
+      (item.voucher_no?.toLowerCase() ?? "").includes(searchLower)
+
     return searchMatch
   })
 
@@ -872,14 +882,12 @@ function StockLedgerTable({
         <div className="bg-green-500/10 dark:bg-green-500/10 border border-green-500/20 dark:border-green-500/20 rounded-lg p-3">
           <p className="text-gray-600 dark:text-gray-400 text-sm">Total Balance</p>
           <p className="text-xl font-bold text-green-600 dark:text-green-400">
-            {totalBalance.toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+            {totalBalance.toLocaleString("en-KE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
           </p>
         </div>
         <div className="bg-orange-500/10 dark:bg-orange-500/10 border border-orange-500/20 dark:border-orange-500/20 rounded-lg p-3">
           <p className="text-gray-600 dark:text-gray-400 text-sm">Total Stock Value</p>
-          <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
-            KES {totalValue.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
+          <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(totalValue)}</p>
         </div>
       </div>
 
@@ -897,12 +905,12 @@ function StockLedgerTable({
             className="pl-10 bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700"
           />
         </div>
-        
+
         <div className="flex flex-col">
           <Label className="text-xs text-gray-600 dark:text-gray-400 mb-1">Select Date</Label>
           <Input
             type="date"
-            value={selectedDate.toISOString().split('T')[0]}
+            value={selectedDate.toISOString().split("T")[0]}
             onChange={(e) => {
               setSelectedDate(new Date(e.target.value))
               setCurrentPage(1)
@@ -910,7 +918,7 @@ function StockLedgerTable({
             className="bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700"
           />
         </div>
-        
+
         <div className="flex flex-col">
           <Label className="text-xs text-gray-600 dark:text-gray-400 mb-1">Item Code (Optional)</Label>
           <select
@@ -929,12 +937,9 @@ function StockLedgerTable({
             ))}
           </select>
         </div>
-        
+
         <div className="flex items-end">
-          <Button
-            onClick={fetchStockLedger}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-          >
+          <Button onClick={fetchStockLedger} className="w-full bg-orange-500 hover:bg-orange-600 text-white">
             Fetch Report
           </Button>
         </div>
@@ -966,16 +971,19 @@ function StockLedgerTable({
                 <td className="p-3 text-gray-600 dark:text-gray-400">{row.voucher_type}</td>
                 <td className="p-3 text-gray-900 dark:text-gray-200 font-mono">{row.voucher_no}</td>
                 <td className="p-3 text-right text-green-600 dark:text-green-400">
-                  {(row.qty_in || 0).toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  {(row.qty_in || 0).toLocaleString("en-KE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                 </td>
                 <td className="p-3 text-right text-red-600 dark:text-red-400">
-                  {(row.qty_out || 0).toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  {(row.qty_out || 0).toLocaleString("en-KE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                 </td>
                 <td className="p-3 text-right text-blue-600 dark:text-blue-400 font-semibold">
-                  {(row.balance_in_store || 0).toLocaleString('en-KE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  {(row.balance_in_store || 0).toLocaleString("en-KE", {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  })}
                 </td>
                 <td className="p-3 text-right text-orange-600 dark:text-orange-400 font-semibold">
-                  KES {(row.value_of_stock || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatCurrency(row.value_of_stock || 0)}
                 </td>
                 <td className="p-3 text-gray-600 dark:text-gray-400 text-xs">{row.posting_date}</td>
               </tr>

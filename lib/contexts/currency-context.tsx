@@ -1,0 +1,48 @@
+"use client"
+
+import type React from "react"
+import { createContext, useContext, useEffect, useState } from "react"
+
+interface CurrencyContextType {
+  currency: string
+  isLoading: boolean
+}
+
+const CurrencyContext = createContext<CurrencyContextType>({
+  currency: "KES",
+  isLoading: true,
+})
+
+export function CurrencyProvider({ children }: { children: React.ReactNode }) {
+  const [currency, setCurrency] = useState("KES")
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchCurrency() {
+      try {
+        const response = await fetch("/api/currency")
+        const data = await response.json()
+        if (data.message?.currency) {
+          setCurrency(data.message.currency)
+        }
+      } catch (error) {
+        console.error("Failed to fetch currency:", error)
+        // Keep default KES
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCurrency()
+  }, [])
+
+  return <CurrencyContext.Provider value={{ currency, isLoading }}>{children}</CurrencyContext.Provider>
+}
+
+export function useCurrency() {
+  const context = useContext(CurrencyContext)
+  if (!context) {
+    throw new Error("useCurrency must be used within a CurrencyProvider")
+  }
+  return context
+}

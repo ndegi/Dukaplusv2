@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useCurrency } from "@/hooks/use-currency"
 
 interface PaymentData {
   method: string
@@ -15,6 +16,8 @@ interface PaymentBreakdownProps {
 }
 
 export function PaymentMethodBreakdown({ dateRange, isLoading }: PaymentBreakdownProps) {
+  const { formatCurrency } = useCurrency()
+
   const [data, setData] = useState<PaymentData[]>([
     { method: "Cash", amount: 45000, percentage: 45, color: "bg-orange-500" },
     { method: "Card", amount: 35000, percentage: 35, color: "bg-blue-500" },
@@ -39,7 +42,7 @@ export function PaymentMethodBreakdown({ dateRange, isLoading }: PaymentBreakdow
                   <span className="text-sm font-medium text-slate-300">{item.method}</span>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-white">KES {item.amount.toLocaleString()}</p>
+                  <p className="text-sm font-semibold text-white">{formatCurrency(item.amount)}</p>
                   <p className="text-xs text-slate-500">{item.percentage}%</p>
                 </div>
               </div>
@@ -52,7 +55,7 @@ export function PaymentMethodBreakdown({ dateRange, isLoading }: PaymentBreakdow
           <div className="pt-4 border-t border-slate-700 mt-4">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-slate-300">Total Revenue</span>
-              <p className="text-lg font-bold text-orange-400">KES {total.toLocaleString()}</p>
+              <p className="text-lg font-bold text-orange-400">{formatCurrency(total)}</p>
             </div>
           </div>
         </div>

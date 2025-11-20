@@ -8,10 +8,11 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Search, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { Plus, Search, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
+import { useCurrency } from "@/hooks/use-currency"
 
 interface Customer {
   customer_id: string
@@ -35,6 +36,7 @@ type SortOrder = "asc" | "desc"
 export default function CustomersPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  const { formatCurrency } = useCurrency()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [pageLoading, setPageLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -329,20 +331,12 @@ export default function CustomersPage() {
                         <td className="table-cell-secondary">{customer.mobile_number}</td>
                         <td className="table-cell-secondary">{customer.customer_group || "-"}</td>
                         <td className="px-4 py-3 text-right text-warning font-semibold">
-                          KES{" "}
-                          {customer.total_sales.toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                          {formatCurrency(customer.total_sales)}
                         </td>
                         <td className="table-cell-secondary text-right">{customer.paid_invoices.count}</td>
                         <td className="table-cell-secondary text-right">{customer.unpaid_invoices.count}</td>
                         <td className="px-4 py-3">
-                          <TableActionButtons
-                            showEdit={true}
-                            onEdit={() => handleEditCustomer(customer)}
-                            size="sm"
-                          />
+                          <TableActionButtons showEdit={true} onEdit={() => handleEditCustomer(customer)} size="sm" />
                         </td>
                       </tr>
                     ))}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faExclamationCircle, faBox, faPlus } from "@fortawesome/free-solid-svg-icons"
+import { useCurrency } from "@/lib/contexts/currency-context"
 
 interface Product {
   id: string
@@ -28,6 +29,7 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [categories, setCategories] = useState<string[]>([])
+  const { currency } = useCurrency()
 
   useEffect(() => {
     fetchProducts()
@@ -179,9 +181,7 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
                     <FontAwesomeIcon icon={faBox} className="text-2xl text-muted-foreground" />
                   )}
                   <div className="absolute top-1 right-1">
-                    <span
-                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${currentStatus.color}`}
-                    >
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${currentStatus.color}`}>
                       {product.quantity} available
                     </span>
                   </div>
@@ -193,14 +193,17 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
                   <div className="mt-2 flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <p className="text-base sm:text-lg font-bold text-foreground truncate">
-                        KES{" "}
+                        {currency}{" "}
                         {product.price.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                       {product.all_selling_prices && product.all_selling_prices.length > 1 && (
                         <div className="mt-1 space-y-0.5">
                           {product.all_selling_prices.map((price) => (
-                            <p key={price.unit_of_measure} className="text-xs text-muted-foreground font-medium truncate">
-                              {price.unit_of_measure}: KES{" "}
+                            <p
+                              key={price.unit_of_measure}
+                              className="text-xs text-muted-foreground font-medium truncate"
+                            >
+                              {price.unit_of_measure}: {currency}{" "}
                               {price.unit_selling_price.toLocaleString("en-KE", {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
