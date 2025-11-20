@@ -219,14 +219,8 @@ export function PaymentForm({
   const remaining = totalAmount - totalPaid;
   const isPaymentComplete = Math.abs(remaining) < 0.01;
 
-  const allElectronicPaymentsPaid = splitPayments.every((payment) => {
-    const isElectronic =
-      payment.mode.toLowerCase().includes("mpesa") ||
-      payment.mode.toLowerCase().includes("till");
-    return !isElectronic || payment.isPaid;
-  });
-
-  const canComplete = isPaymentComplete && allElectronicPaymentsPaid;
+  // This enables offline Mpesa/Till payments without requiring STK push confirmation
+  const canComplete = isPaymentComplete;
 
   const addPaymentSplit = () => {
     const newId = Math.max(...splitPayments.map((p) => p.id), 0) + 1;
@@ -352,10 +346,7 @@ export function PaymentForm({
 
   const printReceipt = async (salesId: string) => {
     try {
-      console.log(
-        "[DukaPlus] Printing receipt to 192.168.1.100 for sale:",
-        salesId
-      );
+      console.log("[DukaPlus] Printing receipt to 192.168.1.100 for sale:", salesId);
       // Network print command - adjust based on your printer setup
       const printWindow = window.open("", "_blank");
       if (printWindow) {
@@ -477,17 +468,10 @@ export function PaymentForm({
     }
 
     if (!canComplete) {
-      if (!isPaymentComplete) {
-        setMessage({
-          type: "error",
-          text: `Payment incomplete. Remaining: KES ${remaining.toFixed(2)}`,
-        });
-      } else {
-        setMessage({
-          type: "error",
-          text: "Please complete all M-PESA/Till payments before finishing",
-        });
-      }
+      setMessage({
+        type: "error",
+        text: `Payment incomplete. Remaining: KES ${remaining.toFixed(2)}`,
+      });
       return;
     }
 
@@ -504,6 +488,7 @@ export function PaymentForm({
             payment_details: splitPayments.map((payment) => ({
               mode_of_payment: payment.mode,
               amount: payment.amount,
+              reference: payment.reference,
             })),
           }),
         });
