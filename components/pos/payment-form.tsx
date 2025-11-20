@@ -89,7 +89,7 @@ export function PaymentForm({
   const pointsToEarn = Math.floor(totalAmount * 0.1);
 
   useEffect(() => {
-    console.log("[v0] PaymentForm received customer data:", {
+    console.log("[DukaPlus] PaymentForm received customer data:", {
       name: initialCustomerName,
       mobile: initialMobileNumber,
       hasValue: !!initialMobileNumber,
@@ -127,7 +127,7 @@ export function PaymentForm({
         }
       }
     } catch (error) {
-      console.error("[v0] Failed to check shift status:", error);
+      console.error("[DukaPlus] Failed to check shift status:", error);
     } finally {
       setShiftCheckComplete(true);
     }
@@ -163,7 +163,7 @@ export function PaymentForm({
         }
       }
     } catch (error) {
-      console.error("[v0] Failed to fetch payment modes:", error);
+      console.error("[DukaPlus] Failed to fetch payment modes:", error);
       setPaymentModes([
         { mode_of_payment: "Cash" },
         { mode_of_payment: "Mpesa" },
@@ -276,7 +276,7 @@ export function PaymentForm({
         setMessage({ type: "error", text: data.message || "STK Push failed" });
       }
     } catch (error) {
-      console.error("[v0] STK Push error:", error);
+      console.error("[DukaPlus] STK Push error:", error);
       setMessage({ type: "error", text: "Failed to initiate STK Push" });
     } finally {
       setIsProcessing(false);
@@ -285,7 +285,7 @@ export function PaymentForm({
 
   const printReceipt = async (salesId: string) => {
     try {
-      console.log("[v0] Printing receipt to 192.168.1.100 for sale:", salesId);
+      console.log("[DukaPlus] Printing receipt to 192.168.1.100 for sale:", salesId);
       // Network print command - adjust based on your printer setup
       const printWindow = window.open("", "_blank");
       if (printWindow) {
@@ -304,20 +304,20 @@ export function PaymentForm({
           </html>
         `);
       }
-      console.log("[v0] Print job sent successfully");
+      console.log("[DukaPlus] Print job sent successfully");
     } catch (error) {
-      console.error("[v0] Failed to print receipt:", error);
+      console.error("[DukaPlus] Failed to print receipt:", error);
     }
   };
 
   const sendReceipt = async (salesId: string, mobile: string) => {
     if (!mobile) {
-      console.log("[v0] No mobile number provided, skipping send");
+      console.log("[DukaPlus] No mobile number provided, skipping send");
       return;
     }
 
     try {
-      console.log("[v0] Sending receipt to customer:", mobile);
+      console.log("[DukaPlus] Sending receipt to customer:", mobile);
       const response = await fetch("/api/sales/send-receipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -329,13 +329,13 @@ export function PaymentForm({
 
       const data = await response.json();
       if (response.ok) {
-        console.log("[v0] Receipt sent successfully");
+        console.log("[DukaPlus] Receipt sent successfully");
         setMessage({ type: "success", text: "Receipt sent to customer" });
       } else {
-        console.error("[v0] Failed to send receipt:", data.message);
+        console.error("[DukaPlus] Failed to send receipt:", data.message);
       }
     } catch (error) {
-      console.error("[v0] Error sending receipt:", error);
+      console.error("[DukaPlus] Error sending receipt:", error);
     }
   };
 
@@ -390,7 +390,7 @@ export function PaymentForm({
         });
       }
     } catch (error) {
-      console.error("[v0] Error saving draft:", error);
+      console.error("[DukaPlus] Error saving draft:", error);
       setMessage({ type: "error", text: "Failed to save to queue" });
     } finally {
       setIsProcessing(false);
@@ -454,7 +454,7 @@ export function PaymentForm({
           });
         }
       } catch (error) {
-        console.error("[v0] Payment error:", error);
+        console.error("[DukaPlus] Payment error:", error);
         setMessage({
           type: "error",
           text: "An error occurred while processing payment",
@@ -535,7 +535,7 @@ export function PaymentForm({
         setMessage({ type: "error", text: data.message || "Payment failed" });
       }
     } catch (error) {
-      console.error("[v0] Payment error:", error);
+      console.error("[DukaPlus] Payment error:", error);
       setMessage({
         type: "error",
         text: "An error occurred while processing payment",
