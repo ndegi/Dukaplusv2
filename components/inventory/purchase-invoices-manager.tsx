@@ -1,152 +1,190 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { AlertCircle, CheckCircle, Plus, ChevronDown, ChevronUp, FileText, Trash2 } from "lucide-react"
-import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
-import { TableActionButtons } from "@/components/ui/table-action-buttons"
-import { DateRangeFilter } from "@/components/reports/date-range-filter"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertCircle,
+  CheckCircle,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Trash2,
+  CreditCard,
+} from "lucide-react";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { TableActionButtons } from "@/components/ui/table-action-buttons";
+import { DateRangeFilter } from "@/components/reports/date-range-filter";
 
 interface PurchaseInvoice {
-  name: string
-  supplier: string
-  status: string
-  posting_date: string
-  docstatus: number
+  name: string;
+  supplier: string;
+  status: string;
+  posting_date: string;
+  docstatus: number;
   items: {
-    item_code: string
-    item_name: string
-    qty: number
-    rate: number
-    amount: number
-    warehouse: string
-  }[]
+    item_code: string;
+    item_name: string;
+    qty: number;
+    rate: number;
+    amount: number;
+    warehouse: string;
+  }[];
+  purchase_order?: string;
 }
 
 interface PurchaseOrder {
-  order_id: string
-  supplier: string
-  status: string
-  grand_total: number
+  order_id: string;
+  supplier: string;
+  status: string;
+  grand_total: number;
 }
 
 interface PaymentMode {
-  mode_of_payment: string
+  mode_of_payment: string;
 }
 
 interface Payment {
-  id: number
-  mode: string
-  amount: string
+  id: number;
+  mode: string;
+  amount: string;
 }
 
 export function PurchaseInvoicesManager() {
-  const [invoices, setInvoices] = useState<PurchaseInvoice[]>([])
-  const [orders, setOrders] = useState<PurchaseOrder[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [showPaymentView, setShowPaymentView] = useState(false)
-  const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null)
-  const [expandedInvoices, setExpandedInvoices] = useState<Set<string>>(new Set())
-  const [selectedOrderId, setSelectedOrderId] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "submitted" | "paid" | "unpaid">("all")
+  const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
+  const [orders, setOrders] = useState<PurchaseOrder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showPaymentView, setShowPaymentView] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
+  const [expandedInvoices, setExpandedInvoices] = useState<Set<string>>(
+    new Set()
+  );
+  const [selectedOrderId, setSelectedOrderId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "draft" | "submitted" | "paid" | "unpaid"
+  >("all");
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date(),
-  })
+  });
   const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean
-    title: string
-    description: string
-    action: () => void
-    variant: "danger" | "success"
+    open: boolean;
+    title: string;
+    description: string;
+    action: () => void;
+    variant: "danger" | "success";
   }>({
     open: false,
     title: "",
     description: "",
     action: () => {},
     variant: "success",
-  })
+  });
 
-  const [paymentModes, setPaymentModes] = useState<PaymentMode[]>([])
-  const [payments, setPayments] = useState<Payment[]>([{ id: 1, mode: "Cash", amount: "" }])
-  const [showEditForm, setShowEditForm] = useState(false)
-  const [editingInvoice, setEditingInvoice] = useState<PurchaseInvoice | null>(null)
+  const [paymentModes, setPaymentModes] = useState<PaymentMode[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([
+    { id: 1, mode: "Cash", amount: "" },
+  ]);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<PurchaseInvoice | null>(
+    null
+  );
 
   useEffect(() => {
-    fetchInvoices()
-    fetchOrders()
-    fetchPaymentModes()
-  }, [])
+    fetchInvoices();
+    fetchOrders();
+    fetchPaymentModes();
+  }, []);
 
   const fetchInvoices = async () => {
     try {
-      setIsLoading(true)
-      const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
-      const response = await fetch(`/api/purchase-invoices?warehouse_id=${encodeURIComponent(warehouseId)}`)
-      const data = await response.json()
+      setIsLoading(true);
+      const warehouseId = sessionStorage.getItem("selected_warehouse") || "";
+      const response = await fetch(
+        `/api/purchase-invoices?warehouse_id=${encodeURIComponent(warehouseId)}`
+      );
+      const data = await response.json();
 
       if (response.ok && data.message?.data) {
-        setInvoices(data.message.data)
+        setInvoices(data.message.data);
       } else {
-        setMessage({ type: "error", text: data.message || "Failed to fetch purchase invoices" })
+        setMessage({
+          type: "error",
+          text: data.message || "Failed to fetch purchase invoices",
+        });
       }
     } catch (error) {
-      setMessage({ type: "error", text: "Error fetching purchase invoices" })
-      console.error("[DukaPlus] Error fetching purchase invoices:", error)
+      setMessage({ type: "error", text: "Error fetching purchase invoices" });
+      console.error("[DukaPlus] Error fetching purchase invoices:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const fetchOrders = async () => {
     try {
-      const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
-      if (!warehouseId) return
+      const warehouseId = sessionStorage.getItem("selected_warehouse") || "";
+      if (!warehouseId) return;
 
-      const response = await fetch(`/api/purchase-orders?warehouse_id=${encodeURIComponent(warehouseId)}`)
-      const data = await response.json()
+      const response = await fetch(
+        `/api/purchase-orders?warehouse_id=${encodeURIComponent(warehouseId)}`
+      );
+      const data = await response.json();
 
       if (response.ok && data.message?.purchase_orders) {
         // Show orders that can be invoiced (not Draft, not Cancelled)
         const ordersToInvoice = data.message.purchase_orders.filter(
-          (order: PurchaseOrder) => order.status !== "Draft" && order.status !== "Cancelled",
-        )
-        setOrders(ordersToInvoice)
+          (order: PurchaseOrder) =>
+            order.status !== "Draft" && order.status !== "Cancelled"
+        );
+        setOrders(ordersToInvoice);
       }
     } catch (error) {
-      console.error("[DukaPlus] Error fetching purchase orders:", error)
+      console.error("[DukaPlus] Error fetching purchase orders:", error);
     }
-  }
+  };
 
   const fetchPaymentModes = async () => {
     try {
-      const response = await fetch("/api/payments/modes")
+      const response = await fetch("/api/payments/modes");
       if (response.ok) {
-        const data = await response.json()
-        const modes = data.message?.modes_of_payments || data.modes || data.message?.mode_of_payments || []
-        const modesList = Array.isArray(modes) ? modes : []
-        setPaymentModes(modesList)
+        const data = await response.json();
+        const modes =
+          data.message?.modes_of_payments ||
+          data.modes ||
+          data.message?.mode_of_payments ||
+          [];
+        const modesList = Array.isArray(modes) ? modes : [];
+        setPaymentModes(modesList);
 
         // Set default payment mode to first in list
         if (modesList.length > 0) {
-          setPayments([{ id: 1, mode: modesList[0].mode_of_payment, amount: "" }])
+          setPayments([
+            { id: 1, mode: modesList[0].mode_of_payment, amount: "" },
+          ]);
         }
       }
     } catch (error) {
-      console.error("[DukaPlus] Failed to fetch payment modes:", error)
+      console.error("[DukaPlus] Failed to fetch payment modes:", error);
       // Fallback to hardcoded modes if API fails
-      setPaymentModes([{ mode_of_payment: "Cash" }, { mode_of_payment: "Mpesa" }])
+      setPaymentModes([
+        { mode_of_payment: "Cash" },
+        { mode_of_payment: "Mpesa" },
+      ]);
     }
-  }
+  };
 
   const handleCreateInvoice = async () => {
     if (!selectedOrderId) {
-      setMessage({ type: "error", text: "Please select a purchase order" })
-      return
+      setMessage({ type: "error", text: "Please select a purchase order" });
+      return;
     }
 
     setConfirmDialog({
@@ -154,8 +192,8 @@ export function PurchaseInvoicesManager() {
       title: "Create Purchase Invoice?",
       description: `Create invoice for order ${selectedOrderId}?`,
       action: async () => {
-        setIsSubmitting(true)
-        setMessage(null)
+        setIsSubmitting(true);
+        setMessage(null);
 
         try {
           const response = await fetch("/api/purchase-invoices/create", {
@@ -166,32 +204,41 @@ export function PurchaseInvoicesManager() {
               purchase_invoice_id: "",
               items: [],
             }),
-          })
+          });
 
-          const data = await response.json()
+          const data = await response.json();
 
           if (response.ok) {
             setMessage({
               type: "success",
-              text: data.message?.message || "Purchase invoice created successfully",
-            })
-            setShowCreateForm(false)
-            setSelectedOrderId("")
-            fetchInvoices()
-            fetchOrders()
+              text:
+                data.message?.message ||
+                "Purchase invoice created successfully",
+            });
+            setShowCreateForm(false);
+            setSelectedOrderId("");
+            fetchInvoices();
+            fetchOrders();
           } else {
-            setMessage({ type: "error", text: data.message?.message || "Failed to create purchase invoice" })
+            setMessage({
+              type: "error",
+              text:
+                data.message?.message || "Failed to create purchase invoice",
+            });
           }
         } catch (error) {
-          setMessage({ type: "error", text: "Error creating purchase invoice" })
-          console.error("[DukaPlus] Error creating purchase invoice:", error)
+          setMessage({
+            type: "error",
+            text: "Error creating purchase invoice",
+          });
+          console.error("[DukaPlus] Error creating purchase invoice:", error);
         } finally {
-          setIsSubmitting(false)
+          setIsSubmitting(false);
         }
       },
       variant: "success",
-    })
-  }
+    });
+  };
 
   const handleSubmitInvoice = async (invoiceId: string) => {
     setConfirmDialog({
@@ -204,27 +251,40 @@ export function PurchaseInvoicesManager() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ purchase_invoice_id: invoiceId }),
-          })
+          });
 
-          const data = await response.json()
+          const data = await response.json();
 
           if (response.ok) {
-            setMessage({ type: "success", text: "Purchase invoice submitted successfully" })
-            fetchInvoices()
+            setMessage({
+              type: "success",
+              text: "Purchase invoice submitted successfully",
+            });
+            fetchInvoices();
           } else {
-            setMessage({ type: "error", text: data.message?.message || "Failed to submit purchase invoice" })
+            setMessage({
+              type: "error",
+              text:
+                data.message?.message || "Failed to submit purchase invoice",
+            });
           }
         } catch (error) {
-          setMessage({ type: "error", text: "Error submitting purchase invoice" })
-          console.error("[DukaPlus] Error submitting purchase invoice:", error)
+          setMessage({
+            type: "error",
+            text: "Error submitting purchase invoice",
+          });
+          console.error("[DukaPlus] Error submitting purchase invoice:", error);
         }
       },
       variant: "success",
-    })
-  }
+    });
+  };
 
-  const handleCancelOrDeleteInvoice = async (invoiceId: string, docstatus: number) => {
-    const isDraft = docstatus === 0
+  const handleCancelOrDeleteInvoice = async (
+    invoiceId: string,
+    docstatus: number
+  ) => {
+    const isDraft = docstatus === 0;
 
     setConfirmDialog({
       open: true,
@@ -238,52 +298,74 @@ export function PurchaseInvoicesManager() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ purchase_invoice_id: invoiceId }),
-          })
+          });
 
-          const data = await response.json()
+          const data = await response.json();
 
           if (response.ok) {
-            setMessage({ type: "success", text: `Purchase invoice ${isDraft ? "deleted" : "cancelled"} successfully` })
-            fetchInvoices()
+            setMessage({
+              type: "success",
+              text: `Purchase invoice ${
+                isDraft ? "deleted" : "cancelled"
+              } successfully`,
+            });
+            fetchInvoices();
           } else {
             setMessage({
               type: "error",
-              text: data.message?.message || `Failed to ${isDraft ? "delete" : "cancel"} purchase invoice`,
-            })
+              text:
+                data.message?.message ||
+                `Failed to ${isDraft ? "delete" : "cancel"} purchase invoice`,
+            });
           }
         } catch (error) {
-          setMessage({ type: "error", text: `Error ${isDraft ? "deleting" : "canceling"} purchase invoice` })
-          console.error("[DukaPlus] Error:", error)
+          setMessage({
+            type: "error",
+            text: `Error ${
+              isDraft ? "deleting" : "canceling"
+            } purchase invoice`,
+          });
+          console.error("[DukaPlus] Error:", error);
         }
       },
       variant: "danger",
-    })
-  }
+    });
+  };
 
   const handlePaymentSubmit = async () => {
-    if (!selectedInvoice) return
+    if (!selectedInvoice) return;
 
     // Calculate total and validate payments
-    const validPayments = payments.filter((p) => Number.parseFloat(p.amount) > 0)
+    const validPayments = payments.filter(
+      (p) => Number.parseFloat(p.amount) > 0
+    );
 
     if (validPayments.length === 0) {
-      setMessage({ type: "error", text: "Please enter at least one payment amount" })
-      return
+      setMessage({
+        type: "error",
+        text: "Please enter at least one payment amount",
+      });
+      return;
     }
 
-    const totalPayment = validPayments.reduce((sum, p) => sum + Number.parseFloat(p.amount), 0)
+    const totalPayment = validPayments.reduce(
+      (sum, p) => sum + Number.parseFloat(p.amount),
+      0
+    );
 
     setConfirmDialog({
       open: true,
       title: "Record Payment?",
-      description: `Record payment of KES ${totalPayment.toFixed(2)} for invoice ${selectedInvoice}?`,
+      description: `Record payment of KES ${totalPayment.toFixed(
+        2
+      )} for invoice ${selectedInvoice}?`,
       action: async () => {
         try {
           // Format payments according to API spec
           const formattedPayments = validPayments.map((p) => ({
             mode_of_payment: p.mode,
             amount: Number.parseFloat(p.amount),
-          }))
+          }));
 
           const response = await fetch("/api/purchase-invoices/payment", {
             method: "POST",
@@ -292,149 +374,219 @@ export function PurchaseInvoicesManager() {
               purchase_invoice_id: selectedInvoice,
               payments: formattedPayments,
             }),
-          })
+          });
 
-          const data = await response.json()
+          const data = await response.json();
 
           if (response.ok) {
-            setMessage({ type: "success", text: "Payment recorded successfully" })
-            setShowPaymentView(false)
-            setSelectedInvoice(null)
-            setPayments([{ id: 1, mode: paymentModes[0]?.mode_of_payment || "Cash", amount: "" }])
-            fetchInvoices()
+            setMessage({
+              type: "success",
+              text: "Payment recorded successfully",
+            });
+            setShowPaymentView(false);
+            setSelectedInvoice(null);
+            setPayments([
+              {
+                id: 1,
+                mode: paymentModes[0]?.mode_of_payment || "Cash",
+                amount: "",
+              },
+            ]);
+            fetchInvoices();
           } else {
-            setMessage({ type: "error", text: data.message || "Failed to record payment" })
+            setMessage({
+              type: "error",
+              text: data.message || "Failed to record payment",
+            });
           }
         } catch (error) {
-          setMessage({ type: "error", text: "Error recording payment" })
-          console.error("[DukaPlus] Error recording payment:", error)
+          setMessage({ type: "error", text: "Error recording payment" });
+          console.error("[DukaPlus] Error recording payment:", error);
         }
       },
       variant: "success",
-    })
-  }
+    });
+  };
 
   const addPayment = () => {
-    const newId = Math.max(...payments.map((p) => p.id), 0) + 1
-    setPayments([...payments, { id: newId, mode: paymentModes[0]?.mode_of_payment || "Cash", amount: "" }])
-  }
+    const newId = Math.max(...payments.map((p) => p.id), 0) + 1;
+    setPayments([
+      ...payments,
+      {
+        id: newId,
+        mode: paymentModes[0]?.mode_of_payment || "Cash",
+        amount: "",
+      },
+    ]);
+  };
 
   const removePayment = (id: number) => {
     if (payments.length > 1) {
-      setPayments(payments.filter((p) => p.id !== id))
+      setPayments(payments.filter((p) => p.id !== id));
     }
-  }
+  };
 
-  const updatePayment = (id: number, field: "mode" | "amount", value: string) => {
-    setPayments(payments.map((p) => (p.id === id ? { ...p, [field]: value } : p)))
-  }
+  const updatePayment = (
+    id: number,
+    field: "mode" | "amount",
+    value: string
+  ) => {
+    setPayments(
+      payments.map((p) => (p.id === id ? { ...p, [field]: value } : p))
+    );
+  };
 
   const getTotalPayment = () => {
-    return payments.reduce((sum, p) => sum + (Number.parseFloat(p.amount) || 0), 0)
-  }
+    return payments.reduce(
+      (sum, p) => sum + (Number.parseFloat(p.amount) || 0),
+      0
+    );
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case "draft":
-        return <span className="badge-warning">Draft</span>
+        return <span className="badge-warning">Draft</span>;
       case "unpaid":
-        return <span className="badge-danger">Unpaid</span>
+        return <span className="badge-danger">Unpaid</span>;
       case "paid":
-        return <span className="badge-success">Paid</span>
+        return <span className="badge-success">Paid</span>;
       case "partially paid":
-        return <span className="badge-warning">Partially Paid</span>
+        return <span className="badge-warning">Partially Paid</span>;
       default:
-        return <span className="badge-secondary">{status}</span>
+        return <span className="badge-secondary">{status}</span>;
     }
-  }
+  };
 
   const filteredInvoices = invoices.filter((invoice) => {
     const matchesSearch =
       invoice.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.supplier.toLowerCase().includes(searchTerm.toLowerCase())
+      invoice.supplier.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || invoice.status.toLowerCase().replace(" ", "_") === statusFilter
+    const matchesStatus =
+      statusFilter === "all" ||
+      invoice.status.toLowerCase().replace(" ", "_") === statusFilter;
 
-    const invoiceDate = new Date(invoice.posting_date)
-    const matchesDateRange = invoiceDate >= dateRange.from && invoiceDate <= dateRange.to
+    const invoiceDate = new Date(invoice.posting_date);
+    const matchesDateRange =
+      invoiceDate >= dateRange.from && invoiceDate <= dateRange.to;
 
-    return matchesSearch && matchesStatus && matchesDateRange
-  })
+    return matchesSearch && matchesStatus && matchesDateRange;
+  });
 
   const toggleInvoiceExpansion = (invoiceId: string) => {
     setExpandedInvoices((prev) => {
-      const newSet = new Set(prev)
+      const newSet = new Set(prev);
       if (newSet.has(invoiceId)) {
-        newSet.delete(invoiceId)
+        newSet.delete(invoiceId);
       } else {
-        newSet.add(invoiceId)
+        newSet.add(invoiceId);
       }
-      return newSet
-    })
-  }
+      return newSet;
+    });
+  };
 
   const handleEditInvoice = async (invoice: PurchaseInvoice) => {
-    setEditingInvoice(invoice)
-    setShowEditForm(true)
-    setMessage(null)
-  }
+    try {
+      const response = await fetch(
+        `/api/purchase-invoices?invoice_id=${invoice.name}`
+      );
+      const data = await response.json();
+
+      if (response.ok && data.message?.data?.[0]) {
+        const fullInvoice = data.message.data[0];
+        setEditingInvoice({
+          ...fullInvoice,
+          order_id: fullInvoice.purchase_order || "", // Get order_id from API
+        });
+        setShowEditForm(true);
+        setMessage(null);
+      } else {
+        setMessage({ type: "error", text: "Failed to load invoice details" });
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "Error loading invoice details" });
+      console.error("[DukaPlus] Error loading invoice:", error);
+    }
+  };
 
   const handleSaveEdit = async () => {
-    if (!editingInvoice) return
+    if (!editingInvoice) return;
+
+    if (!editingInvoice.order_id && !(editingInvoice as any).purchase_order) {
+      setMessage({ type: "error", text: "order_id is required" });
+      return;
+    }
 
     setConfirmDialog({
       open: true,
       title: "Save Invoice Changes?",
       description: `Save changes to invoice ${editingInvoice.name}?`,
       action: async () => {
-        setIsSubmitting(true)
-        setMessage(null)
+        setIsSubmitting(true);
+        setMessage(null);
 
         try {
+          const orderId =
+            (editingInvoice as any).order_id ||
+            (editingInvoice as any).purchase_order;
+
           const response = await fetch("/api/purchase-invoices/create", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+              order_id: orderId,
               purchase_invoice_id: editingInvoice.name,
               items: editingInvoice.items.map((item) => ({
                 item_code: item.item_code,
                 qty: item.qty,
               })),
             }),
-          })
+          });
 
-          const data = await response.json()
+          const data = await response.json();
 
           if (response.ok) {
             setMessage({
               type: "success",
-              text: data.message?.message || "Purchase invoice updated successfully",
-            })
-            setShowEditForm(false)
-            setEditingInvoice(null)
-            fetchInvoices()
+              text:
+                data.message?.message ||
+                "Purchase invoice updated successfully",
+            });
+            setShowEditForm(false);
+            setEditingInvoice(null);
+            fetchInvoices();
           } else {
-            setMessage({ type: "error", text: data.message?.message || "Failed to update purchase invoice" })
+            setMessage({
+              type: "error",
+              text:
+                data.message?.message || "Failed to update purchase invoice",
+            });
           }
         } catch (error) {
-          setMessage({ type: "error", text: "Error updating purchase invoice" })
-          console.error("[DukaPlus] Error updating purchase invoice:", error)
+          setMessage({
+            type: "error",
+            text: "Error updating purchase invoice",
+          });
+          console.error("[DukaPlus] Error updating purchase invoice:", error);
         } finally {
-          setIsSubmitting(false)
+          setIsSubmitting(false);
         }
       },
       variant: "success",
-    })
-  }
+    });
+  };
 
   const updateInvoiceItem = (itemCode: string, qty: number) => {
-    if (!editingInvoice) return
+    if (!editingInvoice) return;
 
     setEditingInvoice({
       ...editingInvoice,
-      items: editingInvoice.items.map((item) => (item.item_code === itemCode ? { ...item, qty } : item)),
-    })
-  }
+      items: editingInvoice.items.map((item) =>
+        item.item_code === itemCode ? { ...item, qty } : item
+      ),
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -449,15 +601,17 @@ export function PurchaseInvoicesManager() {
           confirmDialog.title.includes("Delete")
             ? "Delete"
             : confirmDialog.title.includes("Cancel")
-              ? "Cancel Invoice"
-              : "Confirm"
+            ? "Cancel Invoice"
+            : "Confirm"
         }
       />
 
       {message && (
         <div
           className={
-            message.type === "success" ? "alert-success flex items-start gap-2" : "alert-error flex items-start gap-2"
+            message.type === "success"
+              ? "alert-success flex items-start gap-2"
+              : "alert-error flex items-start gap-2"
           }
         >
           {message.type === "success" ? (
@@ -465,7 +619,15 @@ export function PurchaseInvoicesManager() {
           ) : (
             <AlertCircle className="w-5 h-5 text-danger flex-shrink-0" />
           )}
-          <p className={message.type === "success" ? "text-success text-sm" : "text-danger text-sm"}>{message.text}</p>
+          <p
+            className={
+              message.type === "success"
+                ? "text-success text-sm"
+                : "text-danger text-sm"
+            }
+          >
+            {message.text}
+          </p>
         </div>
       )}
 
@@ -477,8 +639,8 @@ export function PurchaseInvoicesManager() {
           </h2>
           <Button
             onClick={() => {
-              setShowCreateForm(!showCreateForm)
-              setSelectedOrderId("")
+              setShowCreateForm(!showCreateForm);
+              setSelectedOrderId("");
             }}
             className="btn-create"
           >
@@ -506,12 +668,17 @@ export function PurchaseInvoicesManager() {
             <option value="paid">Paid</option>
             <option value="partially_paid">Partially Paid</option>
           </select>
-          <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+          <DateRangeFilter
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
         </div>
 
         {showCreateForm && (
           <div className="mb-6 p-4 border border-border rounded-lg bg-muted/50">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Create Purchase Invoice</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-4">
+              Create Purchase Invoice
+            </h3>
             <div className="space-y-4">
               <div>
                 <label className="form-label">Purchase Order *</label>
@@ -523,11 +690,14 @@ export function PurchaseInvoicesManager() {
                   <option value="">Select purchase order</option>
                   {orders.map((order) => (
                     <option key={order.order_id} value={order.order_id}>
-                      {order.order_id} - {order.supplier} (KES {order.grand_total.toFixed(2)}) - {order.status}
+                      {order.order_id} - {order.supplier} (KES{" "}
+                      {order.grand_total.toFixed(2)}) - {order.status}
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-muted-foreground mt-1">Select a purchase order to create an invoice</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Select a purchase order to create an invoice
+                </p>
               </div>
 
               <div className="flex gap-2">
@@ -540,8 +710,8 @@ export function PurchaseInvoicesManager() {
                 </Button>
                 <Button
                   onClick={() => {
-                    setShowCreateForm(false)
-                    setSelectedOrderId("")
+                    setShowCreateForm(false);
+                    setSelectedOrderId("");
                   }}
                   disabled={isSubmitting}
                   className="btn-cancel flex-1"
@@ -557,8 +727,12 @@ export function PurchaseInvoicesManager() {
           <div className="mb-6 p-4 border border-border rounded-lg bg-muted/50">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Edit Purchase Invoice</h3>
-                <p className="text-sm text-muted-foreground mt-1">Invoice: {editingInvoice.name}</p>
+                <h3 className="text-lg font-semibold text-foreground">
+                  Edit Purchase Invoice
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Invoice: {editingInvoice.name}
+                </p>
               </div>
             </div>
 
@@ -567,17 +741,29 @@ export function PurchaseInvoicesManager() {
                 <label className="form-label">Invoice Items</label>
                 <div className="space-y-2">
                   {editingInvoice.items.map((item, idx) => (
-                    <div key={idx} className="flex gap-3 items-center p-3 border border-border rounded-lg">
+                    <div
+                      key={idx}
+                      className="flex gap-3 items-center p-3 border border-border rounded-lg"
+                    >
                       <div className="flex-1">
-                        <p className="font-mono text-sm text-foreground">{item.item_code}</p>
-                        <p className="text-xs text-muted-foreground">{item.item_name}</p>
+                        <p className="font-mono text-sm text-foreground">
+                          {item.item_code}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.item_name}
+                        </p>
                       </div>
                       <div className="w-24">
                         <label className="form-label text-xs">Qty</label>
                         <input
                           type="number"
                           value={item.qty}
-                          onChange={(e) => updateInvoiceItem(item.item_code, Number.parseFloat(e.target.value))}
+                          onChange={(e) =>
+                            updateInvoiceItem(
+                              item.item_code,
+                              Number.parseFloat(e.target.value)
+                            )
+                          }
                           min="0.01"
                           step="0.01"
                           className="input-base w-full text-sm"
@@ -585,11 +771,15 @@ export function PurchaseInvoicesManager() {
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-muted-foreground">Rate</p>
-                        <p className="text-sm font-semibold text-foreground">KES {item.rate.toFixed(2)}</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          KES {item.rate.toFixed(2)}
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-muted-foreground">Amount</p>
-                        <p className="text-sm font-semibold text-foreground">KES {(item.qty * item.rate).toFixed(2)}</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          KES {(item.qty * item.rate).toFixed(2)}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -599,15 +789,19 @@ export function PurchaseInvoicesManager() {
               <div className="flex gap-2 pt-2">
                 <Button
                   onClick={() => {
-                    setShowEditForm(false)
-                    setEditingInvoice(null)
+                    setShowEditForm(false);
+                    setEditingInvoice(null);
                   }}
                   disabled={isSubmitting}
                   className="btn-cancel flex-1"
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleSaveEdit} disabled={isSubmitting} className="btn-create flex-1">
+                <Button
+                  onClick={handleSaveEdit}
+                  disabled={isSubmitting}
+                  className="btn-create flex-1"
+                >
                   {isSubmitting ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
@@ -619,25 +813,34 @@ export function PurchaseInvoicesManager() {
           <div className="mb-6 p-4 border border-border rounded-lg bg-muted/50">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Record Payment</h3>
-                <p className="text-sm text-muted-foreground mt-1">Invoice: {selectedInvoice}</p>
+                <h3 className="text-lg font-semibold text-foreground">
+                  Record Payment
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Invoice: {selectedInvoice}
+                </p>
                 {(() => {
-                  const currentInvoice = invoices.find((inv) => inv.name === selectedInvoice)
+                  const currentInvoice = invoices.find(
+                    (inv) => inv.name === selectedInvoice
+                  );
                   if (currentInvoice?.items) {
-                    const totalAmount = currentInvoice.items.reduce((sum, item) => sum + item.amount, 0)
+                    const totalAmount = currentInvoice.items.reduce(
+                      (sum, item) => sum + item.amount,
+                      0
+                    );
                     return (
                       <p className="text-sm font-semibold text-warning mt-1">
                         Invoice Total: KES {totalAmount.toFixed(2)}
                       </p>
-                    )
+                    );
                   }
-                  return null
+                  return null;
                 })()}
               </div>
               <button
                 onClick={() => {
-                  setShowPaymentView(false)
-                  setSelectedInvoice(null)
+                  setShowPaymentView(false);
+                  setSelectedInvoice(null);
                 }}
                 className="p-2 hover:bg-muted rounded transition-colors"
                 title="Close"
@@ -648,8 +851,15 @@ export function PurchaseInvoicesManager() {
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <label className="text-sm font-semibold text-foreground">Payment Methods</label>
-                <Button type="button" onClick={addPayment} size="sm" className="btn-success text-xs h-8 px-3">
+                <label className="text-sm font-semibold text-foreground">
+                  Payment Methods
+                </label>
+                <Button
+                  type="button"
+                  onClick={addPayment}
+                  size="sm"
+                  className="btn-success text-xs h-8 px-3"
+                >
                   <Plus className="w-3 h-3 mr-1" />
                   Add
                 </Button>
@@ -657,18 +867,28 @@ export function PurchaseInvoicesManager() {
 
               <div className="space-y-3">
                 {payments.map((payment) => (
-                  <div key={payment.id} className="p-3 border border-border rounded-lg space-y-3">
+                  <div
+                    key={payment.id}
+                    className="p-3 border border-border rounded-lg space-y-3"
+                  >
                     <div className="flex gap-2">
                       <div className="flex-1">
-                        <label className="form-label text-xs">Payment Mode</label>
+                        <label className="form-label text-xs">
+                          Payment Mode
+                        </label>
                         <select
                           value={payment.mode}
-                          onChange={(e) => updatePayment(payment.id, "mode", e.target.value)}
+                          onChange={(e) =>
+                            updatePayment(payment.id, "mode", e.target.value)
+                          }
                           className="input-base w-full text-sm"
                         >
                           {paymentModes.length > 0 ? (
                             paymentModes.map((mode) => (
-                              <option key={mode.mode_of_payment} value={mode.mode_of_payment}>
+                              <option
+                                key={mode.mode_of_payment}
+                                value={mode.mode_of_payment}
+                              >
                                 {mode.mode_of_payment}
                               </option>
                             ))
@@ -697,7 +917,9 @@ export function PurchaseInvoicesManager() {
                       <input
                         type="number"
                         value={payment.amount}
-                        onChange={(e) => updatePayment(payment.id, "amount", e.target.value)}
+                        onChange={(e) =>
+                          updatePayment(payment.id, "amount", e.target.value)
+                        }
                         placeholder="0.00"
                         min="0"
                         step="0.01"
@@ -717,15 +939,25 @@ export function PurchaseInvoicesManager() {
               <div className="flex gap-2 pt-2">
                 <Button
                   onClick={() => {
-                    setShowPaymentView(false)
-                    setSelectedInvoice(null)
-                    setPayments([{ id: 1, mode: paymentModes[0]?.mode_of_payment || "Cash", amount: "" }])
+                    setShowPaymentView(false);
+                    setSelectedInvoice(null);
+                    setPayments([
+                      {
+                        id: 1,
+                        mode: paymentModes[0]?.mode_of_payment || "Cash",
+                        amount: "",
+                      },
+                    ]);
                   }}
                   className="btn-cancel flex-1"
                 >
                   Cancel
                 </Button>
-                <Button onClick={handlePaymentSubmit} className="btn-success flex-1" disabled={getTotalPayment() <= 0}>
+                <Button
+                  onClick={handlePaymentSubmit}
+                  className="btn-success flex-1"
+                  disabled={getTotalPayment() <= 0}
+                >
                   Record Payment
                 </Button>
               </div>
@@ -734,10 +966,14 @@ export function PurchaseInvoicesManager() {
         )}
 
         {isLoading ? (
-          <p className="text-foreground p-6 text-center">Loading purchase invoices...</p>
+          <p className="text-foreground p-6 text-center">
+            Loading purchase invoices...
+          </p>
         ) : filteredInvoices.length === 0 ? (
           <p className="text-foreground text-center py-8">
-            {searchTerm || statusFilter !== "all" ? "No invoices match your filters" : "No purchase invoices found"}
+            {searchTerm || statusFilter !== "all"
+              ? "No invoices match your filters"
+              : "No purchase invoices found"}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -754,9 +990,9 @@ export function PurchaseInvoicesManager() {
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredInvoices.map((invoice) => {
-                  const isExpanded = expandedInvoices.has(invoice.name)
-                  const isDraft = invoice.docstatus === 0
-                  const isUnpaid = invoice.status.toLowerCase() === "unpaid"
+                  const isExpanded = expandedInvoices.has(invoice.name);
+                  const isDraft = invoice.docstatus === 0;
+                  const isUnpaid = invoice.status.toLowerCase() === "unpaid";
 
                   return (
                     <>
@@ -764,7 +1000,9 @@ export function PurchaseInvoicesManager() {
                         <td className="px-2 sm:px-4 py-3">
                           {invoice.items && invoice.items.length > 0 && (
                             <button
-                              onClick={() => toggleInvoiceExpansion(invoice.name)}
+                              onClick={() =>
+                                toggleInvoiceExpansion(invoice.name)
+                              }
                               className="p-1 hover:bg-muted rounded transition-colors"
                             >
                               {isExpanded ? (
@@ -775,10 +1013,14 @@ export function PurchaseInvoicesManager() {
                             </button>
                           )}
                         </td>
-                        <td className="table-cell font-mono text-warning text-sm">{invoice.name}</td>
+                        <td className="table-cell font-mono text-warning text-sm">
+                          {invoice.name}
+                        </td>
                         <td className="table-cell">{invoice.supplier}</td>
                         <td className="table-cell">{invoice.posting_date}</td>
-                        <td className="table-cell">{getStatusBadge(invoice.status)}</td>
+                        <td className="table-cell">
+                          {getStatusBadge(invoice.status)}
+                        </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-2">
                             {isDraft && (
@@ -787,31 +1029,49 @@ export function PurchaseInvoicesManager() {
                                 showSubmit={true}
                                 showCancel={true}
                                 onEdit={() => handleEditInvoice(invoice)}
-                                onSubmit={() => handleSubmitInvoice(invoice.name)}
-                                onCancel={() => handleCancelOrDeleteInvoice(invoice.name, invoice.docstatus)}
+                                onSubmit={() =>
+                                  handleSubmitInvoice(invoice.name)
+                                }
+                                onCancel={() =>
+                                  handleCancelOrDeleteInvoice(
+                                    invoice.name,
+                                    invoice.docstatus
+                                  )
+                                }
                                 docstatus={invoice.docstatus}
                                 status={invoice.status}
                               />
                             )}
                             {!isDraft &&
                               (isUnpaid ||
-                                invoice.status.toLowerCase().includes("partial") ||
-                                invoice.status.toLowerCase().includes("partly")) && (
+                                invoice.status
+                                  .toLowerCase()
+                                  .includes("partial") ||
+                                invoice.status
+                                  .toLowerCase()
+                                  .includes("partly")) && (
                                 <>
-                                  <Button
+                                  <button
                                     onClick={() => {
-                                      setSelectedInvoice(invoice.name)
-                                      setShowPaymentView(true)
+                                      setSelectedInvoice(invoice.name);
+                                      setShowPaymentView(true);
                                     }}
-                                    size="sm"
-                                    className="bg-foreground hover:bg-foreground/90 text-background text-sm h-9 px-4"
-                                    title="Make Payment"
+                                    className="p-2 hover:bg-muted rounded transition-colors group relative"
+                                    title="Pay"
                                   >
-                                    Pay
-                                  </Button>
+                                    <CreditCard className="w-5 h-5 text-warning" />
+                                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-background bg-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                      Pay
+                                    </span>
+                                  </button>
                                   <TableActionButtons
                                     showCancel={true}
-                                    onCancel={() => handleCancelOrDeleteInvoice(invoice.name, invoice.docstatus)}
+                                    onCancel={() =>
+                                      handleCancelOrDeleteInvoice(
+                                        invoice.name,
+                                        invoice.docstatus
+                                      )
+                                    }
                                     docstatus={invoice.docstatus}
                                     status={invoice.status}
                                   />
@@ -819,12 +1079,21 @@ export function PurchaseInvoicesManager() {
                               )}
                             {!isDraft &&
                               !isUnpaid &&
-                              !invoice.status.toLowerCase().includes("partial") &&
-                              !invoice.status.toLowerCase().includes("partly") &&
+                              !invoice.status
+                                .toLowerCase()
+                                .includes("partial") &&
+                              !invoice.status
+                                .toLowerCase()
+                                .includes("partly") &&
                               invoice.status.toLowerCase() === "paid" && (
                                 <TableActionButtons
                                   showCancel={true}
-                                  onCancel={() => handleCancelOrDeleteInvoice(invoice.name, invoice.docstatus)}
+                                  onCancel={() =>
+                                    handleCancelOrDeleteInvoice(
+                                      invoice.name,
+                                      invoice.docstatus
+                                    )
+                                  }
                                   docstatus={invoice.docstatus}
                                   status={invoice.status}
                                 />
@@ -832,41 +1101,66 @@ export function PurchaseInvoicesManager() {
                           </div>
                         </td>
                       </tr>
-                      {isExpanded && invoice.items && invoice.items.length > 0 && (
-                        <tr>
-                          <td colSpan={6} className="px-4 py-2 bg-muted/30">
-                            <div className="p-4">
-                              <h4 className="font-semibold text-sm mb-2 text-foreground">Items:</h4>
-                              <table className="w-full text-xs">
-                                <thead className="bg-muted">
-                                  <tr>
-                                    <th className="table-header-cell text-left">Item Code</th>
-                                    <th className="table-header-cell text-left">Item Name</th>
-                                    <th className="table-header-cell text-right">Quantity</th>
-                                    <th className="table-header-cell text-right">Rate</th>
-                                    <th className="table-header-cell text-right">Amount</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {invoice.items.map((item, idx) => (
-                                    <tr key={idx} className="border-b border-border">
-                                      <td className="p-2 font-mono text-foreground">{item.item_code}</td>
-                                      <td className="p-2 text-foreground">{item.item_name}</td>
-                                      <td className="p-2 text-right text-foreground">{item.qty}</td>
-                                      <td className="p-2 text-right text-foreground">KES {item.rate.toFixed(2)}</td>
-                                      <td className="p-2 text-right font-semibold text-foreground">
-                                        KES {item.amount.toFixed(2)}
-                                      </td>
+                      {isExpanded &&
+                        invoice.items &&
+                        invoice.items.length > 0 && (
+                          <tr>
+                            <td colSpan={6} className="px-4 py-2 bg-muted/30">
+                              <div className="p-4">
+                                <h4 className="font-semibold text-sm mb-2 text-foreground">
+                                  Items:
+                                </h4>
+                                <table className="w-full text-xs">
+                                  <thead className="bg-muted">
+                                    <tr>
+                                      <th className="table-header-cell text-left">
+                                        Item Code
+                                      </th>
+                                      <th className="table-header-cell text-left">
+                                        Item Name
+                                      </th>
+                                      <th className="table-header-cell text-right">
+                                        Quantity
+                                      </th>
+                                      <th className="table-header-cell text-right">
+                                        Rate
+                                      </th>
+                                      <th className="table-header-cell text-right">
+                                        Amount
+                                      </th>
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
+                                  </thead>
+                                  <tbody>
+                                    {invoice.items.map((item, idx) => (
+                                      <tr
+                                        key={idx}
+                                        className="border-b border-border"
+                                      >
+                                        <td className="p-2 font-mono text-foreground">
+                                          {item.item_code}
+                                        </td>
+                                        <td className="p-2 text-foreground">
+                                          {item.item_name}
+                                        </td>
+                                        <td className="p-2 text-right text-foreground">
+                                          {item.qty}
+                                        </td>
+                                        <td className="p-2 text-right text-foreground">
+                                          KES {item.rate.toFixed(2)}
+                                        </td>
+                                        <td className="p-2 text-right font-semibold text-foreground">
+                                          KES {item.amount.toFixed(2)}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
                     </>
-                  )
+                  );
                 })}
               </tbody>
             </table>
@@ -874,5 +1168,5 @@ export function PurchaseInvoicesManager() {
         )}
       </div>
     </div>
-  )
+  );
 }
