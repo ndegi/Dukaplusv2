@@ -5,6 +5,7 @@ import { ProductBrowser } from "./product-browser"
 import { CartSummary } from "./cart-summary"
 import { PaymentForm } from "./payment-form"
 import { offlineStore } from "@/lib/db/offline-store"
+import { BarcodeInput } from "./barcode-input"
 
 interface User {
   id: string
@@ -53,6 +54,8 @@ export function POSInterface({
   const [draftId, setDraftId] = useState<string | null>(null)
   const [customerCredit, setCustomerCredit] = useState(0)
   const [loyaltyPoints, setLoyaltyPoints] = useState(0)
+  const [barcodeSearching, setBarcodeSearching] = useState(false)
+  const [products, setProducts] = useState<any[]>([])
 
   useEffect(() => {
     const initCart = async () => {
@@ -283,6 +286,60 @@ export function POSInterface({
     setDraftId(null)
   }
 
+  const handleBarcodeScan = async (barcode: string) => {
+    setBarcodeSearching(true)
+    try {
+      const credentialsStr = sessionStorage.getItem("tenant_credentials")
+      const credentials = credentialsStr ? JSON.parse(credentialsStr) : null
+      const warehouse = sessionStorage.getItem("selected_warehouse")
+
+      if (!warehouse) {
+        setBarcodeSearching(false)
+        return
+      }
+
+      // Search for product by barcode in the products list
+      let foundProduct = products.find(
+        (p) => p.barcode?.toLowerCase() === barcode.toLowerCase() || p.sku?.toLowerCase() === barcode.toLowerCase(),
+      )
+
+      if (!foundProduct) {
+        // If not found locally, fetch all products and search
+        const response = await fetch(`/api/inventory/products?warehouse_id=${encodeURIComponent(warehouse)}`, {
+          headers: credentials
+            ? {
+                "X-API-Key": credentials.api_key,
+                "X-API-Secret": credentials.api_secret,
+                "X-Base-URL": credentials.base_url,
+              }
+            : {},
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const allProducts = data.products || []
+          setProducts(allProducts)
+
+          foundProduct = allProducts.find(
+            (p: any) =>
+              p.barcode?.toLowerCase() === barcode.toLowerCase() || p.sku?.toLowerCase() === barcode.toLowerCase(),
+          )
+        }
+      }
+
+      if (foundProduct) {
+        console.log("[DukaPlus] Product found by barcode:", foundProduct.name)
+        addToCart(foundProduct)
+      } else {
+        console.log("[DukaPlus] No product found for barcode:", barcode)
+      }
+    } catch (error) {
+      console.error("[DukaPlus] Error searching by barcode:", error)
+    } finally {
+      setBarcodeSearching(false)
+    }
+  }
+
   if (showPayment) {
     return (
       <div className="h-full bg-slate-50 dark:bg-slate-800 overflow-y-auto">
@@ -318,8 +375,13 @@ export function POSInterface({
 
   return (
     <div className="flex flex-col lg:flex-row h-full gap-0 lg:gap-0 bg-slate-50 dark:bg-slate-800">
-      <div className="w-full lg:w-1/2 overflow-y-auto order-2 lg:order-1 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-slate-700">
-        <ProductBrowser onAddToCart={addToCart} searchTerm={searchTerm} />
+      <div className="w-full lg:w-1/2 overflow-y-auto order-2 lg:order-1 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-slate-700 flex flex-col">
+        <div className="p-4 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
+          <BarcodeInput onScan={handleBarcodeScan} isLoading={barcodeSearching} />
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <ProductBrowser onAddToCart={addToCart} searchTerm={searchTerm} />
+        </div>
       </div>
 
       <div className="w-full lg:w-1/2 bg-white dark:bg-slate-800 overflow-y-auto flex flex-col order-1 lg:order-2">

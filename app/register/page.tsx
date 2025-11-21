@@ -1,33 +1,27 @@
-"use client";
+"use client"
 
-import type React from "react";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { AlertCircle, Loader2 } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import type React from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { AlertCircle, Loader2 } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Country {
-  name: string;
-  iso2: string;
-  currency?: string;
+  name: string
+  iso2: string
+  currency?: string
 }
 
 interface Currency {
-  code: string;
-  name: string;
+  code: string
+  name: string
 }
 
-const API_KEY = "R0hUcGNpejNLbVhnbDRiSkg2UVBhaUJIcjRoV0lCa20ydlZnOTFpRw==";
+const API_KEY = "R0hUcGNpejNLbVhnbDRiSkg2UVBhaUJIcjRoDukaPluslCa20ydlZnOTFpRw=="
 
 const FALLBACK_COUNTRIES = [
   { name: "Kenya", iso2: "KE", currency: "KES" },
@@ -36,7 +30,7 @@ const FALLBACK_COUNTRIES = [
   { name: "Rwanda", iso2: "RW", currency: "RWF" },
   { name: "United States", iso2: "US", currency: "USD" },
   { name: "United Kingdom", iso2: "GB", currency: "GBP" },
-];
+]
 
 const FALLBACK_CURRENCIES = [
   { code: "KES", name: "Kenyan Shilling" },
@@ -46,10 +40,10 @@ const FALLBACK_CURRENCIES = [
   { code: "TZS", name: "Tanzanian Shilling" },
   { code: "UGX", name: "Ugandan Shilling" },
   { code: "RWF", name: "Rwandan Franc" },
-];
+]
 
 export default function RegisterPage() {
-  const router = useRouter();
+  const router = useRouter()
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -58,110 +52,94 @@ export default function RegisterPage() {
     referralCode: "",
     country: "",
     currency: "",
-  });
-  const [agreed, setAgreed] = useState(false);
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [currencies, setCurrencies] = useState<Currency[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(true);
+  })
+  const [agreed, setAgreed] = useState(false)
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [countries, setCountries] = useState<Country[]>([])
+  const [currencies, setCurrencies] = useState<Currency[]>([])
+  const [isLoadingData, setIsLoadingData] = useState(true)
 
   useEffect(() => {
     const fetchCountries = async () => {
       try {
-        console.log("[DukaPlus] Fetching countries...");
-        const response = await fetch(
-          "https://api.countrystatecity.in/v1/countries",
-          {
-            headers: { "X-CSCAPI-KEY": API_KEY },
-          }
-        );
+        console.log("[DukaPlus] Fetching countries...")
+        const response = await fetch("https://api.countrystatecity.in/v1/countries", {
+          headers: { "X-CSCAPI-KEY": API_KEY },
+        })
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+          throw new Error(`HTTP ${response.status}`)
         }
 
-        const fetchedCountries = await response.json();
+        const fetchedCountries = await response.json()
 
         if (Array.isArray(fetchedCountries)) {
-          setCountries(fetchedCountries);
-          const kenya = fetchedCountries.find(
-            (country: Country) => country.name === "Kenya"
-          );
+          setCountries(fetchedCountries)
+          const kenya = fetchedCountries.find((country: Country) => country.name === "Kenya")
           if (kenya) {
-            setFormData((prev) => ({ ...prev, country: kenya.name }));
+            setFormData((prev) => ({ ...prev, country: kenya.name }))
           }
         } else {
-          throw new Error("Invalid response format");
+          throw new Error("Invalid response format")
         }
       } catch (error) {
-        console.log(
-          "[DukaPlus] Failed to load countries, using fallback:",
-          error
-        );
-        setCountries(FALLBACK_COUNTRIES);
-        setFormData((prev) => ({ ...prev, country: "Kenya" }));
+        console.log("[DukaPlus] Failed to load countries, using fallback:", error)
+        setCountries(FALLBACK_COUNTRIES)
+        setFormData((prev) => ({ ...prev, country: "Kenya" }))
       }
-    };
+    }
 
     const fetchCurrencies = async () => {
       try {
-        console.log("[DukaPlus] Fetching currencies...");
-        const response = await fetch(
-          "https://openexchangerates.org/api/currencies.json"
-        );
+        console.log("[DukaPlus] Fetching currencies...")
+        const response = await fetch("https://openexchangerates.org/api/currencies.json")
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+          throw new Error(`HTTP ${response.status}`)
         }
 
-        const data = await response.json();
+        const data = await response.json()
 
         if (data && typeof data === "object") {
           const currencyList = Object.entries(data).map(([code, name]) => ({
             code,
             name: name as string,
-          }));
-          setCurrencies(currencyList);
-          const defaultCurrency = currencyList.find((c) => c.code === "KES");
+          }))
+          setCurrencies(currencyList)
+          const defaultCurrency = currencyList.find((c) => c.code === "KES")
           if (defaultCurrency) {
-            setFormData((prev) => ({
-              ...prev,
-              currency: defaultCurrency.code,
-            }));
+            setFormData((prev) => ({ ...prev, currency: defaultCurrency.code }))
           }
         } else {
-          throw new Error("Invalid response format");
+          throw new Error("Invalid response format")
         }
       } catch (error) {
-        console.log(
-          "[DukaPlus] Failed to fetch currencies, using fallback:",
-          error
-        );
-        setCurrencies(FALLBACK_CURRENCIES);
-        setFormData((prev) => ({ ...prev, currency: "KES" }));
+        console.log("[DukaPlus] Failed to fetch currencies, using fallback:", error)
+        setCurrencies(FALLBACK_CURRENCIES)
+        setFormData((prev) => ({ ...prev, currency: "KES" }))
       }
-    };
-
-    const fetchData = async () => {
-      setIsLoadingData(true);
-      await Promise.all([fetchCountries(), fetchCurrencies()]);
-      setIsLoadingData(false);
-    };
-
-    fetchData();
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!agreed) {
-      setError("Please agree to the terms and conditions");
-      return;
     }
 
-    setIsLoading(true);
+    const fetchData = async () => {
+      setIsLoadingData(true)
+      await Promise.all([fetchCountries(), fetchCurrencies()])
+      setIsLoadingData(false)
+    }
+
+    fetchData()
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+
+    if (!agreed) {
+      setError("Please agree to the terms and conditions")
+      return
+    }
+
+    setIsLoading(true)
 
     try {
       const response = await fetch("/api/auth/register", {
@@ -176,22 +154,22 @@ export default function RegisterPage() {
           country: formData.country,
           preferred_currency: formData.currency,
         }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (response.ok && data.message?.status === 200) {
-        alert("Registration successful! Please login to continue.");
-        router.push("/login");
+        alert("Registration successful! Please login to continue.")
+        router.push("/login")
       } else {
-        setError(data.message?.message || "Registration failed");
+        setError(data.message?.message || "Registration failed")
       }
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      setError("An error occurred. Please try again.")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background flex items-center justify-center p-4">
@@ -199,19 +177,11 @@ export default function RegisterPage() {
         <div className="card-base p-8 shadow-2xl">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <Image
-                src="/images/icon.png"
-                alt="DukaPlus"
-                width={40}
-                height={40}
-                className="rounded-lg"
-              />
+              <Image src="/images/icon.png" alt="DukaPlus" width={40} height={40} className="rounded-lg" />
               <h1 className="text-2xl font-bold text-foreground">DukaPlus</h1>
             </div>
             <h2 className="text-xl font-semibold mb-2">Create Account</h2>
-            <p className="text-muted-foreground text-sm">
-              Join thousands of businesses using DukaPlus
-            </p>
+            <p className="text-muted-foreground text-sm">Join thousands of businesses using DukaPlus</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -229,9 +199,7 @@ export default function RegisterPage() {
                   type="text"
                   placeholder="John Doe"
                   value={formData.fullName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, fullName: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   disabled={isLoading || isLoadingData}
                   className="input-base"
                   required
@@ -244,9 +212,7 @@ export default function RegisterPage() {
                   type="email"
                   placeholder="john@example.com"
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   disabled={isLoading || isLoadingData}
                   className="input-base"
                   required
@@ -259,9 +225,7 @@ export default function RegisterPage() {
                   type="tel"
                   placeholder="+254XXXXXXXXX"
                   value={formData.mobileNumber}
-                  onChange={(e) =>
-                    setFormData({ ...formData, mobileNumber: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
                   disabled={isLoading || isLoadingData}
                   className="input-base"
                   required
@@ -274,9 +238,7 @@ export default function RegisterPage() {
                   type="text"
                   placeholder="My Business"
                   value={formData.businessName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, businessName: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                   disabled={isLoading || isLoadingData}
                   className="input-base"
                   required
@@ -287,19 +249,11 @@ export default function RegisterPage() {
                 <label className="form-label">Country *</label>
                 <Select
                   value={formData.country}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, country: value })
-                  }
+                  onValueChange={(value) => setFormData({ ...formData, country: value })}
                   disabled={isLoading || isLoadingData}
                 >
                   <SelectTrigger className="select-base">
-                    <SelectValue
-                      placeholder={
-                        isLoadingData
-                          ? "Loading countries..."
-                          : "Select country"
-                      }
-                    />
+                    <SelectValue placeholder={isLoadingData ? "Loading countries..." : "Select country"} />
                   </SelectTrigger>
                   <SelectContent>
                     {countries.map((country) => (
@@ -315,19 +269,11 @@ export default function RegisterPage() {
                 <label className="form-label">Currency *</label>
                 <Select
                   value={formData.currency}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, currency: value })
-                  }
+                  onValueChange={(value) => setFormData({ ...formData, currency: value })}
                   disabled={isLoading || isLoadingData}
                 >
                   <SelectTrigger className="select-base">
-                    <SelectValue
-                      placeholder={
-                        isLoadingData
-                          ? "Loading currencies..."
-                          : "Select currency"
-                      }
-                    />
+                    <SelectValue placeholder={isLoadingData ? "Loading currencies..." : "Select currency"} />
                   </SelectTrigger>
                   <SelectContent>
                     {currencies.map((currency) => (
@@ -345,9 +291,7 @@ export default function RegisterPage() {
                   type="text"
                   placeholder="Enter referral code"
                   value={formData.referralCode}
-                  onChange={(e) =>
-                    setFormData({ ...formData, referralCode: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, referralCode: e.target.value })}
                   disabled={isLoading || isLoadingData}
                   className="input-base"
                 />
@@ -404,10 +348,7 @@ export default function RegisterPage() {
             <div className="text-center pt-4 border-t">
               <p className="text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link
-                  href="/login"
-                  className="text-primary hover:underline font-semibold"
-                >
+                <Link href="/login" className="text-primary hover:underline font-semibold">
                   Sign in here
                 </Link>
               </p>
@@ -416,5 +357,5 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }
