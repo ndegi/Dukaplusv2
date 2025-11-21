@@ -50,7 +50,7 @@ export function BarcodeInput({ onScan, isLoading }: BarcodeInputProps) {
         };
       }
     } catch (error) {
-      console.error("[DukaPlus] Failed to access camera:", error);
+      console.error("[v0] Failed to access camera:", error);
       const errorMsg =
         error instanceof Error
           ? error.message
@@ -150,32 +150,62 @@ export function BarcodeInput({ onScan, isLoading }: BarcodeInputProps) {
       </div>
 
       {showCamera && (
-        <div className="relative bg-black rounded-lg overflow-hidden">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-64 object-cover"
-            style={{ transform: "scaleX(-1)" }}
-          />
-          <canvas ref={canvasRef} className="hidden" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div
-              className="absolute border-4 border-accent rounded-lg"
-              style={{ width: "80%", height: "80%" }}
-            />
-          </div>
-          <div className="absolute bottom-4 left-0 right-0 text-center">
-            <p className="text-white text-sm font-semibold bg-black/50 py-2 rounded">
-              {cameraLoading ? "Loading camera..." : "Point camera at barcode"}
-            </p>
+        <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
+          {/* Header */}
+          <div className="absolute top-0 left-0 right-0 bg-black/50 backdrop-blur-sm p-4 flex items-center justify-between">
+            <h3 className="text-white font-semibold">Scan Barcode</h3>
             <button
               onClick={stopCamera}
-              className="mt-2 px-4 py-2 bg-red-600 rounded text-white text-sm hover:bg-red-700 transition-colors"
+              className="text-white hover:text-gray-300 transition-colors"
+              title="Close camera"
             >
-              Close Camera
+              <X className="w-6 h-6" />
             </button>
+          </div>
+
+          {/* Camera Feed */}
+          <div className="flex-1 w-full relative flex items-center justify-center overflow-hidden">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ transform: "scaleX(-1)" }}
+            />
+            <canvas ref={canvasRef} className="hidden" />
+
+            {/* Scanning Frame Overlay */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative w-80 h-80">
+                {/* Main scan box */}
+                <div className="absolute inset-0 border-4 border-accent rounded-2xl shadow-2xl" />
+
+                {/* Corner highlights */}
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-accent rounded-tl-xl" />
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-accent rounded-tr-xl" />
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-accent rounded-bl-xl" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-accent rounded-br-xl" />
+
+                {/* Animated scanning line */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent animate-pulse" />
+              </div>
+
+              {/* Dimmed areas outside scan box */}
+              <div className="absolute inset-0 bg-black/40" />
+            </div>
+
+            {/* Instructions */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-center">
+              <p className="text-white text-lg font-semibold">
+                {cameraLoading
+                  ? "Loading camera..."
+                  : "Position barcode in frame"}
+              </p>
+              <p className="text-gray-300 text-sm mt-2">
+                Keep the barcode steady and within the highlighted area
+              </p>
+            </div>
           </div>
         </div>
       )}
