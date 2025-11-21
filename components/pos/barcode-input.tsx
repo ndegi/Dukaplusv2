@@ -50,7 +50,7 @@ export function BarcodeInput({ onScan, isLoading }: BarcodeInputProps) {
         };
       }
     } catch (error) {
-      console.error("[v0] Failed to access camera:", error);
+      console.error("[DukaPlus] Failed to access camera:", error);
       const errorMsg =
         error instanceof Error
           ? error.message
