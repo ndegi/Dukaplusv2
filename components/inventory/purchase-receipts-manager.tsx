@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, CheckCircle, Plus, ChevronDown, ChevronUp, FileText, Trash2, Search } from 'lucide-react'
+import { AlertCircle, CheckCircle, Plus, ChevronDown, ChevronUp, FileText, Trash2 } from "lucide-react"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { DateRangeFilter } from "@/components/reports/date-range-filter"
@@ -20,6 +20,7 @@ interface PurchaseReceipt {
     rate: number
     amount: number
   }[]
+  docstatus: number
 }
 
 interface PurchaseOrder {
@@ -76,12 +77,13 @@ export function PurchaseReceiptsManager() {
     title: "",
     description: "",
     action: () => {},
-    variant: "success"
+    variant: "success",
   })
   const [productSearchTerms, setProductSearchTerms] = useState<string[]>([""])
   const [showProductDropdowns, setShowProductDropdowns] = useState<boolean[]>([false])
   const [error, setError] = useState<string | null>(null)
   const [isLoadingOrders, setIsLoadingOrders] = useState(true)
+  const [currency, setCurrency] = useState<string>("KES")
 
   useEffect(() => {
     fetchReceipts()
@@ -121,7 +123,10 @@ export function PurchaseReceiptsManager() {
       const response = await fetch(`/api/purchase-orders?warehouse_id=${encodeURIComponent(warehouseId)}`)
       const data = await response.json()
 
-      if (response.status === 401 || (data.message && typeof data.message === 'string' && data.message.includes("Unauthorized"))) {
+      if (
+        response.status === 401 ||
+        (data.message && typeof data.message === "string" && data.message.includes("Unauthorized"))
+      ) {
         sessionStorage.clear()
         window.location.href = "/login"
         return
@@ -157,14 +162,16 @@ export function PurchaseReceiptsManager() {
 
   const handleOrderSelect = (orderId: string) => {
     setSelectedOrderId(orderId)
-    const order = orders.find(o => o.order_id === orderId)
+    const order = orders.find((o) => o.order_id === orderId)
     if (order && order.items) {
-      setReceiptItems(order.items.map(item => ({
-        item_code: item.item_code,
-        qty: item.qty
-      })))
+      setReceiptItems(
+        order.items.map((item) => ({
+          item_code: item.item_code,
+          qty: item.qty,
+        })),
+      )
       // Set product display names for read-only view
-      setProductSearchTerms(order.items.map(item => item.item_name))
+      setProductSearchTerms(order.items.map((item) => item.item_name))
       setShowProductDropdowns(order.items.map(() => false))
     } else {
       setReceiptItems([{ item_code: "", qty: 1 }])
@@ -208,9 +215,10 @@ export function PurchaseReceiptsManager() {
           const data = await response.json()
 
           if (response.ok) {
-            setMessage({ 
-              type: "success", 
-              text: data.message?.message || `Purchase receipt ${editingReceiptId ? "updated" : "created"} successfully` 
+            setMessage({
+              type: "success",
+              text:
+                data.message?.message || `Purchase receipt ${editingReceiptId ? "updated" : "created"} successfully`,
             })
             setShowCreateForm(false)
             setSelectedOrderId("")
@@ -266,11 +274,11 @@ export function PurchaseReceiptsManager() {
 
   const handleCancelOrDeleteReceipt = async (receiptId: string, docstatus: number) => {
     const isDraft = docstatus === 0
-    
+
     setConfirmDialog({
       open: true,
       title: isDraft ? "Delete Purchase Receipt?" : "Cancel Purchase Receipt?",
-      description: isDraft 
+      description: isDraft
         ? `Delete draft receipt ${receiptId}? This action cannot be undone.`
         : `Cancel receipt ${receiptId}? This action cannot be undone.`,
       action: async () => {
@@ -282,14 +290,17 @@ export function PurchaseReceiptsManager() {
           })
 
           if (response.ok) {
-            setMessage({ type: "success", text: `Purchase receipt ${isDraft ? 'deleted' : 'cancelled'} successfully` })
+            setMessage({ type: "success", text: `Purchase receipt ${isDraft ? "deleted" : "cancelled"} successfully` })
             fetchReceipts()
           } else {
             const data = await response.json()
-            setMessage({ type: "error", text: data.message?.message || `Failed to ${isDraft ? 'delete' : 'cancel'} receipt` })
+            setMessage({
+              type: "error",
+              text: data.message?.message || `Failed to ${isDraft ? "delete" : "cancel"} receipt`,
+            })
           }
         } catch (err) {
-          setMessage({ type: "error", text: `Error ${isDraft ? 'deleting' : 'canceling'} receipt` })
+          setMessage({ type: "error", text: `Error ${isDraft ? "deleting" : "canceling"} receipt` })
           console.error("[DukaPlus] Error:", err)
         }
       },
@@ -299,17 +310,19 @@ export function PurchaseReceiptsManager() {
 
   const handleEditReceipt = (receipt: PurchaseReceipt) => {
     setEditingReceiptId(receipt.name)
-    setReceiptItems(receipt.items.map(item => ({
-      item_code: item.item_code,
-      qty: item.qty
-    })))
+    setReceiptItems(
+      receipt.items.map((item) => ({
+        item_code: item.item_code,
+        qty: item.qty,
+      })),
+    )
     setShowCreateForm(true)
     // Try to find matching order (might not exist if already fully received)
-    const matchingOrder = orders.find(order => order.supplier === receipt.supplier)
+    const matchingOrder = orders.find((order) => order.supplier === receipt.supplier)
     if (matchingOrder) {
       setSelectedOrderId(matchingOrder.order_id)
     }
-    setProductSearchTerms(receipt.items.map(item => item.item_name))
+    setProductSearchTerms(receipt.items.map((item) => item.item_name))
     setShowProductDropdowns(receipt.items.map(() => false))
   }
 
@@ -339,21 +352,21 @@ export function PurchaseReceiptsManager() {
     if (selectedOrderId) {
       return
     }
-    
+
     const existingItemIndex = receiptItems.findIndex((item, idx) => idx !== index && item.item_code === productId)
-    
+
     if (existingItemIndex !== -1) {
       const newItems = [...receiptItems]
       newItems[existingItemIndex].qty += 1
       setReceiptItems(newItems.filter((_, idx) => idx !== index))
       setProductSearchTerms(productSearchTerms.filter((_, idx) => idx !== index))
       setShowProductDropdowns(showProductDropdowns.filter((_, idx) => idx !== index))
-      const product = products.find(p => p.id === productId)
+      const product = products.find((p) => p.id === productId)
       setMessage({ type: "error", text: `"${product?.name || productId}" already in list. Quantity increased.` })
       setTimeout(() => setMessage(null), 3000)
     } else {
       updateReceiptItem(index, "item_code", productId)
-      const product = products.find(p => p.id === productId)
+      const product = products.find((p) => p.id === productId)
       const newTerms = [...productSearchTerms]
       newTerms[index] = product ? product.name : productId
       setProductSearchTerms(newTerms)
@@ -370,7 +383,7 @@ export function PurchaseReceiptsManager() {
   }
 
   const toggleReceiptExpansion = (receiptId: string) => {
-    setExpandedReceipts(prev => {
+    setExpandedReceipts((prev) => {
       const newSet = new Set(prev)
       if (newSet.has(receiptId)) {
         newSet.delete(receiptId)
@@ -410,9 +423,10 @@ export function PurchaseReceiptsManager() {
 
   const getFilteredProducts = (searchTerm: string) => {
     if (!searchTerm) return products
-    return products.filter(p => 
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.id.toLowerCase().includes(searchTerm.toLowerCase())
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.id.toLowerCase().includes(searchTerm.toLowerCase()),
     )
   }
 
@@ -425,7 +439,13 @@ export function PurchaseReceiptsManager() {
         description={confirmDialog.description}
         onConfirm={confirmDialog.action}
         variant={confirmDialog.variant}
-        confirmText={confirmDialog.title.includes("Delete") ? "Delete" : confirmDialog.title.includes("Cancel") ? "Cancel Receipt" : "Confirm"}
+        confirmText={
+          confirmDialog.title.includes("Delete")
+            ? "Delete"
+            : confirmDialog.title.includes("Cancel")
+              ? "Cancel Receipt"
+              : "Confirm"
+        }
       />
 
       {message && (
@@ -456,7 +476,7 @@ export function PurchaseReceiptsManager() {
             <FileText className="w-6 h-6" />
             Purchase Receipts
           </h2>
-          <Button 
+          <Button
             onClick={() => {
               setShowCreateForm(!showCreateForm)
               setEditingReceiptId("")
@@ -464,7 +484,7 @@ export function PurchaseReceiptsManager() {
               setReceiptItems([{ item_code: "", qty: 1 }])
               setProductSearchTerms([""])
               setShowProductDropdowns([false])
-            }} 
+            }}
             className="btn-create"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -493,145 +513,176 @@ export function PurchaseReceiptsManager() {
         </div>
 
         {showCreateForm && (
-          <div className="mb-6 p-4 border border-border rounded-lg bg-muted/50">
-            <h3 className="text-lg font-semibold text-foreground mb-4">
+          <div className="mb-6 p-6 border-2 border-primary/20 rounded-lg bg-card shadow-sm">
+            <h3 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
               {editingReceiptId ? "Edit Purchase Receipt" : "Create Purchase Receipt"}
             </h3>
-            <div className="space-y-4">
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
               <div>
-                <label className="form-label">Purchase Order</label>
+                <label className="form-label">Purchase Order *</label>
                 <select
                   value={selectedOrderId}
                   onChange={(e) => handleOrderSelect(e.target.value)}
-                  className="w-full input-base"
+                  className="w-full input-base h-9 text-sm"
                   disabled={!!editingReceiptId}
                 >
                   <option value="">Select purchase order</option>
                   {orders.map((order) => (
                     <option key={order.order_id} value={order.order_id}>
-                      {order.order_id} - {order.supplier} (KES {order.grand_total.toFixed(2)})
+                      {order.order_id} - {order.supplier}
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Only submitted orders available for receiving are shown
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">Only submitted orders available for receiving</p>
               </div>
 
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="form-label">Items</label>
-                  {!selectedOrderId && (
-                    <Button onClick={addReceiptItem} size="sm" className="btn-success text-xs">
-                      <Plus className="w-3 h-3 mr-1" />
-                      Add Item
-                    </Button>
-                  )}
+              <div className="flex items-end">
+                <div className="w-full">
+                  <label className="form-label">Grand Total</label>
+                  <div className="h-9 px-3 rounded-md border border-input bg-muted flex items-center text-sm font-semibold">
+                    {currency}{" "}
+                    {selectedOrderId
+                      ? orders
+                          .find((o) => o.order_id === selectedOrderId)
+                          ?.grand_total.toLocaleString("en-KE", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }) || "0.00"
+                      : "0.00"}
+                  </div>
                 </div>
-                {selectedOrderId && (
-                  <p className="text-xs text-muted-foreground mb-2 italic">
-                    Items from purchase order. You can only adjust quantities.
-                  </p>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <label className="form-label mb-0">Items</label>
+                {!selectedOrderId && (
+                  <button onClick={addReceiptItem} className="btn-success h-8 text-xs px-3">
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Item
+                  </button>
                 )}
-                <div className="space-y-2">
-                  {receiptItems.map((item, index) => (
-                    <div key={index} className="flex gap-2">
-                      <div className="flex-1 relative">
-                        {selectedOrderId ? (
+              </div>
+              {selectedOrderId && (
+                <p className="text-xs text-muted-foreground mb-3 italic">
+                  Items from purchase order. You can only adjust quantities.
+                </p>
+              )}
+
+              {/* Table Header */}
+              <div className="hidden md:grid md:grid-cols-[1fr_120px_60px] gap-2 mb-2 px-3 py-1.5 bg-muted/50 rounded-md border border-border">
+                <div className="text-xs font-semibold text-muted-foreground uppercase">Product</div>
+                <div className="text-xs font-semibold text-muted-foreground uppercase text-center">Quantity</div>
+                <div className="text-xs font-semibold text-muted-foreground uppercase text-center">Action</div>
+              </div>
+
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {receiptItems.map((item, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 md:grid-cols-[1fr_120px_60px] gap-2 p-2 border border-border rounded-md bg-card hover:bg-accent/5 transition-colors"
+                  >
+                    <div className="relative">
+                      <label className="md:hidden text-xs font-medium text-muted-foreground mb-1 block">Product</label>
+                      {selectedOrderId ? (
+                        <input
+                          type="text"
+                          value={productSearchTerms[index] || ""}
+                          readOnly
+                          className="w-full input-base h-9 text-sm bg-muted cursor-not-allowed"
+                        />
+                      ) : (
+                        <>
                           <input
                             type="text"
+                            placeholder="Search product..."
                             value={productSearchTerms[index] || ""}
-                            readOnly
-                            className="input-base w-full bg-muted/50 cursor-not-allowed"
-                            title="Item from purchase order - cannot be changed"
+                            onChange={(e) => {
+                              const newTerms = [...productSearchTerms]
+                              newTerms[index] = e.target.value
+                              setProductSearchTerms(newTerms)
+                              const newShow = [...showProductDropdowns]
+                              newShow[index] = true
+                              setShowProductDropdowns(newShow)
+                            }}
+                            onFocus={() => {
+                              const newShow = [...showProductDropdowns]
+                              newShow[index] = true
+                              setShowProductDropdowns(newShow)
+                            }}
+                            className="w-full input-base h-9 text-sm"
                           />
-                        ) : (
-                          <>
-                            <div className="relative">
-                              <input
-                                type="text"
-                                value={productSearchTerms[index] || ""}
-                                onChange={(e) => {
-                                  const newTerms = [...productSearchTerms]
-                                  newTerms[index] = e.target.value
-                                  setProductSearchTerms(newTerms)
-                                  const newShow = [...showProductDropdowns]
-                                  newShow[index] = true
-                                  setShowProductDropdowns(newShow)
-                                }}
-                                onFocus={() => {
-                                  const newShow = [...showProductDropdowns]
-                                  newShow[index] = true
-                                  setShowProductDropdowns(newShow)
-                                }}
-                                placeholder="Search product..."
-                                className="input-base w-full pr-8"
-                              />
-                              <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          {showProductDropdowns[index] && getFilteredProducts(productSearchTerms[index]).length > 0 && (
+                            <div className="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-card border border-border rounded-md shadow-lg">
+                              {getFilteredProducts(productSearchTerms[index]).map((product) => (
+                                <button
+                                  key={product.id}
+                                  type="button"
+                                  onClick={() => selectProduct(index, product.id)}
+                                  className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+                                >
+                                  <div className="font-medium">{product.name}</div>
+                                  <div className="text-xs text-muted-foreground">{product.id}</div>
+                                </button>
+                              ))}
                             </div>
-                            {showProductDropdowns[index] && (
-                              <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                {getFilteredProducts(productSearchTerms[index]).length === 0 ? (
-                                  <div className="p-2 text-sm text-muted-foreground">No products found</div>
-                                ) : (
-                                  getFilteredProducts(productSearchTerms[index]).map((product) => (
-                                    <button
-                                      key={product.id}
-                                      onClick={() => selectProduct(index, product.id)}
-                                      className="w-full p-2 text-left hover:bg-muted transition-colors text-sm"
-                                    >
-                                      <div className="font-medium text-foreground">{product.name}</div>
-                                      <div className="text-xs text-muted-foreground">{product.id}</div>
-                                    </button>
-                                  ))
-                                )}
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                      <input
-                        type="number"
-                        value={item.qty}
-                        onChange={(e) => updateReceiptItem(index, "qty", e.target.value)}
-                        placeholder="Quantity"
-                        min="1"
-                        className="input-base w-32"
-                      />
-                      {receiptItems.length > 1 && !selectedOrderId && (
-                        <Button
-                          onClick={() => removeReceiptItem(index)}
-                          size="sm"
-                          variant="ghost"
-                          className="action-btn-delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                          )}
+                        </>
                       )}
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              <div className="flex gap-2">
-                <Button onClick={handleCreateOrUpdateReceipt} disabled={isSubmitting} className="btn-create flex-1">
-                  {isSubmitting ? (editingReceiptId ? "Updating..." : "Creating...") : (editingReceiptId ? "Update Receipt" : "Create Receipt")}
-                </Button>
-                <Button 
-                  onClick={() => {
-                    setShowCreateForm(false)
-                    setEditingReceiptId("")
-                    setSelectedOrderId("")
-                    setReceiptItems([{ item_code: "", qty: 1 }])
-                    setProductSearchTerms([""])
-                    setShowProductDropdowns([false])
-                  }} 
-                  disabled={isSubmitting} 
-                  className="btn-cancel flex-1"
-                >
-                  Cancel
-                </Button>
+                    <div>
+                      <label className="md:hidden text-xs font-medium text-muted-foreground mb-1 block">Quantity</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.qty}
+                        onChange={(e) => updateReceiptItem(index, "qty", e.target.value)}
+                        className="w-full input-base h-9 text-sm text-center"
+                      />
+                    </div>
+
+                    <div className="flex items-end md:items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={() => removeReceiptItem(index)}
+                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                        disabled={selectedOrderId}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
+            </div>
+
+            <div className="flex gap-2 mt-6 pt-4 border-t border-border">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateForm(false)
+                  setEditingReceiptId("")
+                  setSelectedOrderId("")
+                  setReceiptItems([{ item_code: "", qty: 1 }])
+                  setProductSearchTerms([""])
+                  setShowProductDropdowns([false])
+                }}
+                className="btn-cancel flex-1 h-9 text-sm"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateOrUpdateReceipt}
+                disabled={isSubmitting || !selectedOrderId}
+                className="btn-create flex-1 h-9 text-sm"
+              >
+                {isSubmitting ? "Saving..." : editingReceiptId ? "Update Receipt" : "Create Receipt"}
+              </button>
             </div>
           </div>
         )}
@@ -640,7 +691,9 @@ export function PurchaseReceiptsManager() {
           <p className="text-foreground p-6 text-center">Loading purchase receipts...</p>
         ) : filteredReceipts.length === 0 ? (
           <p className="text-foreground text-center py-8">
-            {searchTerm || statusFilter !== "all" || (dateRange.from && dateRange.to) ? "No receipts match your filters" : "No purchase receipts found"}
+            {searchTerm || statusFilter !== "all" || (dateRange.from && dateRange.to)
+              ? "No receipts match your filters"
+              : "No purchase receipts found"}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -659,8 +712,7 @@ export function PurchaseReceiptsManager() {
               <tbody className="divide-y divide-border">
                 {filteredReceipts.map((receipt) => {
                   const isExpanded = expandedReceipts.has(receipt.name)
-                  const docstatus = receipt.status.toLowerCase() === "draft" ? 0 : 1
-                  
+
                   return (
                     <>
                       <tr key={receipt.name} className="table-row">
@@ -684,26 +736,17 @@ export function PurchaseReceiptsManager() {
                         <td className="table-cell">{receipt.posting_date}</td>
                         <td className="table-cell">{getStatusBadge(receipt.status)}</td>
                         <td className="px-4 py-3">
-                          {receipt.status.toLowerCase() === "draft" && (
-                            <TableActionButtons
-                              showEdit={true}
-                              showSubmit={true}
-                              showCancel={true}
-                              onEdit={() => handleEditReceipt(receipt)}
-                              onSubmit={() => handleSubmitReceipt(receipt.name)}
-                              onCancel={() => handleCancelOrDeleteReceipt(receipt.name, docstatus)}
-                              docstatus={docstatus}
-                              status={receipt.status}
-                            />
-                          )}
-                          {receipt.status.toLowerCase() === "submitted" && (
-                            <TableActionButtons
-                              showCancel={true}
-                              onCancel={() => handleCancelOrDeleteReceipt(receipt.name, docstatus)}
-                              docstatus={docstatus}
-                              status={receipt.status}
-                            />
-                          )}
+                          <TableActionButtons
+                            showEdit={receipt.docstatus === 0}
+                            onEdit={() => handleEditReceipt(receipt)}
+                            showSubmit={receipt.docstatus === 0}
+                            onSubmit={() => handleSubmitReceipt(receipt.name)}
+                            showCancel={true}
+                            onCancel={() => handleCancelOrDeleteReceipt(receipt.name, receipt.docstatus)}
+                            docstatus={receipt.docstatus}
+                            status={receipt.status}
+                            size="sm"
+                          />
                         </td>
                       </tr>
                       {isExpanded && receipt.items && receipt.items.length > 0 && (
@@ -728,10 +771,10 @@ export function PurchaseReceiptsManager() {
                                       <td className="p-2 text-foreground">{item.item_name}</td>
                                       <td className="p-2 text-right text-foreground">{item.qty}</td>
                                       <td className="p-2 text-right text-muted-foreground">
-                                        KES {item.rate.toFixed(2)}
+                                        {currency} {item.rate.toFixed(2)}
                                       </td>
                                       <td className="p-2 text-right font-semibold text-foreground">
-                                        KES {item.amount.toFixed(2)}
+                                        {currency} {item.amount.toFixed(2)}
                                       </td>
                                     </tr>
                                   ))}

@@ -21,6 +21,8 @@ interface Product {
   img?: string // Added image field
   lastUpdated: string
   status: "in_stock" | "low_stock" | "out_of_stock"
+  sold_by?: string
+  purpose?: string
 }
 
 interface ProductFormProps {

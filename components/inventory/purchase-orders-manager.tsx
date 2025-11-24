@@ -50,12 +50,15 @@ export function PurchaseOrdersManager() {
     title: string
     description: string
     action: () => void
+    variant: string
   }>({
     open: false,
     title: "",
     description: "",
     action: () => {},
+    variant: "default",
   })
+  const [message, setMessage] = useState<{ type: string; text: string } | null>(null)
 
   useEffect(() => {
     fetchPurchaseOrders()
@@ -137,6 +140,7 @@ export function PurchaseOrdersManager() {
           console.error("[DukaPlus] Error:", err)
         }
       },
+      variant: isDraft ? "danger" : "default",
     })
   }
 
@@ -166,12 +170,43 @@ export function PurchaseOrdersManager() {
           console.error("[DukaPlus] Error:", err)
         }
       },
+      variant: "success",
     })
   }
 
   const handleEditOrder = (orderId: string) => {
     setEditingOrderId(orderId)
     setShowNewOrderForm(true)
+  }
+
+  const handleSubmitOrder = async (orderId: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Submit Purchase Order?",
+      description: `Submit order ${orderId}? This action cannot be undone.`,
+      action: async () => {
+        try {
+          const response = await fetch("/api/purchase-orders/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: orderId }),
+          })
+
+          const data = await response.json()
+
+          if (response.ok) {
+            setMessage({ type: "success", text: "Purchase order submitted successfully" })
+            fetchPurchaseOrders()
+          } else {
+            setMessage({ type: "error", text: data.message?.message || "Failed to submit purchase order" })
+          }
+        } catch (error) {
+          setMessage({ type: "error", text: "Error submitting purchase order" })
+          console.error("[DukaPlus] Error submitting purchase order:", error)
+        }
+      },
+      variant: "success",
+    })
   }
 
   const filterOrders = () => {
@@ -215,15 +250,32 @@ export function PurchaseOrdersManager() {
         title={confirmDialog.title}
         description={confirmDialog.description}
         onConfirm={confirmDialog.action}
-        variant="danger"
+        variant={confirmDialog.variant}
         confirmText={
           confirmDialog.title.includes("Delete")
             ? "Delete"
             : confirmDialog.title.includes("Cancel")
               ? "Cancel Order"
-              : "Confirm"
+              : confirmDialog.title.includes("Submit")
+                ? "Submit"
+                : "Confirm"
         }
       />
+
+      {message && (
+        <div
+          className={`bg-${message.type === "success" ? "green-50" : "red-50"} dark:bg-${message.type === "success" ? "green-900/20" : "red-900/20"} border border-${message.type === "success" ? "green-200" : "red-200"} dark:border-${message.type === "success" ? "green-800" : "red-800"} rounded-lg p-4 flex items-start gap-3`}
+        >
+          <AlertCircle
+            className={`w-5 h-5 text-${message.type === "success" ? "green-600" : "red-600"} dark:text-${message.type === "success" ? "green-400" : "red-400"} flex-shrink-0 mt-0.5`}
+          />
+          <p
+            className={`text-${message.type === "success" ? "green-800" : "red-800"} dark:text-${message.type === "success" ? "green-200" : "red-200"} text-sm`}
+          >
+            {message.text}
+          </p>
+        </div>
+      )}
 
       <div className="flex justify-between items-center">
         <div className="flex gap-2">
@@ -356,6 +408,8 @@ export function PurchaseOrdersManager() {
                           <TableActionButtons
                             showEdit={order.docstatus === 0}
                             onEdit={() => handleEditOrder(order.order_id)}
+                            showSubmit={order.docstatus === 0}
+                            onSubmit={() => handleSubmitOrder(order.order_id)}
                             showCancel={true}
                             showCreateReceipt={order.status !== "Draft"}
                             onCancel={() => handleCancelOrDeleteOrder(order.order_id, order.docstatus)}
@@ -678,86 +732,103 @@ function NewOrderInlineForm({
   }
 
   return (
-    <div className="card-base p-6 mb-6 border-2 border-orange-300">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-bold">{editingOrderId ? "Edit Purchase Order" : "New Purchase Order"}</h3>
-        <Button onClick={onClose} variant="ghost" size="sm">
+    <div className="card-base border-2 border-orange-300">
+      <div className="flex justify-between items-center px-4 py-3 border-b border-border bg-orange-50 dark:bg-orange-950/20">
+        <h3 className="text-base font-bold text-foreground">
+          {editingOrderId ? "Edit Purchase Order" : "New Purchase Order"}
+        </h3>
+        <Button onClick={onClose} variant="ghost" size="sm" className="h-7 w-7 p-0">
           ✕
         </Button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="p-4">
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-800 dark:text-red-200 flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-2.5 text-xs text-red-800 dark:text-red-200 flex items-start gap-2 mb-3">
+            <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <div className="relative">
-          <label className="block text-sm font-medium mb-2">Supplier *</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
           <div className="relative">
-            <input
-              type="text"
-              value={supplierSearch}
-              onChange={(e) => {
-                setSupplierSearch(e.target.value)
-                setShowSupplierDropdown(true)
-              }}
-              onFocus={() => setShowSupplierDropdown(true)}
-              className="input-base w-full pr-10"
-              placeholder="Search supplier..."
-              required
-            />
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          </div>
-          {showSupplierDropdown && filteredSuppliers.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {filteredSuppliers.map((s, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => {
-                    setSupplier(s.supplier_name)
-                    setSupplierSearch(s.supplier_name)
-                    setShowSupplierDropdown(false)
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 flex flex-col"
-                >
-                  <span className="font-medium">{s.supplier_name}</span>
-                  {s.mobile_number && <span className="text-xs text-secondary">{s.mobile_number}</span>}
-                </button>
-              ))}
+            <label className="block text-xs font-medium mb-1.5">
+              Supplier <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={supplierSearch}
+                onChange={(e) => {
+                  setSupplierSearch(e.target.value)
+                  setShowSupplierDropdown(true)
+                }}
+                onFocus={() => setShowSupplierDropdown(true)}
+                className="input-base w-full h-9 text-sm pr-9"
+                placeholder="Search supplier..."
+                required
+              />
+              <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
             </div>
-          )}
+            {showSupplierDropdown && filteredSuppliers.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {filteredSuppliers.map((s, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setSupplier(s.supplier_name)
+                      setSupplierSearch(s.supplier_name)
+                      setShowSupplierDropdown(false)
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm"
+                  >
+                    <span className="font-medium">{s.supplier_name}</span>
+                    {s.mobile_number && <span className="text-xs text-secondary block">{s.mobile_number}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1.5">Required By</label>
+            <input
+              type="date"
+              value={requiredBy}
+              onChange={(e) => setRequiredBy(e.target.value)}
+              className="input-base w-full h-9 text-sm"
+            />
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-2">Required By</label>
-          <input
-            type="date"
-            value={requiredBy}
-            onChange={(e) => setRequiredBy(e.target.value)}
-            className="input-base w-full"
-          />
-        </div>
-
-        <div>
+        <div className="mb-3">
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium">Items</label>
-            <Button type="button" onClick={addItem} variant="outline" size="sm">
-              <Plus className="w-4 h-4 mr-1" />
+            <label className="block text-xs font-medium">
+              Items <span className="text-red-500">*</span>
+            </label>
+            <Button type="button" onClick={addItem} variant="outline" size="sm" className="h-7 text-xs bg-transparent">
+              <Plus className="w-3 h-3 mr-1" />
               Add Item
             </Button>
+          </div>
+
+          <div className="hidden sm:grid sm:grid-cols-12 gap-2 px-2 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-t-lg text-xs font-medium text-secondary">
+            <div className="col-span-5">Product</div>
+            <div className="col-span-2 text-center">Quantity</div>
+            <div className="col-span-2 text-center">Price</div>
+            <div className="col-span-2 text-right">Subtotal</div>
+            <div className="col-span-1"></div>
           </div>
 
           <div className="space-y-2">
             {items.map((item, index) => (
               <div
                 key={index}
-                className="flex gap-2 items-start p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg relative"
+                className="grid grid-cols-1 sm:grid-cols-12 gap-2 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700"
               >
-                <div className="flex-1 relative">
+                <div className="sm:col-span-5 relative">
+                  <label className="sm:hidden text-xs font-medium text-secondary mb-1 block">Product</label>
                   <input
                     type="text"
                     value={productSearches[index] || ""}
@@ -774,73 +845,109 @@ function NewOrderInlineForm({
                         setShowProductDropdowns(newDropdowns)
                       }, 200)
                     }}
-                    className="input-base w-full"
-                    placeholder="Search and select product..."
+                    className="input-base w-full h-8 text-sm"
+                    placeholder="Search product..."
                     required
                   />
                   {showProductDropdowns[index] && getFilteredProducts(productSearches[index] || "").length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-40 overflow-y-auto">
                       {getFilteredProducts(productSearches[index] || "")
-                        .slice(0, 10)
+                        .slice(0, 8)
                         .map((p) => (
                           <button
                             key={p.id}
                             type="button"
                             onClick={() => selectProduct(index, p)}
-                            className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm"
+                            className="w-full text-left px-2.5 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs"
                           >
-                            <div className="font-medium">{p.name}</div>
-                            <div className="text-xs text-secondary">
-                              {p.id} • Cost: KES {p.cost?.toFixed(2)} • Stock: {p.quantity}
+                            <div className="font-medium truncate">{p.name}</div>
+                            <div className="text-[10px] text-secondary truncate">
+                              {p.id} • KES {p.cost?.toFixed(2)} • Stock: {p.quantity}
                             </div>
                           </button>
                         ))}
                     </div>
                   )}
                 </div>
-                <input
-                  type="number"
-                  value={item.quantity}
-                  onChange={(e) => updateItem(index, "quantity", Number.parseInt(e.target.value) || 0)}
-                  className="input-base w-20"
-                  placeholder="Qty"
-                  min="1"
-                  required
-                />
-                <input
-                  type="number"
-                  value={item.buying_price}
-                  onChange={(e) => updateItem(index, "buying_price", Number.parseFloat(e.target.value) || 0)}
-                  className="input-base w-24"
-                  placeholder="Price"
-                  min="0"
-                  step="0.01"
-                  required
-                />
-                {items.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeItem(index)}
-                    className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
+
+                <div className="sm:col-span-2">
+                  <label className="sm:hidden text-xs font-medium text-secondary mb-1 block">Qty</label>
+                  <input
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => updateItem(index, "quantity", Number.parseInt(e.target.value) || 0)}
+                    className="input-base w-full h-8 text-sm text-center"
+                    placeholder="Qty"
+                    min="1"
+                    required
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="sm:hidden text-xs font-medium text-secondary mb-1 block">Price</label>
+                  <input
+                    type="number"
+                    value={item.buying_price}
+                    onChange={(e) => updateItem(index, "buying_price", Number.parseFloat(e.target.value) || 0)}
+                    className="input-base w-full h-8 text-sm text-center"
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+
+                <div className="sm:col-span-2 flex items-center">
+                  <label className="sm:hidden text-xs font-medium text-secondary mr-2">Subtotal:</label>
+                  <div className="text-sm font-semibold text-foreground sm:text-right sm:w-full">
+                    KES {(item.quantity * item.buying_price).toFixed(2)}
+                  </div>
+                </div>
+
+                <div className="sm:col-span-1 flex items-center justify-end">
+                  {items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      className="p-1.5 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded transition-colors"
+                      title="Remove item"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
+
+          {items.length > 0 && (
+            <div className="mt-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg flex justify-between items-center text-sm">
+              <span className="font-medium">
+                Total ({items.length} item{items.length > 1 ? "s" : ""}):
+              </span>
+              <span className="font-bold text-lg text-warning">
+                KES{" "}
+                {items
+                  .reduce((sum, item) => sum + item.quantity * item.buying_price, 0)
+                  .toLocaleString("en-KE", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+              </span>
+            </div>
+          )}
         </div>
 
-        <div className="mt-4 flex gap-2">
-          <button type="button" onClick={onClose} className="btn-cancel flex-1" disabled={isSaving}>
+        <div className="flex gap-2 pt-2 border-t border-border">
+          <button type="button" onClick={onClose} className="btn-cancel flex-1 h-9 text-sm" disabled={isSaving}>
             Cancel
           </button>
           <button
             type="submit"
-            className="btn-create flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-create flex-1 h-9 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSaving}
           >
-            {isSaving ? "Creating..." : editingOrderId ? "Update Order" : "Create Order"}
+            {isSaving ? "Saving..." : editingOrderId ? "Update Order" : "Create Order"}
           </button>
         </div>
       </form>

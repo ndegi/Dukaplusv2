@@ -98,13 +98,15 @@ export default function CustomersPage() {
   const handleCreateCustomer = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const endpoint = editingCustomer ? `/api/customers/${editingCustomer.customer_id}` : "/api/customers/create"
+      const endpoint = editingCustomer ? "/api/customers/update" : "/api/customers/create"
       const method = "POST"
+
+      const payload = editingCustomer ? { customer_id: editingCustomer.customer_id, ...formData } : formData
 
       const res = await fetch(endpoint, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
       if (res.ok) {

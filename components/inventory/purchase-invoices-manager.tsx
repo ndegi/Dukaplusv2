@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, CheckCircle, Plus, ChevronDown, ChevronUp, FileText, Trash2, CreditCard } from "lucide-react"
+import { AlertCircle, CheckCircle, Plus, ChevronDown, ChevronUp, FileText, Trash2 } from "lucide-react"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { DateRangeFilter } from "@/components/reports/date-range-filter"
@@ -76,6 +76,7 @@ export function PurchaseInvoicesManager() {
   const [payments, setPayments] = useState<Payment[]>([{ id: 1, mode: "Cash", amount: "" }])
   const [showEditForm, setShowEditForm] = useState(false)
   const [editingInvoice, setEditingInvoice] = useState<PurchaseInvoice | null>(null)
+  const currency = "KES" // Assuming currency is KES for simplicity
 
   useEffect(() => {
     fetchInvoices()
@@ -277,7 +278,7 @@ export function PurchaseInvoicesManager() {
     setConfirmDialog({
       open: true,
       title: "Record Payment?",
-      description: `Record payment of KES ${totalPayment.toFixed(2)} for invoice ${selectedInvoice}?`,
+      description: `Record payment of ${currency} ${totalPayment.toFixed(2)} for invoice ${selectedInvoice}?`,
       action: async () => {
         try {
           // Format payments according to API spec
@@ -535,106 +536,167 @@ export function PurchaseInvoicesManager() {
         </div>
 
         {showCreateForm && (
-          <div className="mb-6 p-4 border border-border rounded-lg bg-muted/50">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Create Purchase Invoice</h3>
+          <div className="mb-6 p-6 border-2 border-primary/20 rounded-lg bg-card shadow-sm">
+            <h3 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
+              Create Purchase Invoice
+            </h3>
+
             <div className="space-y-4">
               <div>
                 <label className="form-label">Purchase Order *</label>
                 <select
                   value={selectedOrderId}
                   onChange={(e) => setSelectedOrderId(e.target.value)}
-                  className="w-full input-base"
+                  className="w-full input-base h-9 text-sm"
                 >
                   <option value="">Select purchase order</option>
                   {orders.map((order) => (
                     <option key={order.order_id} value={order.order_id}>
-                      {order.order_id} - {order.supplier} (KES {order.grand_total.toFixed(2)}) - {order.status}
+                      {order.order_id} - {order.supplier} ({currency} {order.grand_total.toFixed(2)}) - {order.status}
                     </option>
                   ))}
                 </select>
                 <p className="text-xs text-muted-foreground mt-1">Select a purchase order to create an invoice</p>
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleCreateInvoice}
-                  disabled={isSubmitting || !selectedOrderId}
-                  className="btn-create flex-1"
-                >
-                  {isSubmitting ? "Creating..." : "Create Invoice"}
-                </Button>
-                <Button
+              <div className="flex gap-2 pt-2 border-t border-border">
+                <button
+                  type="button"
                   onClick={() => {
                     setShowCreateForm(false)
                     setSelectedOrderId("")
                   }}
                   disabled={isSubmitting}
-                  className="btn-cancel flex-1"
+                  className="btn-cancel flex-1 h-9 text-sm"
                 >
                   Cancel
-                </Button>
+                </button>
+                <button
+                  onClick={handleCreateInvoice}
+                  disabled={isSubmitting || !selectedOrderId}
+                  className="btn-create flex-1 h-9 text-sm"
+                >
+                  {isSubmitting ? "Creating..." : "Create Invoice"}
+                </button>
               </div>
             </div>
           </div>
         )}
 
         {showEditForm && editingInvoice && (
-          <div className="mb-6 p-4 border border-border rounded-lg bg-muted/50">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Edit Purchase Invoice</h3>
-                <p className="text-sm text-muted-foreground mt-1">Invoice: {editingInvoice.name}</p>
-              </div>
-            </div>
+          <div className="mb-6 p-6 border-2 border-primary/20 rounded-lg bg-card shadow-sm">
+            <h3 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
+              Edit Purchase Invoice: {editingInvoice.name}
+            </h3>
 
             <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">Supplier</label>
+                  <input
+                    type="text"
+                    value={editingInvoice.supplier}
+                    readOnly
+                    className="w-full input-base h-9 text-sm bg-muted cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Date</label>
+                  <input
+                    type="text"
+                    value={new Date(editingInvoice.posting_date).toLocaleDateString()}
+                    readOnly
+                    className="w-full input-base h-9 text-sm bg-muted cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="form-label">Invoice Items</label>
-                <div className="space-y-2">
-                  {editingInvoice.items.map((item, idx) => (
-                    <div key={idx} className="flex gap-3 items-center p-3 border border-border rounded-lg">
-                      <div className="flex-1">
-                        <p className="font-mono text-sm text-foreground">{item.item_code}</p>
-                        <p className="text-xs text-muted-foreground">{item.item_name}</p>
+                <label className="form-label mb-3">Items</label>
+
+                {/* Table Header */}
+                <div className="hidden md:grid md:grid-cols-[1fr_150px_150px_150px] gap-2 mb-2 px-3 py-1.5 bg-muted/50 rounded-md border border-border">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase">Product</div>
+                  <div className="text-xs font-semibold text-muted-foreground uppercase text-center">Quantity</div>
+                  <div className="text-xs font-semibold text-muted-foreground uppercase text-right">Rate</div>
+                  <div className="text-xs font-semibold text-muted-foreground uppercase text-right">Amount</div>
+                </div>
+
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {editingInvoice.items.map((item) => (
+                    <div
+                      key={item.item_code}
+                      className="grid grid-cols-1 md:grid-cols-[1fr_150px_150px_150px] gap-2 p-3 border border-border rounded-md bg-card hover:bg-accent/5 transition-colors"
+                    >
+                      <div>
+                        <label className="md:hidden text-xs font-medium text-muted-foreground mb-1 block">
+                          Product
+                        </label>
+                        <div className="font-medium text-sm">{item.item_name}</div>
+                        <div className="text-xs text-muted-foreground">{item.item_code}</div>
                       </div>
-                      <div className="w-24">
-                        <label className="form-label text-xs">Qty</label>
+                      <div>
+                        <label className="md:hidden text-xs font-medium text-muted-foreground mb-1 block">
+                          Quantity
+                        </label>
                         <input
                           type="number"
+                          min="1"
                           value={item.qty}
                           onChange={(e) => updateInvoiceItem(item.item_code, Number.parseFloat(e.target.value))}
-                          min="0.01"
-                          step="0.01"
-                          className="input-base w-full text-sm"
+                          className="w-full input-base h-9 text-sm text-center"
                         />
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Rate</p>
-                        <p className="text-sm font-semibold text-foreground">KES {item.rate.toFixed(2)}</p>
+                      <div>
+                        <label className="md:hidden text-xs font-medium text-muted-foreground mb-1 block">Rate</label>
+                        <div className="h-9 flex items-center justify-end text-sm font-medium">
+                          {currency} {item.rate.toFixed(2)}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Amount</p>
-                        <p className="text-sm font-semibold text-foreground">KES {(item.qty * item.rate).toFixed(2)}</p>
+                      <div>
+                        <label className="md:hidden text-xs font-medium text-muted-foreground mb-1 block">Amount</label>
+                        <div className="h-9 flex items-center justify-end text-sm font-semibold">
+                          {currency} {item.amount.toFixed(2)}
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
+
+                {/* Total */}
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Total:</span>
+                    <span className="text-lg font-bold text-primary">
+                      {currency}{" "}
+                      {editingInvoice.items
+                        .reduce((sum, item) => sum + item.amount, 0)
+                        .toLocaleString("en-KE", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex gap-2 pt-2">
-                <Button
+              <div className="flex gap-2 pt-2 border-t border-border">
+                <button
+                  type="button"
                   onClick={() => {
                     setShowEditForm(false)
                     setEditingInvoice(null)
                   }}
                   disabled={isSubmitting}
-                  className="btn-cancel flex-1"
+                  className="btn-cancel flex-1 h-9 text-sm"
                 >
                   Cancel
-                </Button>
-                <Button onClick={handleSaveEdit} disabled={isSubmitting} className="btn-create flex-1">
+                </button>
+                <button onClick={handleSaveEdit} disabled={isSubmitting} className="btn-create flex-1 h-9 text-sm">
                   {isSubmitting ? "Saving..." : "Save Changes"}
-                </Button>
+                </button>
               </div>
             </div>
           </div>
@@ -652,7 +714,7 @@ export function PurchaseInvoicesManager() {
                     const totalAmount = currentInvoice.items.reduce((sum, item) => sum + item.amount, 0)
                     return (
                       <p className="text-sm font-semibold text-warning mt-1">
-                        Invoice Total: KES {totalAmount.toFixed(2)}
+                        Invoice Total: {currency} {totalAmount.toFixed(2)}
                       </p>
                     )
                   }
@@ -718,7 +780,7 @@ export function PurchaseInvoicesManager() {
                       )}
                     </div>
                     <div>
-                      <label className="form-label text-xs">Amount (KES)</label>
+                      <label className="form-label text-xs">Amount ({currency})</label>
                       <input
                         type="number"
                         value={payment.amount}
@@ -735,7 +797,7 @@ export function PurchaseInvoicesManager() {
 
               <div className="p-3 bg-muted rounded-lg">
                 <p className="text-sm font-semibold text-foreground">
-                  Total Payment: KES {getTotalPayment().toFixed(2)}
+                  Total Payment: {currency} {getTotalPayment().toFixed(2)}
                 </p>
               </div>
 
@@ -804,59 +866,23 @@ export function PurchaseInvoicesManager() {
                         <td className="table-cell">{invoice.supplier}</td>
                         <td className="table-cell">{invoice.posting_date}</td>
                         <td className="table-cell">{getStatusBadge(invoice.status)}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2">
-                            {isDraft && (
-                              <TableActionButtons
-                                showEdit={true}
-                                showSubmit={true}
-                                showCancel={true}
-                                onEdit={() => handleEditInvoice(invoice)}
-                                onSubmit={() => handleSubmitInvoice(invoice.name)}
-                                onCancel={() => handleCancelOrDeleteInvoice(invoice.name, invoice.docstatus)}
-                                docstatus={invoice.docstatus}
-                                status={invoice.status}
-                              />
-                            )}
-                            {!isDraft &&
-                              (isUnpaid ||
-                                invoice.status.toLowerCase().includes("partial") ||
-                                invoice.status.toLowerCase().includes("partly")) && (
-                                <>
-                                  <button
-                                    onClick={() => {
-                                      setSelectedInvoice(invoice.name)
-                                      setShowPaymentView(true)
-                                    }}
-                                    className="p-2 hover:bg-muted rounded transition-colors group relative"
-                                    title="Pay"
-                                  >
-                                    <CreditCard className="w-5 h-5 text-warning" />
-                                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-background bg-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                      Pay
-                                    </span>
-                                  </button>
-                                  <TableActionButtons
-                                    showCancel={true}
-                                    onCancel={() => handleCancelOrDeleteInvoice(invoice.name, invoice.docstatus)}
-                                    docstatus={invoice.docstatus}
-                                    status={invoice.status}
-                                  />
-                                </>
-                              )}
-                            {!isDraft &&
-                              !isUnpaid &&
-                              !invoice.status.toLowerCase().includes("partial") &&
-                              !invoice.status.toLowerCase().includes("partly") &&
-                              invoice.status.toLowerCase() === "paid" && (
-                                <TableActionButtons
-                                  showCancel={true}
-                                  onCancel={() => handleCancelOrDeleteInvoice(invoice.name, invoice.docstatus)}
-                                  docstatus={invoice.docstatus}
-                                  status={invoice.status}
-                                />
-                              )}
-                          </div>
+                        <td className="table-cell text-center">
+                          <TableActionButtons
+                            showEdit={invoice.docstatus === 0}
+                            onEdit={() => handleEditInvoice(invoice)}
+                            showSubmit={invoice.docstatus === 0}
+                            onSubmit={() => handleSubmitInvoice(invoice.name)}
+                            showPay={invoice.docstatus === 1}
+                            onPay={() => {
+                              setSelectedInvoice(invoice.name)
+                              setShowPaymentView(true)
+                            }}
+                            showCancel={true}
+                            onCancel={() => handleCancelOrDeleteInvoice(invoice.name, invoice.docstatus)}
+                            docstatus={invoice.docstatus}
+                            status={invoice.status}
+                            size="sm"
+                          />
                         </td>
                       </tr>
                       {isExpanded && invoice.items && invoice.items.length > 0 && (
@@ -880,9 +906,11 @@ export function PurchaseInvoicesManager() {
                                       <td className="p-2 font-mono text-foreground">{item.item_code}</td>
                                       <td className="p-2 text-foreground">{item.item_name}</td>
                                       <td className="p-2 text-right text-foreground">{item.qty}</td>
-                                      <td className="p-2 text-right text-foreground">KES {item.rate.toFixed(2)}</td>
+                                      <td className="p-2 text-right text-foreground">
+                                        {currency} {item.rate.toFixed(2)}
+                                      </td>
                                       <td className="p-2 text-right font-semibold text-foreground">
-                                        KES {item.amount.toFixed(2)}
+                                        {currency} {item.amount.toFixed(2)}
                                       </td>
                                     </tr>
                                   ))}

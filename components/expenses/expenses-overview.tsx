@@ -125,8 +125,7 @@ export function ExpensesOverview() {
 
     try {
       setIsLoading(true)
-      const method = editingExpense ? "PUT" : "POST"
-      const endpoint = editingExpense ? `/api/expenses/${editingExpense.expense_name}` : "/api/expenses/create"
+      const endpoint = editingExpense ? "/api/expenses/update" : "/api/expenses/create"
 
       const warehouse = sessionStorage.getItem("selected_warehouse") || ""
 
@@ -137,10 +136,11 @@ export function ExpensesOverview() {
         date: formData.date,
         expense_description: formData.expense_description,
         mode_of_payment: formData.mode_of_payment,
+        ...(editingExpense && { expense_name: editingExpense.expense_name }),
       }
 
       const response = await fetch(endpoint, {
-        method,
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
@@ -181,8 +181,14 @@ export function ExpensesOverview() {
     if (!submittingExpense) return
 
     try {
-      const response = await fetch(`/api/expenses/${submittingExpense.expense_name}/submit`, {
+      const response = await fetch(`/api/expenses/submit`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          expense_name: submittingExpense.expense_name,
+        }),
       })
 
       if (response.ok) {
