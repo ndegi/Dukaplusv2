@@ -22,6 +22,7 @@ interface PurchaseInvoice {
     warehouse: string
   }[]
   purchase_order?: string
+  order_id?: string
 }
 
 interface PurchaseOrder {

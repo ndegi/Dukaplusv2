@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 
 export async function POST(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const credentials = JSON.parse(credentialsCookie)
     const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
 
-    const apiUrl = `${credentials.baseUrl}/api/method/dukaplus.services.rest.create_purchase_receipt`
+    const apiUrl = `${credentials.baseUrl}/api/method/dukaplus.services.rest.create_purchase_receipt_from_web_app`
 
     const response = await fetch(apiUrl, {
       method: "POST",
