@@ -314,15 +314,15 @@ export function CartSummary({
   return (
     <div className="flex flex-col h-full bg-card">
       {error && (
-        <div className="mx-4 mt-3 alert-error flex items-start gap-2">
+        <div className="mx-3 sm:mx-4 mt-2 sm:mt-3 alert-error flex items-start gap-2">
           <AlertCircle className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" />
-          <p className="text-danger text-xs">{error}</p>
+          <p className="text-danger text-xs sm:text-sm">{error}</p>
         </div>
       )}
 
       {cart.length > 0 && (
         <div
-          className="px-4 py-3 table-header grid gap-2 text-xs font-semibold border-b border-border"
+          className="hidden md:grid px-3 sm:px-4 py-1.5 sm:py-2 table-header gap-2 text-xs font-semibold border-b border-border"
           style={{ gridTemplateColumns: "2fr 1fr 1.5fr 1fr 1fr" }}
         >
           <div className="table-cell">Name</div>
@@ -333,10 +333,10 @@ export function CartSummary({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-4 space-y-2 py-3">
+      <div className="flex-1 overflow-y-auto px-2 sm:px-4 space-y-2 py-2 sm:py-3">
         {cart.length === 0 ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">
-            <p className="text-sm">Cart is empty</p>
+            <p className="text-xs sm:text-sm">Cart is empty</p>
           </div>
         ) : (
           cart.map((item) => {
@@ -349,15 +349,15 @@ export function CartSummary({
             return (
               <div
                 key={item.id}
-                className="grid gap-2 items-center h-16 bg-muted/50 p-2 rounded-lg hover:bg-muted transition-colors"
+                className="grid gap-1.5 sm:gap-2 items-center min-h-14 sm:h-16 bg-muted/50 p-1.5 sm:p-2 rounded-lg hover:bg-muted transition-colors"
                 style={{ gridTemplateColumns: "2fr 1fr 1.5fr 1fr 1fr" }}
               >
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-1 sm:gap-2 min-w-0">
                   <button
                     onClick={() => onRemoveItem(item.id)}
                     className="text-danger hover:text-red-700 dark:hover:text-red-300 flex-shrink-0"
                   >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   </button>
                   <span
                     className="text-xs font-medium text-foreground truncate"
@@ -374,7 +374,7 @@ export function CartSummary({
                     onChange={(e) =>
                       onUpdateQuantity(item.id, Number(e.target.value) || 1)
                     }
-                    className="h-7 input-base text-center text-xs"
+                    className="h-7 sm:h-8 input-base text-center text-xs"
                   />
                 </div>
                 <div>
@@ -383,7 +383,7 @@ export function CartSummary({
                       value={currentUom}
                       onValueChange={(val) => handleUnitChange(item.id, val)}
                     >
-                      <SelectTrigger className="h-7 input-base text-xs">
+                      <SelectTrigger className="h-7 sm:h-8 input-base text-xs">
                         <SelectValue placeholder={currentUom} />
                       </SelectTrigger>
                       <SelectContent className="bg-popover border-border">
@@ -400,7 +400,7 @@ export function CartSummary({
                       </SelectContent>
                     </Select>
                   ) : (
-                    <span className="text-foreground text-xs pl-2 block leading-7">
+                    <span className="text-foreground text-xs pl-1 sm:pl-2 block leading-7">
                       {currentUom}
                     </span>
                   )}
@@ -414,7 +414,7 @@ export function CartSummary({
                     onChange={(e) =>
                       handlePriceChange(item.id, Number(e.target.value) || 0)
                     }
-                    className="h-7 input-base text-center text-xs"
+                    className="h-7 sm:h-8 input-base text-center text-xs"
                   />
                 </div>
                 <div className="text-right text-foreground font-semibold text-xs">
@@ -426,12 +426,12 @@ export function CartSummary({
         )}
       </div>
 
-      <div className="border-t border-border px-4 py-3 space-y-2 bg-card">
-        <div className="flex justify-between items-center mb-3">
-          <span className="text-sm font-semibold text-foreground">
+      <div className="border-t border-border px-2 sm:px-4 py-2 sm:py-3 space-y-2 bg-card">
+        <div className="flex justify-between items-center mb-2 sm:mb-3">
+          <span className="text-xs sm:text-sm font-semibold text-foreground">
             Total: ({cart.length} items)
           </span>
-          <span className="text-lg font-bold text-success">
+          <span className="text-base sm:text-lg font-bold text-success">
             {formatCurrency(totalAmount, currency)}
           </span>
         </div>
@@ -439,27 +439,36 @@ export function CartSummary({
         <Button
           onClick={onCheckout}
           disabled={cart.length === 0 || isProcessing}
-          className="w-full btn-success h-12 text-base uppercase rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full btn-success h-9 sm:h-10 text-xs sm:text-sm font-bold uppercase rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           CHECKOUT ({formatCurrency(totalAmount, currency)})
         </Button>
 
-        <div className="grid grid-cols-2 gap-2">
+        {queuedCount > 0 ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={handleQueueCart}
+              disabled={cart.length === 0 || isProcessing}
+              className="bg-orange-600 hover:bg-orange-700 text-white h-9 sm:h-10 text-xs sm:text-sm font-bold uppercase rounded-lg disabled:opacity-50"
+            >
+              {isProcessing ? "Processing..." : "QUEUE"}
+            </Button>
+            <Button
+              onClick={() => setShowQueueModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white h-9 sm:h-10 text-xs sm:text-sm font-bold uppercase rounded-lg"
+            >
+              QUEUED ({queuedCount})
+            </Button>
+          </div>
+        ) : (
           <Button
             onClick={handleQueueCart}
             disabled={cart.length === 0 || isProcessing}
-            className="btn-warning h-12 text-base uppercase rounded-lg disabled:opacity-50"
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white h-9 sm:h-10 text-xs sm:text-sm font-bold uppercase rounded-lg disabled:opacity-50"
           >
             {isProcessing ? "Processing..." : "QUEUE"}
           </Button>
-          <Button
-            onClick={() => setShowQueueModal(true)}
-            disabled={queuedCount === 0}
-            className="btn-disabled h-12 text-base uppercase rounded-lg"
-          >
-            QUEUED ({queuedCount})
-          </Button>
-        </div>
+        )}
       </div>
 
       {showQueueModal && (

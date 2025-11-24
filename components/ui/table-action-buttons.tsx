@@ -1,12 +1,7 @@
 "use client"
 
-import { Eye, Download, Edit2, Trash2, Check, X, CreditCard, FileText } from 'lucide-react'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { Eye, Download, Edit2, Trash2, Check, X, CreditCard, FileText, MessageCircle } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface ActionButtonsProps {
   onView?: () => void
@@ -17,6 +12,7 @@ interface ActionButtonsProps {
   onCancel?: () => void
   onPay?: () => void
   onCreateReceipt?: () => void
+  onSendWhatsApp?: () => void
   showView?: boolean
   showDownload?: boolean
   showEdit?: boolean
@@ -25,6 +21,7 @@ interface ActionButtonsProps {
   showCancel?: boolean
   showPay?: boolean
   showCreateReceipt?: boolean
+  showSendWhatsApp?: boolean
   size?: "sm" | "md" | "lg"
   status?: string
   docstatus?: number
@@ -39,6 +36,7 @@ export function TableActionButtons({
   onCancel,
   onPay,
   onCreateReceipt,
+  onSendWhatsApp,
   showView = false,
   showDownload = false,
   showEdit = false,
@@ -47,6 +45,7 @@ export function TableActionButtons({
   showCancel = false,
   showPay = false,
   showCreateReceipt = false,
+  showSendWhatsApp = false,
   size = "md",
   status,
   docstatus,
@@ -77,7 +76,7 @@ export function TableActionButtons({
             </TooltipContent>
           </Tooltip>
         )}
-        
+
         {showDownload && onDownload && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -91,6 +90,23 @@ export function TableActionButtons({
             </TooltipTrigger>
             <TooltipContent>
               <p>Download</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {showSendWhatsApp && onSendWhatsApp && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onSendWhatsApp}
+                className={`${buttonPadding} hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors text-emerald-600 dark:text-emerald-400`}
+                aria-label="Send via WhatsApp"
+              >
+                <MessageCircle className={iconSize} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Send via WhatsApp</p>
             </TooltipContent>
           </Tooltip>
         )}

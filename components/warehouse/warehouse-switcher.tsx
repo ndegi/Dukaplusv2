@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -115,8 +115,11 @@ export function WarehouseSwitcher({ onSuccess, onCancel }: WarehouseSwitcherProp
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
                   {warehouses.map((warehouse) => (
-                    <SelectItem key={warehouse.id} value={warehouse.id}>
-                      {warehouse.warehouse_name} ({warehouse.id})
+                    <SelectItem key={warehouse.id} value={warehouse.id} className="max-w-full">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <span className="truncate flex-1">{warehouse.warehouse_name}</span>
+                        <span className="text-xs text-muted-foreground flex-shrink-0">({warehouse.id})</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -10,7 +10,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const credentials = JSON.parse(credentialsCookie)
+    let credentials
+    try {
+      credentials = JSON.parse(credentialsCookie)
+    } catch (parseError) {
+      console.error("[DukaPlus] Failed to parse credentials:", parseError)
+      return NextResponse.json({ error: "Invalid credentials format" }, { status: 401 })
+    }
 
     const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
 
@@ -25,8 +31,8 @@ export async function GET(req: NextRequest) {
     const data = await response.json()
 
     if (!response.ok) {
-      console.error("[DukaPlus] Get customers error:", data)
-      return NextResponse.json({ error: "Failed to fetch customers" }, { status: 500 })
+      console.error("[DukaPlus] Get customers error:", { status: response.status, data })
+      return NextResponse.json({ error: "Failed to fetch customers" }, { status: response.status })
     }
 
     const customers = (data.message?.customers || []).map((customer: any) => ({
@@ -37,6 +43,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ customers })
   } catch (error) {
     console.error("[DukaPlus] Get customers error:", error)
-    return NextResponse.json({ error: "Failed to fetch customers" }, { status: 500 })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to fetch customers" },
+      { status: 500 },
+    )
   }
 }

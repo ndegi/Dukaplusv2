@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Fragment } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { AlertCircle, CheckCircle, Plus, Trash2, ArrowRightLeft, Calendar } from 'lucide-react'
+import { AlertCircle, CheckCircle, Plus, Trash2, ArrowRightLeft, ChevronDown, ChevronUp } from "lucide-react"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
+import { DateRangeFilter } from "@/components/reports/date-range-filter"
 
 interface StockTransfer {
   material_transfer_id: string
@@ -50,22 +51,9 @@ export function StockTransferManager() {
   const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "submitted" | "cancelled">("all")
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
-    to: new Date()
+    to: new Date(),
   })
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean
-    title: string
-    description: string
-    action: () => void
-    variant: "danger" | "success"
-  }>({
-    open: false,
-    title: "",
-    description: "",
-    action: () => {},
-    variant: "success"
-  })
+  const [expandedTransferId, setExpandedTransferId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchTransfers()
@@ -247,7 +235,9 @@ export function StockTransferManager() {
   }
 
   const addTransferItem = () => {
-    setTransferItems([...transferItems, { item_code: "", qty: 1 }])
+    const newItem = { item_code: "", qty: 1 }
+    const updatedItems = [...transferItems, newItem]
+    setTransferItems(updatedItems)
   }
 
   const removeTransferItem = (index: number) => {
@@ -255,6 +245,21 @@ export function StockTransferManager() {
   }
 
   const updateTransferItem = (index: number, field: keyof TransferItem, value: string | number) => {
+    if (field === "item_code") {
+      const existingIndex = transferItems.findIndex(
+        (item, i) => i !== index && item.item_code === value && value !== "",
+      )
+
+      if (existingIndex !== -1) {
+        // Item already exists, merge quantities
+        const updated = [...transferItems]
+        updated[existingIndex].qty += transferItems[index].qty || 1
+        updated.splice(index, 1) // Remove the duplicate
+        setTransferItems(updated)
+        return
+      }
+    }
+
     const updated = [...transferItems]
     updated[index] = { ...updated[index], [field]: field === "qty" ? Number(value) : value }
     setTransferItems(updated)
@@ -291,8 +296,56 @@ export function StockTransferManager() {
     return matchesSearch && matchesStatus && matchesDate
   })
 
+  const renderItemsTable = (items: StockTransfer["items"]) => {
+    if (!items || items.length === 0) {
+      return (
+        <div className="p-4">
+          <p className="text-muted-foreground text-sm">No items</p>
+        </div>
+      )
+    }
+
+    return (
+      <div className="p-4">
+        <h4 className="font-semibold text-sm mb-2 text-foreground">Items:</h4>
+        <table className="w-full text-xs">
+          <thead className="bg-muted">
+            <tr>
+              <th className="table-header-cell text-left">Item Code</th>
+              <th className="table-header-cell text-left">Item Name</th>
+              <th className="table-header-cell text-right">Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item, index) => (
+              <tr key={index} className="border-b border-border">
+                <td className="p-2 font-mono text-muted-foreground">{item.item_code}</td>
+                <td className="p-2 text-foreground">{item.item_name || "N/A"}</td>
+                <td className="p-2 text-right text-foreground">{item.qty}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean
+    title: string
+    description: string
+    action: () => void
+    variant: "danger" | "success"
+  }>({
+    open: false,
+    title: "",
+    description: "",
+    action: () => {},
+    variant: "success",
+  })
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <ConfirmationDialog
         open={confirmDialog.open}
         onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
@@ -348,47 +401,7 @@ export function StockTransferManager() {
             <option value="submitted">Submitted</option>
             <option value="cancelled">Cancelled</option>
           </select>
-          <div className="relative">
-            <Button
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              variant="outline"
-              className="border-border hover:bg-muted w-full sm:w-auto justify-start text-left font-normal"
-            >
-              <Calendar className="w-4 h-4 mr-2" />
-              <span className="text-xs sm:text-sm">
-                {dateRange.from.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {dateRange.to.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </span>
-            </Button>
-            
-            {showDatePicker && (
-              <div className="absolute top-full right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-50 p-4 space-y-3 min-w-64">
-                <button onClick={() => {
-                  const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 7)
-                  setDateRange({ from, to }); setShowDatePicker(false)
-                }} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm">Last 7 days</button>
-                <button onClick={() => {
-                  const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 30)
-                  setDateRange({ from, to }); setShowDatePicker(false)
-                }} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm">Last 30 days</button>
-                <button onClick={() => {
-                  const to = new Date(); const from = new Date(); from.setDate(from.getDate() - 90)
-                  setDateRange({ from, to }); setShowDatePicker(false)
-                }} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm">Last 90 days</button>
-                <div className="border-t border-border pt-3 space-y-2">
-                  <p className="text-xs text-muted-foreground font-semibold uppercase">Custom Range</p>
-                  <div>
-                    <label className="text-xs text-muted-foreground">From</label>
-                    <Input type="date" value={dateRange.from.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, from: new Date(e.target.value)})} className="input-base text-sm h-8" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground">To</label>
-                    <Input type="date" value={dateRange.to.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, to: new Date(e.target.value)})} className="input-base text-sm h-8" />
-                  </div>
-                </div>
-                <button onClick={() => setShowDatePicker(false)} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm border-t border-border pt-2">Close</button>
-              </div>
-            )}
-          </div>
+          <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
         </div>
 
         {showCreateForm && (
@@ -429,20 +442,31 @@ export function StockTransferManager() {
               </div>
 
               <div>
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center mb-4">
                   <label className="form-label">Items</label>
                   <Button onClick={addTransferItem} size="sm" className="btn-success text-xs">
                     <Plus className="w-3 h-3 mr-1" />
                     Add Item
                   </Button>
                 </div>
-                <div className="space-y-2">
+                {/* Column Headers */}
+                <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-muted border-b border-border font-semibold text-sm text-foreground">
+                  <div className="col-span-8">Product</div>
+                  <div className="col-span-3">Quantity</div>
+                  <div className="col-span-1 text-center">Action</div>
+                </div>
+
+                {/* Items List */}
+                <div className="divide-y divide-border">
                   {transferItems.map((item, index) => (
-                    <div key={index} className="flex gap-2">
+                    <div
+                      key={index}
+                      className="grid grid-cols-12 gap-3 px-4 py-3 items-center hover:bg-muted/30 transition-colors"
+                    >
                       <select
                         value={item.item_code}
                         onChange={(e) => updateTransferItem(index, "item_code", e.target.value)}
-                        className="input-base flex-1"
+                        className="input-base col-span-8"
                       >
                         <option value="">Select product...</option>
                         {products.map((product) => (
@@ -455,20 +479,22 @@ export function StockTransferManager() {
                         type="number"
                         value={item.qty}
                         onChange={(e) => updateTransferItem(index, "qty", e.target.value)}
-                        placeholder="Quantity"
+                        placeholder="0"
                         min="1"
-                        className="input-base w-32"
+                        className="input-base col-span-3"
                       />
-                      {transferItems.length > 1 && (
-                        <Button
-                          onClick={() => removeTransferItem(index)}
-                          size="sm"
-                          variant="ghost"
-                          className="action-btn-delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
+                      <div className="col-span-1 flex justify-center">
+                        {transferItems.length > 1 && (
+                          <Button
+                            onClick={() => removeTransferItem(index)}
+                            size="sm"
+                            variant="ghost"
+                            className="action-btn-delete hover:text-danger"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -486,58 +512,99 @@ export function StockTransferManager() {
           </div>
         )}
 
-        {isLoading ? (
-          <p className="text-foreground p-6 text-center">Loading stock transfers...</p>
-        ) : filteredTransfers.length === 0 ? (
-          <p className="text-foreground text-center py-8">
-            {searchTerm || statusFilter !== "all" || showDatePicker ? "No transfers match your filters" : "No stock transfers found"}
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="table-header">
-                <tr>
-                  <th className="table-header-cell text-left">Transfer ID</th>
-                  <th className="table-header-cell text-left">From Warehouse</th>
-                  <th className="table-header-cell text-left">To Warehouse</th>
-                  <th className="table-header-cell text-left">Date</th>
-                  <th className="table-header-cell text-left">Status</th>
-                  <th className="table-header-cell text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredTransfers.map((transfer) => (
-                  <tr key={transfer.material_transfer_id} className="table-row">
-                    <td className="table-cell font-mono text-warning text-sm">{transfer.material_transfer_id}</td>
-                    <td className="table-cell">{transfer.from_warehouse || "N/A"}</td>
-                    <td className="table-cell">{transfer.to_warehouse || "N/A"}</td>
-                    <td className="table-cell">{transfer.posting_date}</td>
-                    <td className="table-cell">{getStatusBadge(transfer.docstatus)}</td>
-                    <td className="px-4 py-3">
-                      {transfer.docstatus === 0 && (
-                        <TableActionButtons
-                          showSubmit={true}
-                          showCancel={true}
-                          onSubmit={() => handleSubmitTransfer(transfer.material_transfer_id)}
-                          onCancel={() => handleCancelOrDeleteTransfer(transfer.material_transfer_id, transfer.docstatus)}
-                          docstatus={transfer.docstatus}
-                          size="sm"
-                        />
-                      )}
-                      {transfer.docstatus === 1 && (
-                        <TableActionButtons
-                          showCancel={true}
-                          onCancel={() => handleCancelOrDeleteTransfer(transfer.material_transfer_id, transfer.docstatus)}
-                          docstatus={transfer.docstatus}
-                          size="sm"
-                        />
-                      )}
-                      {transfer.docstatus === 2 && <span className="text-foreground text-sm">Cancelled</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {!showCreateForm && (
+          <div>
+            {isLoading ? (
+              <p className="text-foreground p-6 text-center">Loading stock transfers...</p>
+            ) : filteredTransfers.length === 0 ? (
+              <p className="text-foreground text-center py-8">
+                {searchTerm || statusFilter !== "all" || (dateRange.from && dateRange.to)
+                  ? "No transfers match your filters"
+                  : "No stock transfers found"}
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="table-header">
+                    <tr>
+                      <th className="table-header-cell w-10"></th>
+                      <th className="table-header-cell text-left">TRANSFER ID</th>
+                      <th className="table-header-cell text-left">FROM WAREHOUSE</th>
+                      <th className="table-header-cell text-left">TO WAREHOUSE</th>
+                      <th className="table-header-cell text-left">DATE</th>
+                      <th className="table-header-cell text-left">STATUS</th>
+                      <th className="table-header-cell text-center">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {filteredTransfers.map((transfer) => {
+                      const isExpanded = expandedTransferId === transfer.material_transfer_id
+                      return (
+                        <Fragment key={transfer.material_transfer_id}>
+                          <tr className="table-row">
+                            <td className="px-2 sm:px-4 py-3">
+                              {transfer.items && transfer.items.length > 0 && (
+                                <button
+                                  onClick={() =>
+                                    setExpandedTransferId(isExpanded ? null : transfer.material_transfer_id)
+                                  }
+                                  className="p-1 hover:bg-muted rounded transition-colors"
+                                >
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-4 h-4 text-foreground" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4 text-foreground" />
+                                  )}
+                                </button>
+                              )}
+                            </td>
+                            <td className="table-cell font-mono text-warning text-sm">
+                              {transfer.material_transfer_id}
+                            </td>
+                            <td className="table-cell">{transfer.from_warehouse || "N/A"}</td>
+                            <td className="table-cell">{transfer.to_warehouse || "N/A"}</td>
+                            <td className="table-cell">{transfer.posting_date}</td>
+                            <td className="table-cell">{getStatusBadge(transfer.docstatus)}</td>
+                            <td className="px-4 py-3">
+                              {transfer.docstatus === 0 && (
+                                <TableActionButtons
+                                  showSubmit={true}
+                                  showCancel={true}
+                                  onSubmit={() => handleSubmitTransfer(transfer.material_transfer_id)}
+                                  onCancel={() =>
+                                    handleCancelOrDeleteTransfer(transfer.material_transfer_id, transfer.docstatus)
+                                  }
+                                  docstatus={transfer.docstatus}
+                                  size="sm"
+                                />
+                              )}
+                              {transfer.docstatus === 1 && (
+                                <TableActionButtons
+                                  showCancel={true}
+                                  onCancel={() =>
+                                    handleCancelOrDeleteTransfer(transfer.material_transfer_id, transfer.docstatus)
+                                  }
+                                  docstatus={transfer.docstatus}
+                                  size="sm"
+                                />
+                              )}
+                              {transfer.docstatus === 2 && <span className="text-foreground text-sm">Cancelled</span>}
+                            </td>
+                          </tr>
+                          {isExpanded && transfer.items && transfer.items.length > 0 && (
+                            <tr>
+                              <td colSpan={7} className="px-4 py-2 bg-muted/30">
+                                {renderItemsTable(transfer.items)}
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>

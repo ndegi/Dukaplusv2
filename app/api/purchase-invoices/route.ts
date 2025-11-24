@@ -7,10 +7,17 @@ export async function GET(request: NextRequest) {
     const credentialsCookie = cookieStore.get("tenant_credentials")?.value
 
     if (!credentialsCookie) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ message: "Unauthorized - no credentials cookie" }, { status: 401 })
     }
 
-    const credentials = JSON.parse(credentialsCookie)
+    let credentials
+    try {
+      credentials = JSON.parse(credentialsCookie)
+    } catch (parseError) {
+      console.error("[DukaPlus] Failed to parse credentials:", parseError)
+      return NextResponse.json({ message: "Invalid credentials format" }, { status: 401 })
+    }
+
     const warehouse_id = request.nextUrl.searchParams.get("warehouse_id")
 
     if (!warehouse_id) {
@@ -32,10 +39,10 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error("[DukaPlus] API Error:", errorData)
+      console.error("[DukaPlus] API Error:", { status: response.status, body: errorData })
       return NextResponse.json(
         { message: `Failed to fetch purchase invoices: ${response.status}` },
-        { status: response.status }
+        { status: response.status },
       )
     }
 
@@ -44,8 +51,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       message: {
         status: data.message?.status || 200,
-        data: data.message?.data || []
-      }
+        data: data.message?.data || [],
+      },
     })
   } catch (error) {
     console.error("[DukaPlus] Purchase invoices fetch error:", error)

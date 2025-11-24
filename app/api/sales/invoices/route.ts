@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Warehouse ID is required" }, { status: 400 })
     }
 
-    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
+    const authHeader = `token ${credentials.username}:${credentials.apiKey}`
 
     const response = await fetch(
       `${credentials.baseUrl}/api/method/dukaplus.services.rest.get_sales_invoices?warehouse_id=${encodeURIComponent(warehouseId)}`,

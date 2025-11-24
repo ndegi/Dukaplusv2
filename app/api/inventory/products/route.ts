@@ -7,10 +7,22 @@ export async function GET(request: NextRequest) {
     const credentialsCookie = cookieStore.get("tenant_credentials")?.value
 
     if (!credentialsCookie) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ message: "Unauthorized - no credentials cookie" }, { status: 401 })
     }
 
-    const credentials = JSON.parse(credentialsCookie)
+    let credentials
+    try {
+      credentials = JSON.parse(credentialsCookie)
+    } catch (parseError) {
+      console.error("[DukaPlus] Failed to parse credentials:", parseError)
+      return NextResponse.json({ message: "Invalid credentials format" }, { status: 401 })
+    }
+
+    if (!credentials.username || !credentials.apiKey || !credentials.baseUrl) {
+      console.error("[DukaPlus] Missing required credentials in products route")
+      return NextResponse.json({ message: "Incomplete credentials" }, { status: 401 })
+    }
+
     const warehouse_id = request.nextUrl.searchParams.get("warehouse_id") || "Emidan Farm - DP"
 
     const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
@@ -28,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error("API Error:", errorData)
+      console.error("[DukaPlus] API Error:", { status: response.status, body: errorData })
       return NextResponse.json({ message: `Failed to fetch products: ${response.status}` }, { status: response.status })
     }
 
@@ -59,7 +71,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ products })
   } catch (error) {
-    console.error("Inventory fetch error:", error)
+    console.error("[DukaPlus] Inventory fetch error:", error)
     return NextResponse.json(
       { message: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 },
@@ -79,7 +91,7 @@ export async function POST(request: NextRequest) {
     const credentials = JSON.parse(credentialsCookie)
     const body = await request.json()
 
-    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
+    const authHeader = `token ${credentials.username}:${credentials.apiKey}`
 
     const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.rest.create_product`, {
       method: "POST",

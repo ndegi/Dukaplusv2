@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     const cookieStore = await cookies()
     cookieStore.set("tenant_credentials", JSON.stringify(tenantCredentials), {
-      httpOnly: true,
+      httpOnly: false,
       secure: isProduction,
       sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60,
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     })
 
     cookieStore.set("session_id", authData.sid, {
-      httpOnly: true,
+      httpOnly: false,
       secure: isProduction,
       sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60,

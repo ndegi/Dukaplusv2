@@ -1,7 +1,9 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useState } from "react"
-import { AlertCircle, Plus, ChevronDown, ChevronUp, Trash2, Search } from 'lucide-react'
+import { AlertCircle, Plus, ChevronDown, ChevronUp, Trash2, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
@@ -77,13 +79,13 @@ export function PurchaseOrdersManager() {
       const response = await fetch(`/api/purchase-orders?warehouse_id=${encodeURIComponent(warehouseId)}`)
       const data = await response.json()
 
-      if (response.status === 401 || (typeof data.message === 'string' && data.message.includes("Unauthorized"))) {
+      if (response.status === 401 || (typeof data.message === "string" && data.message.includes("Unauthorized"))) {
         sessionStorage.clear()
         window.location.href = "/login"
         return
       }
 
-      if (typeof data.message === 'string' && data.message.includes("Failed to fetch warehouses")) {
+      if (typeof data.message === "string" && data.message.includes("Failed to fetch warehouses")) {
         setError("Failed to fetch warehouses. Please log in again.")
         setTimeout(() => {
           sessionStorage.clear()
@@ -109,11 +111,11 @@ export function PurchaseOrdersManager() {
 
   const handleCancelOrDeleteOrder = async (orderId: string, docstatus: number) => {
     const isDraft = docstatus === 0
-    
+
     setConfirmDialog({
       open: true,
       title: isDraft ? "Delete Purchase Order?" : "Cancel Purchase Order?",
-      description: isDraft 
+      description: isDraft
         ? `Delete draft order ${orderId}? This action cannot be undone.`
         : `Cancel order ${orderId}? This action cannot be undone.`,
       action: async () => {
@@ -128,10 +130,10 @@ export function PurchaseOrdersManager() {
             fetchPurchaseOrders()
           } else {
             const data = await response.json()
-            alert(data.message?.message || `Failed to ${isDraft ? 'delete' : 'cancel'} order`)
+            alert(data.message?.message || `Failed to ${isDraft ? "delete" : "cancel"} order`)
           }
         } catch (err) {
-          alert(`Error ${isDraft ? 'deleting' : 'canceling'} order`)
+          alert(`Error ${isDraft ? "deleting" : "canceling"} order`)
           console.error("[DukaPlus] Error:", err)
         }
       },
@@ -176,14 +178,15 @@ export function PurchaseOrdersManager() {
     let filtered = [...orders]
 
     if (searchQuery) {
-      filtered = filtered.filter(order =>
-        order.order_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.supplier.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter(
+        (order) =>
+          order.order_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          order.supplier.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     }
 
     if (dateRange.from && dateRange.to) {
-      filtered = filtered.filter(order => {
+      filtered = filtered.filter((order) => {
         const orderDate = new Date(order.date)
         return orderDate >= dateRange.from && orderDate <= dateRange.to
       })
@@ -193,7 +196,7 @@ export function PurchaseOrdersManager() {
   }
 
   const toggleOrderExpansion = (orderId: string) => {
-    setExpandedOrders(prev => {
+    setExpandedOrders((prev) => {
       const newSet = new Set(prev)
       if (newSet.has(orderId)) {
         newSet.delete(orderId)
@@ -213,7 +216,13 @@ export function PurchaseOrdersManager() {
         description={confirmDialog.description}
         onConfirm={confirmDialog.action}
         variant="danger"
-        confirmText={confirmDialog.title.includes("Delete") ? "Delete" : confirmDialog.title.includes("Cancel") ? "Cancel Order" : "Confirm"}
+        confirmText={
+          confirmDialog.title.includes("Delete")
+            ? "Delete"
+            : confirmDialog.title.includes("Cancel")
+              ? "Cancel Order"
+              : "Confirm"
+        }
       />
 
       <div className="flex justify-between items-center">
@@ -222,10 +231,14 @@ export function PurchaseOrdersManager() {
             <Plus className="w-4 h-4 mr-2" />
             {showNewSupplierForm ? "Cancel" : "Add Supplier"}
           </Button>
-          <Button onClick={() => {
-            setEditingOrderId(null)
-            setShowNewOrderForm(!showNewOrderForm)
-          }} size="sm" className="bg-orange-500 hover:bg-orange-600">
+          <Button
+            onClick={() => {
+              setEditingOrderId(null)
+              setShowNewOrderForm(!showNewOrderForm)
+            }}
+            size="sm"
+            className="bg-orange-500 hover:bg-orange-600"
+          >
             <Plus className="w-4 h-4 mr-2" />
             {showNewOrderForm ? "Cancel" : "New Order"}
           </Button>
@@ -233,7 +246,7 @@ export function PurchaseOrdersManager() {
       </div>
 
       {showNewSupplierForm && (
-        <NewSupplierInlineForm 
+        <NewSupplierInlineForm
           onClose={() => setShowNewSupplierForm(false)}
           onSuccess={() => {
             setShowNewSupplierForm(false)
@@ -245,7 +258,7 @@ export function PurchaseOrdersManager() {
       {showNewOrderForm && (
         <NewOrderInlineForm
           editingOrderId={editingOrderId}
-          editingOrder={editingOrderId ? orders.find(o => o.order_id === editingOrderId) : undefined}
+          editingOrder={editingOrderId ? orders.find((o) => o.order_id === editingOrderId) : undefined}
           onClose={() => {
             setShowNewOrderForm(false)
             setEditingOrderId(null)
@@ -269,10 +282,7 @@ export function PurchaseOrdersManager() {
             className="input-base w-full pl-10"
           />
         </div>
-        <DateRangeFilter
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-        />
+        <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
       </div>
 
       {error && (
@@ -313,11 +323,7 @@ export function PurchaseOrdersManager() {
                               onClick={() => toggleOrderExpansion(order.order_id)}
                               className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
                             >
-                              {isExpanded ? (
-                                <ChevronUp className="w-4 h-4" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4" />
-                              )}
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                             </button>
                           )}
                         </td>
@@ -325,15 +331,24 @@ export function PurchaseOrdersManager() {
                         <td className="table-cell">{order.supplier}</td>
                         <td className="table-cell">{new Date(order.date).toLocaleDateString()}</td>
                         <td className="table-cell text-right font-semibold">
-                          KES {order.grand_total.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          KES{" "}
+                          {order.grand_total.toLocaleString("en-KE", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </td>
                         <td className="table-cell text-center">
-                          <span className={`badge ${
-                            order.status === "Draft" ? "badge-secondary" :
-                            order.status === "To Bill" ? "badge-warning" : 
-                            order.status === "Completed" ? "badge-success" :
-                            "badge-info"
-                          }`}>
+                          <span
+                            className={`badge ${
+                              order.status === "Draft"
+                                ? "badge-secondary"
+                                : order.status === "To Bill"
+                                  ? "badge-warning"
+                                  : order.status === "Completed"
+                                    ? "badge-success"
+                                    : "badge-info"
+                            }`}
+                          >
                             {order.status}
                           </span>
                         </td>
@@ -373,7 +388,9 @@ export function PurchaseOrdersManager() {
                                       <td className="p-2 text-foreground">{item.item_name}</td>
                                       <td className="p-2 text-right text-foreground">{item.qty}</td>
                                       <td className="p-2 text-right text-foreground">KES {item.rate.toFixed(2)}</td>
-                                      <td className="p-2 text-right font-semibold text-foreground">KES {item.amount.toFixed(2)}</td>
+                                      <td className="p-2 text-right font-semibold text-foreground">
+                                        KES {item.amount.toFixed(2)}
+                                      </td>
                                     </tr>
                                   ))}
                                 </tbody>
@@ -394,24 +411,26 @@ export function PurchaseOrdersManager() {
   )
 }
 
-function NewOrderInlineForm({ 
-  onClose, 
+function NewOrderInlineForm({
+  onClose,
   onSuccess,
   editingOrderId,
-  editingOrder
-}: { 
+  editingOrder,
+}: {
   onClose: () => void
   onSuccess: () => void
   editingOrderId?: string | null
   editingOrder?: PurchaseOrder
 }) {
-  const [items, setItems] = useState<Array<{ product_id: string; product_name: string; quantity: number; buying_price: number }>>(() => {
+  const [items, setItems] = useState<
+    Array<{ product_id: string; product_name: string; quantity: number; buying_price: number }>
+  >(() => {
     if (editingOrder?.items && editingOrder.items.length > 0) {
-      return editingOrder.items.map(i => ({
+      return editingOrder.items.map((i) => ({
         product_id: i.item_code,
         product_name: i.item_name,
         quantity: i.qty,
-        buying_price: i.rate
+        buying_price: i.rate,
       }))
     }
     return [{ product_id: "", product_name: "", quantity: 1, buying_price: 0 }]
@@ -423,7 +442,7 @@ function NewOrderInlineForm({
   const [products, setProducts] = useState<any[]>([])
   const [productSearches, setProductSearches] = useState<string[]>(() => {
     if (editingOrder?.items && editingOrder.items.length > 0) {
-      return editingOrder.items.map(i => i.item_name)
+      return editingOrder.items.map((i) => i.item_name)
     }
     return [""]
   })
@@ -467,14 +486,13 @@ function NewOrderInlineForm({
     }
   }
 
-  const filteredSuppliers = suppliers.filter(s => 
-    s.supplier_name.toLowerCase().includes(supplierSearch.toLowerCase())
+  const filteredSuppliers = suppliers.filter((s) =>
+    s.supplier_name.toLowerCase().includes(supplierSearch.toLowerCase()),
   )
 
   const getFilteredProducts = (search: string) => {
-    return products.filter(p => 
-      p.name.toLowerCase().includes(search.toLowerCase()) || 
-      p.id.toLowerCase().includes(search.toLowerCase())
+    return products.filter(
+      (p) => p.name.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase()),
     )
   }
 
@@ -491,6 +509,22 @@ function NewOrderInlineForm({
   }
 
   const updateItem = (index: number, field: string, value: any) => {
+    if (field === "product_id" && value) {
+      const existingIndex = items.findIndex((item, i) => i !== index && item.product_id === value)
+
+      if (existingIndex !== -1) {
+        // Product already exists, merge quantities
+        const newItems = [...items]
+        newItems[existingIndex].quantity += items[index].quantity || 1
+        newItems.splice(index, 1) // Remove the duplicate
+        setItems(newItems)
+        // Also update related arrays
+        setProductSearches(productSearches.filter((_, i) => i !== index))
+        setShowProductDropdowns(showProductDropdowns.filter((_, i) => i !== index))
+        return
+      }
+    }
+
     const newItems = [...items]
     newItems[index] = { ...newItems[index], [field]: value }
     setItems(newItems)
@@ -498,7 +532,7 @@ function NewOrderInlineForm({
 
   const selectProduct = (index: number, product: any) => {
     const existingItemIndex = items.findIndex((item, idx) => idx !== index && item.product_id === product.id)
-    
+
     if (existingItemIndex !== -1) {
       setError(`"${product.name}" is already in the list. Quantities merged.`)
       const newItems = [...items]
@@ -514,14 +548,14 @@ function NewOrderInlineForm({
         ...newItems[index],
         product_id: product.id,
         product_name: product.name,
-        buying_price: product.cost || 0
+        buying_price: product.cost || 0,
       }
       setItems(newItems)
-      
+
       const newSearches = [...productSearches]
       newSearches[index] = product.name
       setProductSearches(newSearches)
-      
+
       const newDropdowns = [...showProductDropdowns]
       newDropdowns[index] = false
       setShowProductDropdowns(newDropdowns)
@@ -532,18 +566,18 @@ function NewOrderInlineForm({
     const newSearches = [...productSearches]
     newSearches[index] = searchValue
     setProductSearches(newSearches)
-    
+
     if (items[index].product_name && searchValue !== items[index].product_name) {
       const newItems = [...items]
       newItems[index] = {
         ...newItems[index],
         product_id: "",
         product_name: "",
-        buying_price: 0
+        buying_price: 0,
       }
       setItems(newItems)
     }
-    
+
     const newDropdowns = [...showProductDropdowns]
     newDropdowns[index] = true
     setShowProductDropdowns(newDropdowns)
@@ -551,25 +585,25 @@ function NewOrderInlineForm({
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    
+
     console.log("[DukaPlus] Submit clicked - Starting validation")
     console.log("[DukaPlus] Supplier:", supplier)
     console.log("[DukaPlus] Items:", items)
-    
+
     if (!supplier) {
       setError("Please select a supplier")
       return
     }
-    
+
     if (items.length === 0) {
       setError("Please add at least one item")
       return
     }
-    
-    const invalidItems = items.filter(i => !i.product_id || !i.product_name || i.quantity <= 0)
+
+    const invalidItems = items.filter((i) => !i.product_id || !i.product_name || i.quantity <= 0)
     if (invalidItems.length > 0) {
       console.log("[DukaPlus] Invalid items found:", invalidItems)
-      const emptyProducts = items.filter(i => !i.product_id || !i.product_name)
+      const emptyProducts = items.filter((i) => !i.product_id || !i.product_name)
       if (emptyProducts.length > 0) {
         setError("Please select a product from the dropdown for all items")
       } else {
@@ -592,18 +626,18 @@ function NewOrderInlineForm({
       let formattedDate = ""
       if (requiredBy) {
         const dateObj = new Date(requiredBy)
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0')
-        const day = String(dateObj.getDate()).padStart(2, '0')
+        const month = String(dateObj.getMonth() + 1).padStart(2, "0")
+        const day = String(dateObj.getDate()).padStart(2, "0")
         const year = dateObj.getFullYear()
         formattedDate = `${month}-${day}-${year}`
       }
 
       const payload: any = {
-        ordered_items: items.map(item => ({
+        ordered_items: items.map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,
           product_name: item.product_name,
-          buying_price: item.buying_price
+          buying_price: item.buying_price,
         })),
         warehouse_id: warehouseId,
         supplier_id: supplier,
@@ -647,7 +681,9 @@ function NewOrderInlineForm({
     <div className="card-base p-6 mb-6 border-2 border-orange-300">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-bold">{editingOrderId ? "Edit Purchase Order" : "New Purchase Order"}</h3>
-        <Button onClick={onClose} variant="ghost" size="sm">✕</Button>
+        <Button onClick={onClose} variant="ghost" size="sm">
+          ✕
+        </Button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -689,9 +725,7 @@ function NewOrderInlineForm({
                   className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 flex flex-col"
                 >
                   <span className="font-medium">{s.supplier_name}</span>
-                  {s.mobile_number && (
-                    <span className="text-xs text-secondary">{s.mobile_number}</span>
-                  )}
+                  {s.mobile_number && <span className="text-xs text-secondary">{s.mobile_number}</span>}
                 </button>
               ))}
             </div>
@@ -719,7 +753,10 @@ function NewOrderInlineForm({
 
           <div className="space-y-2">
             {items.map((item, index) => (
-              <div key={index} className="flex gap-2 items-start p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg relative">
+              <div
+                key={index}
+                className="flex gap-2 items-start p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg relative"
+              >
                 <div className="flex-1 relative">
                   <input
                     type="text"
@@ -743,26 +780,28 @@ function NewOrderInlineForm({
                   />
                   {showProductDropdowns[index] && getFilteredProducts(productSearches[index] || "").length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                      {getFilteredProducts(productSearches[index] || "").slice(0, 10).map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => selectProduct(index, p)}
-                          className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm"
-                        >
-                          <div className="font-medium">{p.name}</div>
-                          <div className="text-xs text-secondary">
-                            {p.id} • Cost: KES {p.cost?.toFixed(2)} • Stock: {p.quantity}
-                          </div>
-                        </button>
-                      ))}
+                      {getFilteredProducts(productSearches[index] || "")
+                        .slice(0, 10)
+                        .map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => selectProduct(index, p)}
+                            className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm"
+                          >
+                            <div className="font-medium">{p.name}</div>
+                            <div className="text-xs text-secondary">
+                              {p.id} • Cost: KES {p.cost?.toFixed(2)} • Stock: {p.quantity}
+                            </div>
+                          </button>
+                        ))}
                     </div>
                   )}
                 </div>
                 <input
                   type="number"
                   value={item.quantity}
-                  onChange={(e) => updateItem(index, "quantity", parseInt(e.target.value) || 0)}
+                  onChange={(e) => updateItem(index, "quantity", Number.parseInt(e.target.value) || 0)}
                   className="input-base w-20"
                   placeholder="Qty"
                   min="1"
@@ -771,7 +810,7 @@ function NewOrderInlineForm({
                 <input
                   type="number"
                   value={item.buying_price}
-                  onChange={(e) => updateItem(index, "buying_price", parseFloat(e.target.value) || 0)}
+                  onChange={(e) => updateItem(index, "buying_price", Number.parseFloat(e.target.value) || 0)}
                   className="input-base w-24"
                   placeholder="Price"
                   min="0"
@@ -853,7 +892,9 @@ function NewSupplierInlineForm({ onClose, onSuccess }: { onClose: () => void; on
     <div className="card-base p-6 mb-6 border-2 border-green-300">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-bold">Add Supplier</h3>
-        <Button onClick={onClose} variant="ghost" size="sm">✕</Button>
+        <Button onClick={onClose} variant="ghost" size="sm">
+          ✕
+        </Button>
       </div>
 
       <div className="space-y-4">
@@ -890,11 +931,7 @@ function NewSupplierInlineForm({ onClose, onSuccess }: { onClose: () => void; on
         <button onClick={onClose} className="btn-cancel flex-1" disabled={isSaving}>
           Cancel
         </button>
-        <button
-          onClick={handleSubmit}
-          className="btn-create flex-1"
-          disabled={isSaving || !supplier || !mobileNumber}
-        >
+        <button onClick={handleSubmit} className="btn-create flex-1" disabled={isSaving || !supplier || !mobileNumber}>
           {isSaving ? "Adding..." : "Add Supplier"}
         </button>
       </div>

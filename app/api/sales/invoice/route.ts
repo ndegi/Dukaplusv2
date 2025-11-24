@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const credentials = JSON.parse(credentialsCookie)
     const body = await request.json()
 
-    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
+    const authHeader = `token ${credentials.username}:${credentials.apiKey}`
 
     const payload: any = {
       invoice_items: body.invoice_items,

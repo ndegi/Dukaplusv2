@@ -421,9 +421,10 @@ export function POSInterface({
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-full gap-0 lg:gap-0 bg-slate-50 dark:bg-slate-800">
+    <div className="flex flex-col lg:flex-row h-full gap-0 bg-slate-50 dark:bg-slate-800">
+      {/* Product Browser Section - Full width on mobile, left half on desktop */}
       <div className="w-full lg:w-1/2 overflow-y-auto order-2 lg:order-1 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-slate-700 flex flex-col">
-        <div className="p-4 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
+        <div className="p-2 sm:p-3 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
           <BarcodeInput
             onScan={handleBarcodeScan}
             isLoading={barcodeSearching}
@@ -434,6 +435,7 @@ export function POSInterface({
         </div>
       </div>
 
+      {/* Cart Summary Section - Full width on mobile, right half on desktop */}
       <div className="w-full lg:w-1/2 bg-white dark:bg-slate-800 overflow-y-auto flex flex-col order-1 lg:order-2">
         <CartSummary
           cart={cart}

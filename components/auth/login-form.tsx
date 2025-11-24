@@ -39,7 +39,11 @@ export function LoginForm() {
           sessionStorage.setItem("tenant_credentials", JSON.stringify(result.credentials))
 
           if (result.credentials.warehouses && result.credentials.warehouses.length > 0) {
-            setWarehouses(result.credentials.warehouses)
+            const normalizedWarehouses = result.credentials.warehouses.map((w: any) => ({
+              id: w.id || w.warehoouse_id || "",
+              warehouse_name: w.warehouse_name || "",
+            }))
+            setWarehouses(normalizedWarehouses)
             setTempCredentials(result.credentials)
             setShowWarehouseSelector(true)
             setIsLoading(false)
@@ -90,9 +94,9 @@ export function LoginForm() {
               <SelectValue placeholder="Select a warehouse..." />
             </SelectTrigger>
             <SelectContent className="dialog-content">
-              {warehouses.map((warehouse) => (
-                <SelectItem key={warehouse.id} value={warehouse.id}>
-                  {warehouse.warehouse_name} ({warehouse.id})
+              {warehouses.map((warehouse, index) => (
+                <SelectItem key={warehouse.id || `warehouse-${index}`} value={warehouse.id || `warehouse-${index}`}>
+                  {warehouse.warehouse_name}
                 </SelectItem>
               ))}
             </SelectContent>

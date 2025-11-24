@@ -2,9 +2,9 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
-import { Menu, X, LogOut, Moon, Sun } from 'lucide-react'
+import { Menu, X, LogOut, Moon, Sun } from "lucide-react"
 import {
   faHome,
   faShoppingCart,
@@ -221,9 +221,15 @@ export function DashboardLayout({
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Header - Dynamic based on current page */}
-        <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 md:px-8 py-4 flex-shrink-0">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <h2 className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-500">{getPageTitle()}</h2>
+        <div
+          className={`bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 md:px-8 flex-shrink-0 ${isPOS ? "py-2" : "py-4"}`}
+        >
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
+            <h2
+              className={`font-bold text-green-600 dark:text-green-500 ${isPOS ? "text-base md:text-lg" : "text-lg md:text-2xl"}`}
+            >
+              {getPageTitle()}
+            </h2>
 
             {/* Header Controls - Dynamic based on page */}
             <div className="flex items-center gap-2 md:gap-3 flex-wrap justify-end">
@@ -290,14 +296,14 @@ export function DashboardLayout({
 
           {/* POS-specific controls - Search and Customer */}
           {isPOS && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
               <div>
                 <input
                   type="text"
                   placeholder="Search items..."
                   value={searchTerm || ""}
                   onChange={(e) => onSearchChange?.(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-blue-500 focus:outline-none text-sm"
+                  className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-blue-500 focus:outline-none text-sm"
                 />
               </div>
               <div className="relative">
@@ -310,7 +316,7 @@ export function DashboardLayout({
                     setShowCustomerDropdown(true)
                   }}
                   onFocus={() => setShowCustomerDropdown(true)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-blue-500 focus:outline-none text-sm"
+                  className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:border-blue-500 focus:outline-none text-sm"
                 />
                 {showCustomerDropdown && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
@@ -325,9 +331,10 @@ export function DashboardLayout({
                       Walk In
                     </button>
                     {customers
-                      .filter((c) => 
-                        (c.name && c.name.toLowerCase().includes(customerSearch.toLowerCase())) ||
-                        (c.mobile_number && c.mobile_number.includes(customerSearch))
+                      .filter(
+                        (c) =>
+                          (c.name && c.name.toLowerCase().includes(customerSearch.toLowerCase())) ||
+                          (c.mobile_number && c.mobile_number.includes(customerSearch)),
                       )
                       .map((customer) => (
                         <button
@@ -349,10 +356,12 @@ export function DashboardLayout({
                           </div>
                         </button>
                       ))}
-                    {customers.filter((c) => 
-                      (c.name && c.name.toLowerCase().includes(customerSearch.toLowerCase())) ||
-                      (c.mobile_number && c.mobile_number.includes(customerSearch))
-                    ).length === 0 && customerSearch !== "" && (
+                    {customers.filter(
+                      (c) =>
+                        (c.name && c.name.toLowerCase().includes(customerSearch.toLowerCase())) ||
+                        (c.mobile_number && c.mobile_number.includes(customerSearch)),
+                    ).length === 0 &&
+                      customerSearch !== "" && (
                         <div className="px-3 py-2 text-slate-500 dark:text-slate-400 text-sm">No customers found</div>
                       )}
                   </div>

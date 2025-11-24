@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { AlertCircle, CheckCircle, Upload, X } from 'lucide-react'
+import { AlertCircle, CheckCircle, Upload, X } from "lucide-react"
 
 interface Product {
   id: string
@@ -177,7 +177,11 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               {/* Image Preview */}
               {imagePreview && (
                 <div className="relative w-full h-48 rounded-lg border-2 border-border overflow-hidden bg-muted">
-                  <img src={imagePreview || "/placeholder.svg"} alt="Product preview" className="w-full h-full object-contain" />
+                  <img
+                    src={imagePreview || "/placeholder.svg"}
+                    alt="Product preview"
+                    className="w-full h-full object-contain"
+                  />
                   <button
                     type="button"
                     onClick={handleClearImage}
@@ -194,12 +198,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                   <label className="btn-secondary cursor-pointer flex items-center justify-center gap-2 w-full">
                     <Upload className="w-4 h-4" />
                     Upload Image
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                   </label>
                 </div>
                 <div className="flex-1">
@@ -208,7 +207,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                     name="img"
                     value={formData.img}
                     onChange={handleChange}
-                    placeholder="Or paste image URL"
+                    placeholder="Enter image URL"
                     className="input-base"
                   />
                 </div>
@@ -224,7 +223,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 name="product_id"
                 value={formData.product_id}
                 onChange={handleChange}
-                placeholder="e.g., 443433tt66666646"
+                placeholder="Enter product ID"
                 className="input-base"
                 required
                 disabled={!!product}
@@ -238,7 +237,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 name="sku"
                 value={formData.sku}
                 onChange={handleChange}
-                placeholder="e.g., 1221222FDeeF7D"
+                placeholder="Enter SKU"
                 className="input-base"
                 required
               />
@@ -252,7 +251,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               name="product_name"
               value={formData.product_name}
               onChange={handleChange}
-              placeholder="e.g., 500 Grams Eden Tea"
+              placeholder="Enter product name"
               className="input-base"
               required
             />
@@ -266,7 +265,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 name="product_category"
                 value={formData.product_category}
                 onChange={handleChange}
-                placeholder="e.g., Seaweed"
+                placeholder="Enter category"
                 className="input-base"
                 required
               />
@@ -279,7 +278,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 name="color_code"
                 value={formData.color_code}
                 onChange={handleChange}
-                placeholder="#2196F3"
+                placeholder="Enter hex color code"
                 className="input-base"
               />
             </div>
@@ -292,7 +291,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Product description"
+              placeholder="Enter product description"
               className="input-base"
             />
           </div>
@@ -305,7 +304,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 name="product_cost"
                 value={formData.product_cost}
                 onChange={handleChange}
-                placeholder="100"
+                placeholder="Enter cost"
                 step="0.01"
                 className="input-base"
                 required
@@ -319,7 +318,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 name="price"
                 value={formData.price}
                 onChange={handleChange}
-                placeholder="150"
+                placeholder="Enter selling price"
                 step="0.01"
                 className="input-base"
                 required
@@ -333,7 +332,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 name="stock_quantity"
                 value={formData.stock_quantity}
                 onChange={handleChange}
-                placeholder="45"
+                placeholder="Enter stock quantity"
                 className="input-base"
                 required
               />
@@ -348,20 +347,14 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 name="barcode"
                 value={formData.barcode}
                 onChange={handleChange}
-                placeholder="87787887"
+                placeholder="Enter barcode"
                 className="input-base"
               />
             </div>
 
             <div>
               <label className="form-label">Sold By</label>
-              <select
-                name="sold_by"
-                value={formData.sold_by}
-                onChange={handleChange}
-                className="input-base"
-                required
-              >
+              <select name="sold_by" value={formData.sold_by} onChange={handleChange} className="input-base" required>
                 <option value="Each">Each</option>
                 <option value="Weight">Weight</option>
               </select>

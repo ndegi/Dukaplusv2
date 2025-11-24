@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
 import { AlertCircle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { WhatsAppSendDialog } from "@/components/ui/whatsapp-send-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { Input } from "@/components/ui/input"
 import { useCurrency } from "@/lib/contexts/currency-context"
@@ -81,6 +82,17 @@ export default function SalesPage() {
   })
   const [showDatePicker, setShowDatePicker] = useState(false)
   const { currency } = useCurrency()
+
+  const [whatsAppDialog, setWhatsAppDialog] = useState<{
+    open: boolean
+    salesId: string
+    type: "receipt" | "invoice"
+    defaultPhone?: string
+  }>({
+    open: false,
+    salesId: "",
+    type: "receipt",
+  })
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -260,6 +272,39 @@ export default function SalesPage() {
     })
   }
 
+  const handleSendWhatsApp = async (salesId: string, type: "receipt" | "invoice", defaultPhone?: string) => {
+    setWhatsAppDialog({
+      open: true,
+      salesId,
+      type,
+      defaultPhone,
+    })
+  }
+
+  const sendToWhatsApp = async (phoneNumber: string) => {
+    try {
+      const response = await fetch("/api/sales/send-receipt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sales_id: whatsAppDialog.salesId,
+          mobile_number: phoneNumber,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.message?.message || "Failed to send")
+      }
+
+      setError(null)
+      alert(`${whatsAppDialog.type === "receipt" ? "Receipt" : "Invoice"} sent successfully to ${phoneNumber}`)
+    } catch (err) {
+      console.error("[DukaPlus] Error sending to WhatsApp:", err)
+      throw err
+    }
+  }
+
   const toggleRowExpansion = (id: string) => {
     setExpandedRows((prev) => {
       const newSet = new Set(prev)
@@ -301,6 +346,15 @@ export default function SalesPage() {
           onConfirm={confirmDialog.action}
           variant="danger"
           confirmText="Yes, Cancel"
+        />
+
+        <WhatsAppSendDialog
+          open={whatsAppDialog.open}
+          onOpenChange={(open) => setWhatsAppDialog({ ...whatsAppDialog, open })}
+          onSend={sendToWhatsApp}
+          title={`Send ${whatsAppDialog.type === "receipt" ? "Receipt" : "Invoice"} via WhatsApp`}
+          description="Enter the customer's phone number with country code (e.g. +254712345678)"
+          defaultPhone={whatsAppDialog.defaultPhone}
         />
 
         <div>
@@ -531,6 +585,7 @@ export default function SalesPage() {
                                 <TableActionButtons
                                   showView={true}
                                   showDownload={true}
+                                  showSendWhatsApp={true}
                                   showCancel={true}
                                   onView={() => handleViewReceipt(receipt.receipt_url)}
                                   onDownload={() => {
@@ -539,6 +594,7 @@ export default function SalesPage() {
                                     link.download = `receipt-${receipt.sales_id}.pdf`
                                     link.click()
                                   }}
+                                  onSendWhatsApp={() => handleSendWhatsApp(receipt.sales_id, "receipt")}
                                   onCancel={() => handleCancelReceipt(receipt.sales_id)}
                                   size="sm"
                                 />
@@ -640,6 +696,7 @@ export default function SalesPage() {
                                 <TableActionButtons
                                   showView={true}
                                   showDownload={true}
+                                  showSendWhatsApp={true}
                                   showPay={invoice.outstanding_amount > 0}
                                   showCancel={true}
                                   onView={() => handleViewReceipt(invoice.invoice_url)}
@@ -649,6 +706,9 @@ export default function SalesPage() {
                                     link.download = `invoice-${invoice.sales_id}.pdf`
                                     link.click()
                                   }}
+                                  onSendWhatsApp={() =>
+                                    handleSendWhatsApp(invoice.sales_id, "invoice", invoice.mobile_number)
+                                  }
                                   onPay={() => handleCompletePayment(invoice)}
                                   onCancel={() => handleCancelInvoice(invoice.sales_id)}
                                   size="sm"
