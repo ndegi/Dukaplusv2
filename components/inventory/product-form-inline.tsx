@@ -1,35 +1,39 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { AlertCircle, CheckCircle, Upload, X } from "lucide-react"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { AlertCircle, CheckCircle, Upload, X } from "lucide-react";
 
 interface Product {
-  id: string
-  name: string
-  sku: string
-  category: string
-  quantity: number
-  reorderLevel: number
-  price: number
-  cost?: number
-  barcode?: string
-  colorCode?: string
-  description?: string
-  img?: string
-  lastUpdated: string
-  status: "in_stock" | "low_stock" | "out_of_stock"
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  reorderLevel: number;
+  price: number;
+  cost?: number;
+  barcode?: string;
+  colorCode?: string;
+  description?: string;
+  img?: string;
+  lastUpdated: string;
+  status: "in_stock" | "low_stock" | "out_of_stock";
 }
 
 interface ProductFormProps {
-  product: Product | null
-  onClose: () => void
-  onSave: () => void
+  product: Product | null;
+  onClose: () => void;
+  onSave: () => void;
 }
 
-export function ProductFormInline({ product, onClose, onSave }: ProductFormProps) {
+export function ProductFormInline({
+  product,
+  onClose,
+  onSave,
+}: ProductFormProps) {
   const [formData, setFormData] = useState({
     product_id: "",
     sku: "",
@@ -48,14 +52,18 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
     barcode: "",
     purpose: "Stock Reconciliation",
     img: "",
-  })
+  });
 
-  const [imagePreview, setImagePreview] = useState<string>("")
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const selectedWarehouse = sessionStorage.getItem("selected_warehouse") || "Emidan Farm - DP"
+    const selectedWarehouse =
+      sessionStorage.getItem("selected_warehouse") || "Emidan Farm - DP";
 
     if (product) {
       setFormData({
@@ -76,89 +84,117 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
         barcode: product.barcode || "",
         purpose: "Stock Reconciliation",
         img: product.img || "",
-      })
-      setImagePreview(product.img || "")
+      });
+      setImagePreview(product.img || "");
     } else {
       setFormData((prev) => ({
         ...prev,
         warehouse_id: selectedWarehouse,
-      }))
+      }));
     }
-  }, [product])
+  }, [product]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "stock_quantity" || name === "price" || name === "product_cost" || name === "track_inventory"
+        name === "stock_quantity" ||
+        name === "price" ||
+        name === "product_cost" ||
+        name === "track_inventory"
           ? Number(value)
           : value,
-    }))
+    }));
 
     if (name === "img") {
-      setImagePreview(value)
+      setImagePreview(value);
     }
-  }
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-        setFormData((prev) => ({ ...prev, img: reader.result as string }))
-      }
-      reader.readAsDataURL(file)
+        setImagePreview(reader.result as string);
+        setFormData((prev) => ({ ...prev, img: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   const handleClearImage = () => {
-    setImagePreview("")
-    setFormData((prev) => ({ ...prev, img: "" }))
-  }
+    setImagePreview("");
+    setFormData((prev) => ({ ...prev, img: "" }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setMessage(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage(null);
 
     try {
-      const url = product ? `/api/inventory/products/${product.id}` : "/api/inventory/products"
-      const method = product ? "PUT" : "POST"
+      const url = product
+        ? "/api/inventory/products/update"
+        : "/api/inventory/products";
+      const method = "POST";
 
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-      })
+      });
 
       if (response.ok) {
-        setMessage({ type: "success", text: `Product ${product ? "updated" : "added"} successfully` })
+        setMessage({
+          type: "success",
+          text: `Product ${product ? "updated" : "added"} successfully`,
+        });
         setTimeout(() => {
-          onSave()
-        }, 1000)
+          onSave();
+        }, 1000);
       } else {
-        const data = await response.json()
-        setMessage({ type: "error", text: data.message || "Failed to save product" })
+        const data = await response.json();
+        setMessage({
+          type: "error",
+          text: data.message || "Failed to save product",
+        });
       }
     } catch (error) {
-      setMessage({ type: "error", text: "An error occurred while saving product" })
+      setMessage({
+        type: "error",
+        text: "An error occurred while saving product",
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
       {message && (
-        <div className={message.type === "success" ? "alert-success" : "alert-error"}>
+        <div
+          className={
+            message.type === "success" ? "alert-success" : "alert-error"
+          }
+        >
           {message.type === "success" ? (
             <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
           ) : (
             <AlertCircle className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
           )}
-          <p className={message.type === "success" ? "text-success text-sm" : "text-danger text-sm"}>{message.text}</p>
+          <p
+            className={
+              message.type === "success"
+                ? "text-success text-sm"
+                : "text-danger text-sm"
+            }
+          >
+            {message.text}
+          </p>
         </div>
       )}
 
@@ -188,7 +224,12 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
                 <label className="btn-secondary cursor-pointer flex items-center justify-center gap-2 w-full">
                   <Upload className="w-4 h-4" />
                   Upload Image
-                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
                 </label>
               </div>
               <div className="flex-1">
@@ -344,7 +385,13 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
 
           <div>
             <label className="form-label">Sold By</label>
-            <select name="sold_by" value={formData.sold_by} onChange={handleChange} className="input-base" required>
+            <select
+              name="sold_by"
+              value={formData.sold_by}
+              onChange={handleChange}
+              className="input-base"
+              required
+            >
               <option value="Each">Each</option>
               <option value="Weight">Weight</option>
             </select>
@@ -367,7 +414,11 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
         )}
 
         <div className="flex gap-3 pt-4">
-          <Button type="submit" disabled={isLoading} className="btn-create flex-1">
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="btn-create flex-1"
+          >
             {isLoading ? "Saving..." : "Save Product"}
           </Button>
           <Button type="button" onClick={onClose} className="btn-cancel flex-1">
@@ -376,5 +427,5 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
         </div>
       </form>
     </div>
-  )
+  );
 }
