@@ -1,216 +1,234 @@
-"use client"
+"use client";
 
-import { useAuth } from "@/hooks/use-auth"
-import { DashboardLayout } from "@/components/layout/dashboard-layout"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { AlertCircle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
-import { WhatsAppSendDialog } from "@/components/ui/whatsapp-send-dialog"
-import { TableActionButtons } from "@/components/ui/table-action-buttons"
-import { Input } from "@/components/ui/input"
-import { useCurrency } from "@/lib/contexts/currency-context"
+import { useAuth } from "@/hooks/use-auth";
+import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import {
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Calendar,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { WhatsAppSendDialog } from "@/components/ui/whatsapp-send-dialog";
+import { TableActionButtons } from "@/components/ui/table-action-buttons";
+import { Input } from "@/components/ui/input";
+import { useCurrency } from "@/lib/contexts/currency-context";
 
 interface SalesReceipt {
-  sales_id: string
-  date: string
-  time: string
-  customer: string
-  total_amount: number
-  discount_amount: number
-  receipt_url: string
-  sales_owner: string
+  sales_id: string;
+  date: string;
+  time: string;
+  customer: string;
+  total_amount: number;
+  discount_amount: number;
+  receipt_url: string;
+  sales_owner: string;
   receipt_items?: Array<{
-    item_code: string
-    item_name: string
-    quantity: number
-    rate: number
-    amount: number
-  }>
+    item_code: string;
+    item_name: string;
+    quantity: number;
+    rate: number;
+    amount: number;
+  }>;
 }
 
 interface SalesInvoice {
-  sales_id: string
-  date: string
-  time: string
-  customer_name: string
-  total_amount: number
-  outstanding_amount: number
-  discount_amount: number
-  status: string
-  mobile_number: string
-  invoice_url: string
+  sales_id: string;
+  date: string;
+  time: string;
+  customer_name: string;
+  total_amount: number;
+  outstanding_amount: number;
+  discount_amount: number;
+  status: string;
+  mobile_number: string;
+  invoice_url: string;
   invoice_items?: Array<{
-    item_code: string
-    item_name: string
-    quantity: number
-    rate: number
-    amount: number
-  }>
+    item_code: string;
+    item_name: string;
+    quantity: number;
+    rate: number;
+    amount: number;
+  }>;
 }
 
 export default function SalesPage() {
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
-  const [receipts, setReceipts] = useState<SalesReceipt[]>([])
-  const [invoices, setInvoices] = useState<SalesInvoice[]>([])
-  const [isLoadingReceipts, setIsLoadingReceipts] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [sortBy, setSortBy] = useState<"date" | "amount">("date")
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
-  const [searchTerm, setSearchTerm] = useState("")
-  const [activeTab, setActiveTab] = useState<"receipts" | "invoices">("receipts")
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const [receipts, setReceipts] = useState<SalesReceipt[]>([]);
+  const [invoices, setInvoices] = useState<SalesInvoice[]>([]);
+  const [isLoadingReceipts, setIsLoadingReceipts] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"date" | "amount">("date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState<"receipts" | "invoices">(
+    "receipts"
+  );
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean
-    title: string
-    description: string
-    action: () => void
+    open: boolean;
+    title: string;
+    description: string;
+    action: () => void;
   }>({
     open: false,
     title: "",
     description: "",
     action: () => {},
-  })
-  const [isCancelling, setIsCancelling] = useState(false)
+  });
+  const [isCancelling, setIsCancelling] = useState(false);
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date(),
-  })
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const { currency } = useCurrency()
+  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const { currency } = useCurrency();
 
   const [whatsAppDialog, setWhatsAppDialog] = useState<{
-    open: boolean
-    salesId: string
-    type: "receipt" | "invoice"
-    defaultPhone?: string
+    open: boolean;
+    salesId: string;
+    type: "receipt" | "invoice";
+    defaultPhone?: string;
   }>({
     open: false,
     salesId: "",
     type: "receipt",
-  })
+  });
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push("/login")
+      router.push("/login");
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     if (user) {
-      fetchSalesReceipts()
-      fetchSalesInvoices()
+      fetchSalesReceipts();
+      fetchSalesInvoices();
     }
-  }, [user])
+  }, [user]);
 
   const fetchSalesReceipts = async () => {
     try {
-      setIsLoadingReceipts(true)
-      const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
+      setIsLoadingReceipts(true);
+      const warehouseId = sessionStorage.getItem("selected_warehouse") || "";
 
       if (!warehouseId) {
-        setError("Please select a warehouse first")
-        setIsLoadingReceipts(false)
-        return
+        setError("Please select a warehouse first");
+        setIsLoadingReceipts(false);
+        return;
       }
 
-      const response = await fetch(`/api/sales-receipts?warehouse_id=${encodeURIComponent(warehouseId)}`)
-      const data = await response.json()
+      const response = await fetch(
+        `/api/sales-receipts?warehouse_id=${encodeURIComponent(warehouseId)}`
+      );
+      const data = await response.json();
 
       if (response.ok && data.message?.sales_data) {
-        setReceipts(data.message.sales_data)
-        setError(null)
+        setReceipts(data.message.sales_data);
+        setError(null);
       } else {
-        setError(data.message?.message || "Failed to fetch sales receipts")
+        setError(data.message?.message || "Failed to fetch sales receipts");
       }
     } catch (err) {
-      setError("Error fetching sales receipts")
-      console.error("[DukaPlus] Error fetching sales receipts:", err)
+      setError("Error fetching sales receipts");
+      console.error("[DukaPlus] Error fetching sales receipts:", err);
     } finally {
-      setIsLoadingReceipts(false)
+      setIsLoadingReceipts(false);
     }
-  }
+  };
 
   const fetchSalesInvoices = async () => {
     try {
-      setError(null)
-      const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
+      setError(null);
+      const warehouseId = sessionStorage.getItem("selected_warehouse") || "";
 
       if (!warehouseId) {
-        return
+        return;
       }
 
-      const response = await fetch(`/api/sales/invoices?warehouse_id=${encodeURIComponent(warehouseId)}`)
-      const data = await response.json()
+      const response = await fetch(
+        `/api/sales/invoices?warehouse_id=${encodeURIComponent(warehouseId)}`
+      );
+      const data = await response.json();
 
       if (!response.ok) {
-        console.error("[DukaPlus] Sales invoices API error:", data)
-        setError(data.message?.message || "Failed to fetch sales invoices")
-        return
+        console.error("[DukaPlus] Sales invoices API error:", data);
+        setError(data.message?.message || "Failed to fetch sales invoices");
+        return;
       }
 
       if (data.message?.sales_data && Array.isArray(data.message.sales_data)) {
-        setInvoices(data.message.sales_data)
-        setError(null)
+        setInvoices(data.message.sales_data);
+        setError(null);
       } else if (Array.isArray(data.message)) {
-        setInvoices(data.message)
-        setError(null)
+        setInvoices(data.message);
+        setError(null);
       } else {
-        console.error("[DukaPlus] Unexpected sales invoices response structure:", data)
-        setError("Invalid response format from server")
+        console.error(
+          "[DukaPlus] Unexpected sales invoices response structure:",
+          data
+        );
+        setError("Invalid response format from server");
       }
     } catch (err) {
-      console.error("[DukaPlus] Error fetching sales invoices:", err)
-      setError("Error fetching sales invoices")
+      console.error("[DukaPlus] Error fetching sales invoices:", err);
+      setError("Error fetching sales invoices");
     }
-  }
+  };
 
-  const currentData = activeTab === "receipts" ? receipts : invoices
+  const currentData = activeTab === "receipts" ? receipts : invoices;
   const sortedData = [...currentData].sort((a, b) => {
-    let compareValue = 0
+    let compareValue = 0;
 
     if (sortBy === "date") {
-      compareValue = new Date(`${a.date} ${a.time}`).getTime() - new Date(`${b.date} ${b.time}`).getTime()
+      compareValue =
+        new Date(`${a.date} ${a.time}`).getTime() -
+        new Date(`${b.date} ${b.time}`).getTime();
     } else {
-      compareValue = a.total_amount - b.total_amount
+      compareValue = a.total_amount - b.total_amount;
     }
 
-    return sortOrder === "asc" ? compareValue : -compareValue
-  })
+    return sortOrder === "asc" ? compareValue : -compareValue;
+  });
 
   const filteredData = sortedData.filter((item) => {
-    const searchLower = searchTerm.toLowerCase()
-    const itemDate = new Date(`${item.date} ${item.time}`)
-    const matchesDate = itemDate >= dateRange.from && itemDate <= dateRange.to
+    const searchLower = searchTerm.toLowerCase();
+    const itemDate = new Date(`${item.date} ${item.time}`);
+    const matchesDate = itemDate >= dateRange.from && itemDate <= dateRange.to;
 
     if (activeTab === "receipts") {
-      const receipt = item as SalesReceipt
+      const receipt = item as SalesReceipt;
       const matchesSearch =
         receipt.sales_id.toLowerCase().includes(searchLower) ||
         receipt.customer.toLowerCase().includes(searchLower) ||
-        receipt.sales_owner.toLowerCase().includes(searchLower)
-      return matchesSearch && matchesDate
+        receipt.sales_owner.toLowerCase().includes(searchLower);
+      return matchesSearch && matchesDate;
     } else {
-      const invoice = item as SalesInvoice
+      const invoice = item as SalesInvoice;
       const matchesSearch =
         invoice.sales_id.toLowerCase().includes(searchLower) ||
-        invoice.customer_name.toLowerCase().includes(searchLower)
-      return matchesSearch && matchesDate
+        invoice.customer_name.toLowerCase().includes(searchLower);
+      return matchesSearch && matchesDate;
     }
-  })
+  });
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedData = filteredData.slice(startIndex, endIndex)
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedData = filteredData.slice(startIndex, endIndex);
 
   const handleViewReceipt = (url: string) => {
-    window.open(url, "_blank")
-  }
+    window.open(url, "_blank");
+  };
 
   const handleCompletePayment = async (invoice: SalesInvoice) => {
     sessionStorage.setItem(
@@ -220,10 +238,10 @@ export default function SalesPage() {
         outstanding_amount: invoice.outstanding_amount,
         customer_name: invoice.customer_name,
         mobile_number: invoice.mobile_number,
-      }),
-    )
-    router.push("/pos")
-  }
+      })
+    );
+    router.push("/pos");
+  };
 
   const handleCancelReceipt = async (salesId: string) => {
     setConfirmDialog({
@@ -232,29 +250,29 @@ export default function SalesPage() {
       description: `Are you sure you want to cancel receipt ${salesId}? This action cannot be undone.`,
       action: async () => {
         try {
-          setIsCancelling(true)
-          const response = await fetch("/api/sales/receipt/cancel", {
+          setIsCancelling(true);
+          const response = await fetch("/api/sales/invoice/cancel", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sales_receipt_id: salesId }),
-          })
+            body: JSON.stringify({ sales_invoice_id: salesId }),
+          });
 
           if (response.ok) {
-            fetchSalesReceipts()
-            fetchSalesInvoices()
+            fetchSalesReceipts();
+            fetchSalesInvoices();
           } else {
-            const data = await response.json()
-            setError(data.message?.message || "Failed to cancel receipt")
+            const data = await response.json();
+            setError(data.message?.message || "Failed to cancel receipt");
           }
         } catch (err) {
-          setError("Error cancelling receipt")
-          console.error("[DukaPlus] Error:", err)
+          setError("Error cancelling receipt");
+          console.error("[DukaPlus] Error:", err);
         } finally {
-          setIsCancelling(false)
+          setIsCancelling(false);
         }
       },
-    })
-  }
+    });
+  };
 
   const handleCancelInvoice = async (salesId: string) => {
     setConfirmDialog({
@@ -263,38 +281,42 @@ export default function SalesPage() {
       description: `Are you sure you want to cancel invoice ${salesId}? This action cannot be undone.`,
       action: async () => {
         try {
-          setIsCancelling(true)
+          setIsCancelling(true);
           const response = await fetch("/api/sales/invoice/cancel", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ sales_invoice_id: salesId }),
-          })
+          });
 
           if (response.ok) {
-            fetchSalesReceipts()
-            fetchSalesInvoices()
+            fetchSalesReceipts();
+            fetchSalesInvoices();
           } else {
-            const data = await response.json()
-            setError(data.message?.message || "Failed to cancel invoice")
+            const data = await response.json();
+            setError(data.message?.message || "Failed to cancel invoice");
           }
         } catch (err) {
-          setError("Error cancelling invoice")
-          console.error("[DukaPlus] Error:", err)
+          setError("Error cancelling invoice");
+          console.error("[DukaPlus] Error:", err);
         } finally {
-          setIsCancelling(false)
+          setIsCancelling(false);
         }
       },
-    })
-  }
+    });
+  };
 
-  const handleSendWhatsApp = async (salesId: string, type: "receipt" | "invoice", defaultPhone?: string) => {
+  const handleSendWhatsApp = async (
+    salesId: string,
+    type: "receipt" | "invoice",
+    defaultPhone?: string
+  ) => {
     setWhatsAppDialog({
       open: true,
       salesId,
       type,
       defaultPhone,
-    })
-  }
+    });
+  };
 
   const sendToWhatsApp = async (phoneNumber: string) => {
     try {
@@ -305,49 +327,59 @@ export default function SalesPage() {
           sales_id: whatsAppDialog.salesId,
           mobile_number: phoneNumber,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message?.message || "Failed to send")
+        throw new Error(data.message?.message || "Failed to send");
       }
 
-      setError(null)
-      alert(`${whatsAppDialog.type === "receipt" ? "Receipt" : "Invoice"} sent successfully to ${phoneNumber}`)
+      setError(null);
+      alert(
+        `${
+          whatsAppDialog.type === "receipt" ? "Receipt" : "Invoice"
+        } sent successfully to ${phoneNumber}`
+      );
     } catch (err) {
-      console.error("[DukaPlus] Error sending to WhatsApp:", err)
-      throw err
+      console.error("[DukaPlus] Error sending to WhatsApp:", err);
+      throw err;
     }
-  }
+  };
 
   const toggleRowExpansion = (id: string) => {
     setExpandedRows((prev) => {
-      const newSet = new Set(prev)
+      const newSet = new Set(prev);
       if (newSet.has(id)) {
-        newSet.delete(id)
+        newSet.delete(id);
       } else {
-        newSet.add(id)
+        newSet.add(id);
       }
-      return newSet
-    })
-  }
+      return newSet;
+    });
+  };
 
   const getStatusBadgeColor = (status: string) => {
-    const normalizedStatus = status.toLowerCase()
+    const normalizedStatus = status.toLowerCase();
     if (normalizedStatus === "paid" || normalizedStatus === "completed") {
-      return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-    } else if (normalizedStatus.includes("partly") || normalizedStatus === "partial") {
-      return "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400"
-    } else if (normalizedStatus === "unpaid" || normalizedStatus === "pending") {
-      return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+      return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
+    } else if (
+      normalizedStatus.includes("partly") ||
+      normalizedStatus === "partial"
+    ) {
+      return "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400";
+    } else if (
+      normalizedStatus === "unpaid" ||
+      normalizedStatus === "pending"
+    ) {
+      return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
     } else if (normalizedStatus === "overdue") {
-      return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400"
+      return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400";
     }
-    return "bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400"
-  }
+    return "bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-400";
+  };
 
   if (isLoading || !user) {
-    return null
+    return null;
   }
 
   return (
@@ -365,15 +397,21 @@ export default function SalesPage() {
 
         <WhatsAppSendDialog
           open={whatsAppDialog.open}
-          onOpenChange={(open) => setWhatsAppDialog({ ...whatsAppDialog, open })}
+          onOpenChange={(open) =>
+            setWhatsAppDialog({ ...whatsAppDialog, open })
+          }
           onSend={sendToWhatsApp}
-          title={`Send ${whatsAppDialog.type === "receipt" ? "Receipt" : "Invoice"} via WhatsApp`}
+          title={`Send ${
+            whatsAppDialog.type === "receipt" ? "Receipt" : "Invoice"
+          } via WhatsApp`}
           description="Enter the customer's phone number with country code (e.g. +254712345678)"
           defaultPhone={whatsAppDialog.defaultPhone}
         />
 
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">Sales History</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
+            Sales History
+          </h1>
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
             View all completed sales transactions
           </p>
@@ -390,8 +428,8 @@ export default function SalesPage() {
           <div className="flex gap-4 mb-6 border-b border-slate-200 dark:border-slate-700">
             <button
               onClick={() => {
-                setActiveTab("receipts")
-                setCurrentPage(1)
+                setActiveTab("receipts");
+                setCurrentPage(1);
               }}
               className={`pb-3 px-2 font-semibold transition-colors ${
                 activeTab === "receipts"
@@ -403,8 +441,8 @@ export default function SalesPage() {
             </button>
             <button
               onClick={() => {
-                setActiveTab("invoices")
-                setCurrentPage(1)
+                setActiveTab("invoices");
+                setCurrentPage(1);
               }}
               className={`pb-3 px-2 font-semibold transition-colors ${
                 activeTab === "invoices"
@@ -436,8 +474,15 @@ export default function SalesPage() {
                 >
                   <Calendar className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">
-                    {dateRange.from.toLocaleDateString("en-US", { month: "short", day: "numeric" })} -{" "}
-                    {dateRange.to.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    {dateRange.from.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}{" "}
+                    -{" "}
+                    {dateRange.to.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
                   </span>
                 </Button>
 
@@ -445,11 +490,11 @@ export default function SalesPage() {
                   <div className="absolute top-full right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-50 p-4 space-y-3 min-w-64">
                     <button
                       onClick={() => {
-                        const to = new Date()
-                        const from = new Date()
-                        from.setDate(from.getDate() - 7)
-                        setDateRange({ from, to })
-                        setShowDatePicker(false)
+                        const to = new Date();
+                        const from = new Date();
+                        from.setDate(from.getDate() - 7);
+                        setDateRange({ from, to });
+                        setShowDatePicker(false);
                       }}
                       className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm"
                     >
@@ -457,11 +502,11 @@ export default function SalesPage() {
                     </button>
                     <button
                       onClick={() => {
-                        const to = new Date()
-                        const from = new Date()
-                        from.setDate(from.getDate() - 30)
-                        setDateRange({ from, to })
-                        setShowDatePicker(false)
+                        const to = new Date();
+                        const from = new Date();
+                        from.setDate(from.getDate() - 30);
+                        setDateRange({ from, to });
+                        setShowDatePicker(false);
                       }}
                       className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm"
                     >
@@ -469,33 +514,49 @@ export default function SalesPage() {
                     </button>
                     <button
                       onClick={() => {
-                        const to = new Date()
-                        const from = new Date()
-                        from.setDate(from.getDate() - 90)
-                        setDateRange({ from, to })
-                        setShowDatePicker(false)
+                        const to = new Date();
+                        const from = new Date();
+                        from.setDate(from.getDate() - 90);
+                        setDateRange({ from, to });
+                        setShowDatePicker(false);
                       }}
                       className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm"
                     >
                       Last 90 days
                     </button>
                     <div className="border-t border-border pt-3 space-y-2">
-                      <p className="text-xs text-muted-foreground font-semibold uppercase">Custom Range</p>
+                      <p className="text-xs text-muted-foreground font-semibold uppercase">
+                        Custom Range
+                      </p>
                       <div>
-                        <label className="text-xs text-muted-foreground">From</label>
+                        <label className="text-xs text-muted-foreground">
+                          From
+                        </label>
                         <Input
                           type="date"
                           value={dateRange.from.toISOString().split("T")[0]}
-                          onChange={(e) => setDateRange({ ...dateRange, from: new Date(e.target.value) })}
+                          onChange={(e) =>
+                            setDateRange({
+                              ...dateRange,
+                              from: new Date(e.target.value),
+                            })
+                          }
                           className="input-base text-sm h-8"
                         />
                       </div>
                       <div>
-                        <label className="text-xs text-muted-foreground">To</label>
+                        <label className="text-xs text-muted-foreground">
+                          To
+                        </label>
                         <Input
                           type="date"
                           value={dateRange.to.toISOString().split("T")[0]}
-                          onChange={(e) => setDateRange({ ...dateRange, to: new Date(e.target.value) })}
+                          onChange={(e) =>
+                            setDateRange({
+                              ...dateRange,
+                              to: new Date(e.target.value),
+                            })
+                          }
                           className="input-base text-sm h-8"
                         />
                       </div>
@@ -518,7 +579,9 @@ export default function SalesPage() {
                 <option value="amount">Sort by Amount</option>
               </select>
               <button
-                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                onClick={() =>
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                }
                 className="btn-secondary px-3 py-2 text-sm"
               >
                 {sortOrder === "asc" ? "↑" : "↓"}
@@ -527,10 +590,14 @@ export default function SalesPage() {
           </div>
 
           {isLoadingReceipts ? (
-            <p className="text-foreground p-6 text-center">Loading sales data...</p>
+            <p className="text-foreground p-6 text-center">
+              Loading sales data...
+            </p>
           ) : filteredData.length === 0 ? (
             <p className="text-foreground text-center py-8">
-              {searchTerm ? "No records match your search" : `No ${activeTab} found`}
+              {searchTerm
+                ? "No records match your search"
+                : `No ${activeTab} found`}
             </p>
           ) : (
             <>
@@ -542,46 +609,67 @@ export default function SalesPage() {
                       <th className="px-2 sm:px-4 py-3 text-left font-semibold">
                         {activeTab === "receipts" ? "Receipt ID" : "Invoice ID"}
                       </th>
-                      <th className="px-2 sm:px-4 py-3 text-left font-semibold">Date & Time</th>
-                      <th className="px-2 sm:px-4 py-3 text-left font-semibold">Customer</th>
-                      <th className="px-2 sm:px-4 py-3 text-right font-semibold">Amount</th>
+                      <th className="px-2 sm:px-4 py-3 text-left font-semibold">
+                        Date & Time
+                      </th>
+                      <th className="px-2 sm:px-4 py-3 text-left font-semibold">
+                        Customer
+                      </th>
+                      <th className="px-2 sm:px-4 py-3 text-right font-semibold">
+                        Amount
+                      </th>
                       {activeTab === "invoices" && (
-                        <th className="px-2 sm:px-4 py-3 text-right font-semibold">Outstanding</th>
+                        <th className="px-2 sm:px-4 py-3 text-right font-semibold">
+                          Outstanding
+                        </th>
                       )}
-                      <th className="px-2 sm:px-4 py-3 text-right font-semibold">Discount</th>
+                      <th className="px-2 sm:px-4 py-3 text-right font-semibold">
+                        Discount
+                      </th>
                       {activeTab === "invoices" && (
-                        <th className="px-2 sm:px-4 py-3 text-center font-semibold">Status</th>
+                        <th className="px-2 sm:px-4 py-3 text-center font-semibold">
+                          Status
+                        </th>
                       )}
-                      <th className="px-2 sm:px-4 py-3 text-center font-semibold">Actions</th>
+                      <th className="px-2 sm:px-4 py-3 text-center font-semibold">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {paginatedData.map((item) => {
                       if (activeTab === "receipts") {
-                        const receipt = item as SalesReceipt
-                        const isExpanded = expandedRows.has(receipt.sales_id)
+                        const receipt = item as SalesReceipt;
+                        const isExpanded = expandedRows.has(receipt.sales_id);
                         return (
                           <>
                             <tr key={receipt.sales_id} className="table-row">
-                              {receipt.receipt_items && receipt.receipt_items.length > 0 && (
-                                <td className="px-2 sm:px-4 py-3">
-                                  <button
-                                    onClick={() => toggleRowExpansion(receipt.sales_id)}
-                                    className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
-                                  >
-                                    {isExpanded ? (
-                                      <ChevronUp className="w-4 h-4" />
-                                    ) : (
-                                      <ChevronDown className="w-4 h-4" />
-                                    )}
-                                  </button>
-                                </td>
-                              )}
-                              <td className="px-2 sm:px-4 py-3 font-mono text-warning">{receipt.sales_id}</td>
+                              {receipt.receipt_items &&
+                                receipt.receipt_items.length > 0 && (
+                                  <td className="px-2 sm:px-4 py-3">
+                                    <button
+                                      onClick={() =>
+                                        toggleRowExpansion(receipt.sales_id)
+                                      }
+                                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                                    >
+                                      {isExpanded ? (
+                                        <ChevronUp className="w-4 h-4" />
+                                      ) : (
+                                        <ChevronDown className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                  </td>
+                                )}
+                              <td className="px-2 sm:px-4 py-3 font-mono text-warning">
+                                {receipt.sales_id}
+                              </td>
                               <td className="px-2 sm:px-4 py-3 text-foreground text-xs sm:text-sm">
                                 {receipt.date} {receipt.time}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-foreground">{receipt.customer}</td>
+                              <td className="px-2 sm:px-4 py-3 text-foreground">
+                                {receipt.customer}
+                              </td>
                               <td className="px-2 sm:px-4 py-3 text-right text-foreground font-semibold">
                                 {currency}{" "}
                                 {receipt.total_amount.toLocaleString("en-KE", {
@@ -591,10 +679,13 @@ export default function SalesPage() {
                               </td>
                               <td className="px-2 sm:px-4 py-3 text-right text-muted-foreground">
                                 {currency}{" "}
-                                {receipt.discount_amount.toLocaleString("en-KE", {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })}
+                                {receipt.discount_amount.toLocaleString(
+                                  "en-KE",
+                                  {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  }
+                                )}
                               </td>
                               <td className="px-2 sm:px-4 py-3 text-center">
                                 <TableActionButtons
@@ -602,83 +693,127 @@ export default function SalesPage() {
                                   showDownload={true}
                                   showSendWhatsApp={true}
                                   showCancel={true}
-                                  onView={() => handleViewReceipt(receipt.receipt_url)}
+                                  onView={() =>
+                                    handleViewReceipt(receipt.receipt_url)
+                                  }
                                   onDownload={() => {
-                                    const link = document.createElement("a")
-                                    link.href = receipt.receipt_url
-                                    link.download = `receipt-${receipt.sales_id}.pdf`
-                                    link.click()
+                                    const link = document.createElement("a");
+                                    link.href = receipt.receipt_url;
+                                    link.download = `receipt-${receipt.sales_id}.pdf`;
+                                    link.click();
                                   }}
-                                  onSendWhatsApp={() => handleSendWhatsApp(receipt.sales_id, "receipt")}
-                                  onCancel={() => handleCancelReceipt(receipt.sales_id)}
+                                  onSendWhatsApp={() =>
+                                    handleSendWhatsApp(
+                                      receipt.sales_id,
+                                      "receipt"
+                                    )
+                                  }
+                                  onCancel={() =>
+                                    handleCancelReceipt(receipt.sales_id)
+                                  }
                                   size="sm"
                                 />
                               </td>
                             </tr>
-                            {isExpanded && receipt.receipt_items && receipt.receipt_items.length > 0 && (
-                              <tr>
-                                <td colSpan={7} className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50">
-                                  <div className="p-4">
-                                    <h4 className="font-semibold text-sm mb-2 text-foreground">Items:</h4>
-                                    <table className="w-full text-xs">
-                                      <thead className="bg-slate-100 dark:bg-slate-800">
-                                        <tr>
-                                          <th className="text-left p-2 font-semibold">Item Code</th>
-                                          <th className="text-left p-2 font-semibold">Item Name</th>
-                                          <th className="text-right p-2 font-semibold">Quantity</th>
-                                          <th className="text-right p-2 font-semibold">Rate</th>
-                                          <th className="text-right p-2 font-semibold">Amount</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {receipt.receipt_items.map((lineItem, idx) => (
-                                          <tr key={idx} className="border-b border-slate-200 dark:border-slate-700">
-                                            <td className="p-2 font-mono text-muted-foreground">
-                                              {lineItem.item_code}
-                                            </td>
-                                            <td className="p-2 text-foreground">{lineItem.item_name}</td>
-                                            <td className="p-2 text-right text-foreground">{lineItem.quantity}</td>
-                                            <td className="p-2 text-right text-muted-foreground">
-                                              {currency} {lineItem.rate.toFixed(2)}
-                                            </td>
-                                            <td className="p-2 text-right font-semibold text-foreground">
-                                              {currency} {lineItem.amount.toFixed(2)}
-                                            </td>
+                            {isExpanded &&
+                              receipt.receipt_items &&
+                              receipt.receipt_items.length > 0 && (
+                                <tr>
+                                  <td
+                                    colSpan={7}
+                                    className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50"
+                                  >
+                                    <div className="p-4">
+                                      <h4 className="font-semibold text-sm mb-2 text-foreground">
+                                        Items:
+                                      </h4>
+                                      <table className="w-full text-xs">
+                                        <thead className="bg-slate-100 dark:bg-slate-800">
+                                          <tr>
+                                            <th className="text-left p-2 font-semibold">
+                                              Item Code
+                                            </th>
+                                            <th className="text-left p-2 font-semibold">
+                                              Item Name
+                                            </th>
+                                            <th className="text-right p-2 font-semibold">
+                                              Quantity
+                                            </th>
+                                            <th className="text-right p-2 font-semibold">
+                                              Rate
+                                            </th>
+                                            <th className="text-right p-2 font-semibold">
+                                              Amount
+                                            </th>
                                           </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
+                                        </thead>
+                                        <tbody>
+                                          {receipt.receipt_items.map(
+                                            (lineItem, idx) => (
+                                              <tr
+                                                key={idx}
+                                                className="border-b border-slate-200 dark:border-slate-700"
+                                              >
+                                                <td className="p-2 font-mono text-muted-foreground">
+                                                  {lineItem.item_code}
+                                                </td>
+                                                <td className="p-2 text-foreground">
+                                                  {lineItem.item_name}
+                                                </td>
+                                                <td className="p-2 text-right text-foreground">
+                                                  {lineItem.quantity}
+                                                </td>
+                                                <td className="p-2 text-right text-muted-foreground">
+                                                  {currency}{" "}
+                                                  {lineItem.rate.toFixed(2)}
+                                                </td>
+                                                <td className="p-2 text-right font-semibold text-foreground">
+                                                  {currency}{" "}
+                                                  {lineItem.amount.toFixed(2)}
+                                                </td>
+                                              </tr>
+                                            )
+                                          )}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
                           </>
-                        )
+                        );
                       } else {
-                        const invoice = item as SalesInvoice
-                        const isExpanded = expandedRows.has(invoice.sales_id)
+                        const invoice = item as SalesInvoice;
+                        const isExpanded = expandedRows.has(invoice.sales_id);
                         return (
                           <>
                             <tr key={invoice.sales_id} className="table-row">
-                              {invoice.invoice_items && invoice.invoice_items.length > 0 && (
-                                <td className="px-2 sm:px-4 py-3">
-                                  <button
-                                    onClick={() => toggleRowExpansion(invoice.sales_id)}
-                                    className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
-                                  >
-                                    {isExpanded ? (
-                                      <ChevronUp className="w-4 h-4" />
-                                    ) : (
-                                      <ChevronDown className="w-4 h-4" />
-                                    )}
-                                  </button>
-                                </td>
-                              )}
-                              <td className="px-2 sm:px-4 py-3 font-mono text-warning">{invoice.sales_id}</td>
+                              {invoice.invoice_items &&
+                                invoice.invoice_items.length > 0 && (
+                                  <td className="px-2 sm:px-4 py-3">
+                                    <button
+                                      onClick={() =>
+                                        toggleRowExpansion(invoice.sales_id)
+                                      }
+                                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                                    >
+                                      {isExpanded ? (
+                                        <ChevronUp className="w-4 h-4" />
+                                      ) : (
+                                        <ChevronDown className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                  </td>
+                                )}
+                              <td className="px-2 sm:px-4 py-3 font-mono text-warning">
+                                {invoice.sales_id}
+                              </td>
                               <td className="px-2 sm:px-4 py-3 text-foreground text-xs sm:text-sm">
                                 {invoice.date} {invoice.time}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-foreground">{invoice.customer_name}</td>
+                              <td className="px-2 sm:px-4 py-3 text-foreground">
+                                {invoice.customer_name}
+                              </td>
                               <td className="px-2 sm:px-4 py-3 text-right text-foreground font-semibold">
                                 {currency}{" "}
                                 {invoice.total_amount.toLocaleString("en-KE", {
@@ -688,21 +823,29 @@ export default function SalesPage() {
                               </td>
                               <td className="px-2 sm:px-4 py-3 text-right text-red-600 dark:text-red-400 font-semibold">
                                 {currency}{" "}
-                                {invoice.outstanding_amount.toLocaleString("en-KE", {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })}
+                                {invoice.outstanding_amount.toLocaleString(
+                                  "en-KE",
+                                  {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  }
+                                )}
                               </td>
                               <td className="px-2 sm:px-4 py-3 text-right text-muted-foreground">
                                 {currency}{" "}
-                                {invoice.discount_amount.toLocaleString("en-KE", {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })}
+                                {invoice.discount_amount.toLocaleString(
+                                  "en-KE",
+                                  {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  }
+                                )}
                               </td>
                               <td className="px-2 sm:px-4 py-3 text-center">
                                 <span
-                                  className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadgeColor(invoice.status)}`}
+                                  className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadgeColor(
+                                    invoice.status
+                                  )}`}
                                 >
                                   {invoice.status}
                                 </span>
@@ -714,61 +857,97 @@ export default function SalesPage() {
                                   showSendWhatsApp={true}
                                   showPay={invoice.outstanding_amount > 0}
                                   showCancel={true}
-                                  onView={() => handleViewReceipt(invoice.invoice_url)}
+                                  onView={() =>
+                                    handleViewReceipt(invoice.invoice_url)
+                                  }
                                   onDownload={() => {
-                                    const link = document.createElement("a")
-                                    link.href = invoice.invoice_url
-                                    link.download = `invoice-${invoice.sales_id}.pdf`
-                                    link.click()
+                                    const link = document.createElement("a");
+                                    link.href = invoice.invoice_url;
+                                    link.download = `invoice-${invoice.sales_id}.pdf`;
+                                    link.click();
                                   }}
                                   onSendWhatsApp={() =>
-                                    handleSendWhatsApp(invoice.sales_id, "invoice", invoice.mobile_number)
+                                    handleSendWhatsApp(
+                                      invoice.sales_id,
+                                      "invoice",
+                                      invoice.mobile_number
+                                    )
                                   }
                                   onPay={() => handleCompletePayment(invoice)}
-                                  onCancel={() => handleCancelInvoice(invoice.sales_id)}
+                                  onCancel={() =>
+                                    handleCancelInvoice(invoice.sales_id)
+                                  }
                                   size="sm"
                                 />
                               </td>
                             </tr>
-                            {isExpanded && invoice.invoice_items && invoice.invoice_items.length > 0 && (
-                              <tr>
-                                <td colSpan={9} className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50">
-                                  <div className="p-4">
-                                    <h4 className="font-semibold text-sm mb-2 text-foreground">Items:</h4>
-                                    <table className="w-full text-xs">
-                                      <thead className="bg-slate-100 dark:bg-slate-800">
-                                        <tr>
-                                          <th className="text-left p-2 font-semibold">Item Code</th>
-                                          <th className="text-left p-2 font-semibold">Item Name</th>
-                                          <th className="text-right p-2 font-semibold">Quantity</th>
-                                          <th className="text-right p-2 font-semibold">Rate</th>
-                                          <th className="text-right p-2 font-semibold">Amount</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {invoice.invoice_items.map((lineItem, idx) => (
-                                          <tr key={idx} className="border-b border-slate-200 dark:border-slate-700">
-                                            <td className="p-2 font-mono text-muted-foreground">
-                                              {lineItem.item_code}
-                                            </td>
-                                            <td className="p-2 text-foreground">{lineItem.item_name}</td>
-                                            <td className="p-2 text-right text-foreground">{lineItem.quantity}</td>
-                                            <td className="p-2 text-right text-muted-foreground">
-                                              {currency} {lineItem.rate.toFixed(2)}
-                                            </td>
-                                            <td className="p-2 text-right font-semibold text-foreground">
-                                              {currency} {lineItem.amount.toFixed(2)}
-                                            </td>
+                            {isExpanded &&
+                              invoice.invoice_items &&
+                              invoice.invoice_items.length > 0 && (
+                                <tr>
+                                  <td
+                                    colSpan={9}
+                                    className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50"
+                                  >
+                                    <div className="p-4">
+                                      <h4 className="font-semibold text-sm mb-2 text-foreground">
+                                        Items:
+                                      </h4>
+                                      <table className="w-full text-xs">
+                                        <thead className="bg-slate-100 dark:bg-slate-800">
+                                          <tr>
+                                            <th className="text-left p-2 font-semibold">
+                                              Item Code
+                                            </th>
+                                            <th className="text-left p-2 font-semibold">
+                                              Item Name
+                                            </th>
+                                            <th className="text-right p-2 font-semibold">
+                                              Quantity
+                                            </th>
+                                            <th className="text-right p-2 font-semibold">
+                                              Rate
+                                            </th>
+                                            <th className="text-right p-2 font-semibold">
+                                              Amount
+                                            </th>
                                           </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
+                                        </thead>
+                                        <tbody>
+                                          {invoice.invoice_items.map(
+                                            (lineItem, idx) => (
+                                              <tr
+                                                key={idx}
+                                                className="border-b border-slate-200 dark:border-slate-700"
+                                              >
+                                                <td className="p-2 font-mono text-muted-foreground">
+                                                  {lineItem.item_code}
+                                                </td>
+                                                <td className="p-2 text-foreground">
+                                                  {lineItem.item_name}
+                                                </td>
+                                                <td className="p-2 text-right text-foreground">
+                                                  {lineItem.quantity}
+                                                </td>
+                                                <td className="p-2 text-right text-muted-foreground">
+                                                  {currency}{" "}
+                                                  {lineItem.rate.toFixed(2)}
+                                                </td>
+                                                <td className="p-2 text-right font-semibold text-foreground">
+                                                  {currency}{" "}
+                                                  {lineItem.amount.toFixed(2)}
+                                                </td>
+                                              </tr>
+                                            )
+                                          )}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
                           </>
-                        )
+                        );
                       }
                     })}
                   </tbody>
@@ -778,8 +957,9 @@ export default function SalesPage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
                   <div className="text-sm text-muted-foreground">
-                    Showing {startIndex + 1} to {Math.min(endIndex, filteredData.length)} of {filteredData.length}{" "}
-                    {activeTab}
+                    Showing {startIndex + 1} to{" "}
+                    {Math.min(endIndex, filteredData.length)} of{" "}
+                    {filteredData.length} {activeTab}
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -791,32 +971,43 @@ export default function SalesPage() {
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                        let page
-                        if (totalPages <= 5) {
-                          page = i + 1
-                        } else if (currentPage <= 3) {
-                          page = i + 1
-                        } else if (currentPage >= totalPages - 2) {
-                          page = totalPages - 4 + i
-                        } else {
-                          page = currentPage - 2 + i
+                      {Array.from(
+                        { length: Math.min(totalPages, 5) },
+                        (_, i) => {
+                          let page;
+                          if (totalPages <= 5) {
+                            page = i + 1;
+                          } else if (currentPage <= 3) {
+                            page = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            page = totalPages - 4 + i;
+                          } else {
+                            page = currentPage - 2 + i;
+                          }
+                          return (
+                            <Button
+                              key={page}
+                              onClick={() => setCurrentPage(page)}
+                              variant={
+                                currentPage === page ? "default" : "outline"
+                              }
+                              size="sm"
+                              className={
+                                currentPage === page
+                                  ? "bg-orange-500 hover:bg-orange-600"
+                                  : ""
+                              }
+                            >
+                              {page}
+                            </Button>
+                          );
                         }
-                        return (
-                          <Button
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            variant={currentPage === page ? "default" : "outline"}
-                            size="sm"
-                            className={currentPage === page ? "bg-orange-500 hover:bg-orange-600" : ""}
-                          >
-                            {page}
-                          </Button>
-                        )
-                      })}
+                      )}
                     </div>
                     <Button
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
                       disabled={currentPage === totalPages}
                       variant="outline"
                       size="sm"
@@ -831,5 +1022,5 @@ export default function SalesPage() {
         </div>
       </div>
     </DashboardLayout>
-  )
+  );
 }

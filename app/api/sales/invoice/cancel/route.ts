@@ -1,50 +1,41 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { cookies } from "next/headers"
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const credentialsString = cookieStore.get("tenant_credentials")?.value
+    const body = await request.json();
 
-    if (!credentialsString) {
-      return NextResponse.json({ message: { message: "Unauthorized" } }, { status: 401 })
+    const cookieStore = await cookies();
+    const credentialsCookie = cookieStore.get("tenant_credentials")?.value;
+
+    if (!credentialsCookie) {
+      return NextResponse.json(
+        { message: { message: "Not authenticated", status: 401 } },
+        { status: 401 }
+      );
     }
 
-    const credentials = JSON.parse(credentialsString)
-    const { baseUrl, apiKey, apiSecret } = credentials
+    const credentials = JSON.parse(credentialsCookie);
+    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`;
 
-    if (!baseUrl || !apiKey || !apiSecret) {
-      return NextResponse.json({ message: { message: "Missing credentials" } }, { status: 401 })
-    }
-
-    const body = await request.json()
-    const { sales_invoice_id } = body
-
-    if (!sales_invoice_id) {
-      return NextResponse.json({ message: { message: "Sales invoice ID is required" } }, { status: 400 })
-    }
-
-    const token = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64")
-    const apiUrl = `${baseUrl}/api/method/dukaplus.services.rest.cancel_sales_invoice`
+    const apiUrl = `${credentials.baseUrl}/api/method/dukaplus.services.rest.cancel_sales_invoice`;
 
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
-        Authorization: `token ${token}`,
         "Content-Type": "application/json",
+        Authorization: authHeader,
       },
-      body: JSON.stringify({ sales_invoice_id }),
-    })
+      body: JSON.stringify(body),
+    });
 
-    const data = await response.json()
-
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status })
-    }
-
-    return NextResponse.json(data)
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error("[DukaPlus] Error cancelling invoice:", error)
-    return NextResponse.json({ message: { message: "Internal server error" } }, { status: 500 })
+    console.error("[DukaPlus] Cancel purchase invoice error:", error);
+    return NextResponse.json(
+      { message: { message: "Internal server error", status: 500 } },
+      { status: 500 }
+    );
   }
 }
