@@ -94,6 +94,16 @@ export function PaymentForm({
 
   useEffect(() => {
     checkShiftStatus()
+    const handleShiftChange = () => {
+      checkShiftStatus()
+    }
+    window.addEventListener("shiftOpened", handleShiftChange)
+    window.addEventListener("shiftClosed", handleShiftChange)
+
+    return () => {
+      window.removeEventListener("shiftOpened", handleShiftChange)
+      window.removeEventListener("shiftClosed", handleShiftChange)
+    }
   }, [])
 
   const checkShiftStatus = async () => {

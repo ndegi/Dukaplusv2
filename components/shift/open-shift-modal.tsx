@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { AlertCircle, CheckCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle } from "lucide-react"
 
 interface PaymentMode {
   mode_of_payment: string
@@ -34,9 +34,9 @@ export function OpenShiftModal({ onClose, onSuccess }: { onClose: () => void; on
         setPaymentModes(data.modes || [])
         if (data.modes && data.modes.length > 0) {
           setShiftDetails(
-            data.modes.map((mode: PaymentMode) => ({ 
-              mode_of_payment: mode.mode_of_payment, 
-              opening_amount: 0 
+            data.modes.map((mode: PaymentMode) => ({
+              mode_of_payment: mode.mode_of_payment,
+              opening_amount: 0,
             })),
           )
         }
@@ -70,6 +70,7 @@ export function OpenShiftModal({ onClose, onSuccess }: { onClose: () => void; on
 
       if (response.ok) {
         setMessage({ type: "success", text: "Shift opened successfully" })
+        window.dispatchEvent(new Event("shiftOpened"))
         setTimeout(() => {
           onSuccess()
         }, 1500)
@@ -113,7 +114,11 @@ export function OpenShiftModal({ onClose, onSuccess }: { onClose: () => void; on
               ) : (
                 <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-danger flex-shrink-0" />
               )}
-              <p className={message.type === "success" ? "text-success text-xs sm:text-sm" : "text-danger text-xs sm:text-sm"}>
+              <p
+                className={
+                  message.type === "success" ? "text-success text-xs sm:text-sm" : "text-danger text-xs sm:text-sm"
+                }
+              >
                 {message.text}
               </p>
             </div>
@@ -126,7 +131,7 @@ export function OpenShiftModal({ onClose, onSuccess }: { onClose: () => void; on
           ) : (
             <div className="space-y-3 sm:space-y-4">
               <p className="text-xs sm:text-sm text-muted-foreground">
-                {paymentModes.length > 0 
+                {paymentModes.length > 0
                   ? `Enter opening amounts for all ${paymentModes.length} payment modes:`
                   : "Enter opening amounts for each payment mode:"}
               </p>
@@ -147,7 +152,9 @@ export function OpenShiftModal({ onClose, onSuccess }: { onClose: () => void; on
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-xs sm:text-sm">No payment modes available. Please check your connection.</p>
+                <p className="text-muted-foreground text-xs sm:text-sm">
+                  No payment modes available. Please check your connection.
+                </p>
               )}
             </div>
           )}

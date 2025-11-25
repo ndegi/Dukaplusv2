@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Search,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  InfoIcon,
+} from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons";
 import { ProductFormInline } from "./product-form-inline";
@@ -99,8 +105,8 @@ export function InventoryOverview() {
     <div className="space-y-4">
       {error && (
         <div className="alert-error">
-          <FontAwesomeIcon
-            icon={faExclamationCircle}
+          <InfoIcon
+            name="alert-circle"
             className="w-4 h-4 text-danger flex-shrink-0 mt-0.5"
           />
           <p className="text-danger text-sm">{error}</p>

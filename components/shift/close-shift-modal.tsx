@@ -152,6 +152,7 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
 
       if (response.ok) {
         setMessage({ type: "success", text: "Shift closed successfully" })
+        window.dispatchEvent(new Event("shiftClosed"))
         setTimeout(() => {
           onSuccess()
         }, 1500)
