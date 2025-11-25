@@ -175,7 +175,14 @@ export function ReportsDashboard({ user }: { user: User }) {
           <p className="text-gray-600 dark:text-gray-400">View sales performance and insights</p>
         </div>
         <div className="flex gap-2">
-          <ExportButton reportData={null} dateRange={dateRange} />
+          <ExportButton
+            activeTab={activeTab}
+            salesData={salesReports}
+            customerData={customerStatements}
+            stockData={stockBalance}
+            ledgerData={stockLedger}
+            dateRange={dateRange}
+          />
         </div>
       </div>
 

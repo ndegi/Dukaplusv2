@@ -48,10 +48,15 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json()
 
+    const invoices = (data.message?.data || []).map((invoice: any) => ({
+      ...invoice,
+      order_id: invoice.purchase_order || invoice.order_id,
+    }))
+
     return NextResponse.json({
       message: {
         status: data.message?.status || 200,
-        data: data.message?.data || [],
+        data: invoices,
       },
     })
   } catch (error) {

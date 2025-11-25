@@ -1,70 +1,50 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server"
+import { cookies } from "next/headers"
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const credentialsCookie = cookieStore.get("tenant_credentials")?.value;
+    const cookieStore = await cookies()
+    const credentialsCookie = cookieStore.get("tenant_credentials")?.value
 
     if (!credentialsCookie) {
-      return NextResponse.json(
-        { message: "Unauthorized - no credentials cookie" },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "Unauthorized - no credentials cookie" }, { status: 401 })
     }
 
-    let credentials;
+    let credentials
     try {
-      credentials = JSON.parse(credentialsCookie);
+      credentials = JSON.parse(credentialsCookie)
     } catch (parseError) {
-      console.error("[DukaPlus] Failed to parse credentials:", parseError);
-      return NextResponse.json(
-        { message: "Invalid credentials format" },
-        { status: 401 }
-      );
+      console.error("[DukaPlus] Failed to parse credentials:", parseError)
+      return NextResponse.json({ message: "Invalid credentials format" }, { status: 401 })
     }
 
     if (!credentials.username || !credentials.apiKey || !credentials.baseUrl) {
-      console.error("[DukaPlus] Missing required credentials in products route");
-      return NextResponse.json(
-        { message: "Incomplete credentials" },
-        { status: 401 }
-      );
+      console.error("[DukaPlus] Missing required credentials in products route")
+      return NextResponse.json({ message: "Incomplete credentials" }, { status: 401 })
     }
 
-    const warehouse_id =
-      request.nextUrl.searchParams.get("warehouse_id") || "Emidan Farm - DP";
+    const warehouse_id = request.nextUrl.searchParams.get("warehouse_id") || "Emidan Farm - DP"
 
-    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`;
+    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
 
     const response = await fetch(
-      `${
-        credentials.baseUrl
-      }/api/method/dukaplus.services.rest.get_all_products?warehouse_id=${encodeURIComponent(
-        warehouse_id
-      )}`,
+      `${credentials.baseUrl}/api/method/dukaplus.services.rest.get_all_products?warehouse_id=${encodeURIComponent(warehouse_id)}`,
       {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: authHeader,
         },
-      }
-    );
+      },
+    )
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error("[DukaPlus] API Error:", {
-        status: response.status,
-        body: errorData,
-      });
-      return NextResponse.json(
-        { message: `Failed to fetch products: ${response.status}` },
-        { status: response.status }
-      );
+      const errorData = await response.text()
+      console.error("[DukaPlus] API Error:", { status: response.status, body: errorData })
+      return NextResponse.json({ message: `Failed to fetch products: ${response.status}` }, { status: response.status })
     }
 
-    const data = await response.json();
+    const data = await response.json()
 
     const products = (data.message?.products || []).map((item: any) => ({
       id: item.product_id,
@@ -85,69 +65,53 @@ export async function GET(request: NextRequest) {
         Number.parseFloat(item.qty_in_store) === 0
           ? "out_of_stock"
           : Number.parseFloat(item.qty_in_store) <= 10
-          ? "low_stock"
-          : "in_stock",
-    }));
+            ? "low_stock"
+            : "in_stock",
+    }))
 
-    return NextResponse.json({ products });
+    return NextResponse.json({ products })
   } catch (error) {
-    console.error("[DukaPlus] Inventory fetch error:", error);
+    console.error("[DukaPlus] Inventory fetch error:", error)
     return NextResponse.json(
-      {
-        message:
-          error instanceof Error ? error.message : "Internal server error",
-      },
-      { status: 500 }
-    );
+      { message: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 },
+    )
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const credentialsCookie = cookieStore.get("tenant_credentials")?.value;
+    const cookieStore = await cookies()
+    const credentialsCookie = cookieStore.get("tenant_credentials")?.value
 
     if (!credentialsCookie) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const credentials = JSON.parse(credentialsCookie);
-    const body = await request.json();
+    const credentials = JSON.parse(credentialsCookie)
+    const body = await request.json()
 
-    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`;
+    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
 
-    const response = await fetch(
-      `${credentials.baseUrl}/api/method/dukaplus.services.rest.create_product`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: authHeader,
-        },
-        body: JSON.stringify(body),
-      }
-    );
+    const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.rest.create_product`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: authHeader,
+      },
+      body: JSON.stringify(body),
+    })
 
-    const data = await response.json();
+    const data = await response.json()
 
     if (!response.ok) {
-      console.error("Product creation error:", data);
-      return NextResponse.json(
-        { message: data.message || "Failed to create product" },
-        { status: response.status }
-      );
+      console.error("Product creation error:", data)
+      return NextResponse.json({ message: data.message || "Failed to create product" }, { status: response.status })
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Product created successfully",
-      data,
-    });
+    return NextResponse.json({ success: true, message: "Product created successfully", data })
   } catch (error) {
-    console.error("Product creation error:", error);
-    return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    );
+    console.error("Product creation error:", error)
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }
