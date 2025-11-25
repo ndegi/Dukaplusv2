@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 
 export async function POST(request: NextRequest) {
@@ -9,10 +9,7 @@ export async function POST(request: NextRequest) {
     const credentialsCookie = cookieStore.get("tenant_credentials")?.value
 
     if (!credentialsCookie) {
-      return NextResponse.json(
-        { message: { message: "Not authenticated", status: 401 } },
-        { status: 401 }
-      )
+      return NextResponse.json({ message: { message: "Not authenticated", status: 401 } }, { status: 401 })
     }
 
     const credentials = JSON.parse(credentialsCookie)
@@ -33,9 +30,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data, { status: response.status })
   } catch (error) {
     console.error("[DukaPlus] Submit purchase invoice error:", error)
-    return NextResponse.json(
-      { message: { message: "Internal server error", status: 500 } },
-      { status: 500 }
-    )
+    return NextResponse.json({ message: { message: "Internal server error", status: 500 } }, { status: 500 })
   }
 }

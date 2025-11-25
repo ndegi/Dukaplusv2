@@ -137,6 +137,7 @@ export default function SalesPage() {
 
   const fetchSalesInvoices = async () => {
     try {
+      setError(null)
       const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
 
       if (!warehouseId) {
@@ -146,11 +147,25 @@ export default function SalesPage() {
       const response = await fetch(`/api/sales/invoices?warehouse_id=${encodeURIComponent(warehouseId)}`)
       const data = await response.json()
 
-      if (response.ok && data.message?.sales_data) {
+      if (!response.ok) {
+        console.error("[DukaPlus] Sales invoices API error:", data)
+        setError(data.message?.message || "Failed to fetch sales invoices")
+        return
+      }
+
+      if (data.message?.sales_data && Array.isArray(data.message.sales_data)) {
         setInvoices(data.message.sales_data)
+        setError(null)
+      } else if (Array.isArray(data.message)) {
+        setInvoices(data.message)
+        setError(null)
+      } else {
+        console.error("[DukaPlus] Unexpected sales invoices response structure:", data)
+        setError("Invalid response format from server")
       }
     } catch (err) {
       console.error("[DukaPlus] Error fetching sales invoices:", err)
+      setError("Error fetching sales invoices")
     }
   }
 
