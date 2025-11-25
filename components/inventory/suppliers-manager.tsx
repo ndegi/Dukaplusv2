@@ -1,59 +1,60 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { AlertCircle, Plus, Pencil, Trash2 } from 'lucide-react'
-import { Button } from "@/components/ui/button"
-import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { useEffect, useState } from "react";
+import { AlertCircle, Plus, Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 interface Supplier {
-  supplier_name: string
-  supplier_id?: string
-  mobile_number?: string
-  email?: string
-  address?: string
+  supplier_name: string;
+  supplier_id?: string;
+  mobile_number?: string;
+  email?: string;
+  address?: string;
 }
 
 export function SuppliersManager() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [showModal, setShowModal] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean
-    title: string
-    description: string
-    action: () => void
+    open: boolean;
+    title: string;
+    description: string;
+    action: () => void;
   }>({
     open: false,
     title: "",
     description: "",
     action: () => {},
-  })
+  });
 
   useEffect(() => {
-    fetchSuppliers()
-  }, [])
+    fetchSuppliers();
+  }, []);
 
   const fetchSuppliers = async () => {
     try {
-      setIsLoading(true)
-      const response = await fetch("/api/suppliers")
-      const data = await response.json()
+      setIsLoading(true);
+      const response = await fetch("/api/suppliers");
+      const data = await response.json();
 
       if (response.ok) {
-        setSuppliers(data.suppliers || [])
-        setError(null)
+        setSuppliers(data.suppliers || []);
+        setError(null);
       } else {
-        setError("Failed to fetch suppliers")
+        setError("Failed to fetch suppliers");
       }
     } catch (err) {
-      setError("Error fetching suppliers")
-      console.error("[DukaPlus] Error fetching suppliers:", err)
+      setError("Error fetching suppliers");
+      console.error("[DukaPlus] Error fetching suppliers:", err);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleDelete = async (supplierName: string) => {
     setConfirmDialog({
@@ -66,26 +67,32 @@ export function SuppliersManager() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ supplier_name: supplierName }),
-          })
+          });
 
           if (response.ok) {
-            fetchSuppliers()
+            fetchSuppliers();
           } else {
-            const data = await response.json()
-            alert(data.message || "Failed to delete supplier")
+            const data = await response.json();
+            alert(data.message || "Failed to delete supplier");
           }
         } catch (err) {
-          alert("Error deleting supplier")
-          console.error("[DukaPlus] Error:", err)
+          alert("Error deleting supplier");
+          console.error("[DukaPlus] Error:", err);
         }
       },
-    })
-  }
+    });
+  };
 
-  const filteredSuppliers = suppliers.filter(s =>
-    s.supplier_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.mobile_number?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const handleEdit = (supplier: Supplier) => {
+    setEditingSupplier(supplier);
+    setShowModal(true);
+  };
+
+  const filteredSuppliers = suppliers.filter(
+    (s) =>
+      s.supplier_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.mobile_number?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-4">
@@ -107,7 +114,11 @@ export function SuppliersManager() {
           className="input-base flex-1 max-w-md"
           placeholder="Search suppliers..."
         />
-        <Button onClick={() => setShowModal(true)} size="sm" className="bg-orange-500 hover:bg-orange-600">
+        <Button
+          onClick={() => setShowModal(true)}
+          size="sm"
+          className="bg-orange-500 hover:bg-orange-600"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Supplier
         </Button>
@@ -122,30 +133,53 @@ export function SuppliersManager() {
 
       <div className="card-base overflow-hidden">
         {isLoading ? (
-          <p className="p-6 text-center text-foreground text-sm">Loading suppliers...</p>
+          <p className="p-6 text-center text-foreground text-sm">
+            Loading suppliers...
+          </p>
         ) : filteredSuppliers.length === 0 ? (
           <p className="p-6 text-center text-foreground text-sm">
-            {searchQuery ? "No suppliers found matching your search" : "No suppliers found"}
+            {searchQuery
+              ? "No suppliers found matching your search"
+              : "No suppliers found"}
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="table-header">
                 <tr>
-                  <th className="table-header-cell text-left uppercase">Supplier Name</th>
-                  <th className="table-header-cell text-left uppercase">Mobile Number</th>
-                  <th className="table-header-cell text-left uppercase">Email</th>
-                  <th className="table-header-cell text-center uppercase">Actions</th>
+                  <th className="table-header-cell text-left uppercase">
+                    Supplier Name
+                  </th>
+                  <th className="table-header-cell text-left uppercase">
+                    Mobile Number
+                  </th>
+                  <th className="table-header-cell text-left uppercase">
+                    Email
+                  </th>
+                  <th className="table-header-cell text-center uppercase">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredSuppliers.map((supplier, idx) => (
                   <tr key={idx} className="table-row">
-                    <td className="table-cell font-medium">{supplier.supplier_name}</td>
-                    <td className="table-cell">{supplier.mobile_number || "-"}</td>
+                    <td className="table-cell font-medium">
+                      {supplier.supplier_name}
+                    </td>
+                    <td className="table-cell">
+                      {supplier.mobile_number || "-"}
+                    </td>
                     <td className="table-cell">{supplier.email || "-"}</td>
                     <td className="table-cell text-center">
                       <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => handleEdit(supplier)}
+                          className="action-btn-edit"
+                          title="Edit supplier"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => handleDelete(supplier.supplier_name)}
                           className="action-btn-delete"
@@ -165,33 +199,52 @@ export function SuppliersManager() {
 
       {showModal && (
         <AddSupplierModal
-          onClose={() => setShowModal(false)}
+          supplier={editingSupplier}
+          onClose={() => {
+            setShowModal(false);
+            setEditingSupplier(null);
+          }}
           onSuccess={() => {
-            setShowModal(false)
-            fetchSuppliers()
+            setShowModal(false);
+            setEditingSupplier(null);
+            fetchSuppliers();
           }}
         />
       )}
     </div>
-  )
+  );
 }
 
-function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [supplierName, setSupplierName] = useState("")
-  const [mobileNumber, setMobileNumber] = useState("")
-  const [email, setEmail] = useState("")
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+function AddSupplierModal({
+  supplier,
+  onClose,
+  onSuccess,
+}: {
+  supplier?: Supplier | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [supplierName, setSupplierName] = useState(
+    supplier?.supplier_name || ""
+  );
+  const [mobileNumber, setMobileNumber] = useState(
+    supplier?.mobile_number || ""
+  );
+  const [email, setEmail] = useState(supplier?.email || "");
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isEditing = !!supplier;
 
   const handleSubmit = async () => {
     if (!supplierName || !mobileNumber) {
-      setError("Supplier name and mobile number are required")
-      return
+      setError("Supplier name and mobile number are required");
+      return;
     }
 
     try {
-      setIsSaving(true)
-      setError(null)
+      setIsSaving(true);
+      setError(null);
 
       const response = await fetch("/api/suppliers/create", {
         method: "POST",
@@ -201,28 +254,33 @@ function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
           mobile_number: mobileNumber,
           email: email || undefined,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok) {
-        onSuccess()
+        onSuccess();
       } else {
-        setError(data.message || "Failed to create supplier")
+        setError(
+          data.message ||
+            `Failed to ${isEditing ? "update" : "create"} supplier`
+        );
       }
     } catch (err) {
-      setError("Error creating supplier")
-      console.error("[DukaPlus] Error:", err)
+      setError(`Error ${isEditing ? "updating" : "creating"} supplier`);
+      console.error("[DukaPlus] Error:", err);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-card rounded-lg w-full max-w-md">
         <div className="p-6 border-b border-border">
-          <h2 className="text-xl font-bold">Add Supplier</h2>
+          <h2 className="text-xl font-bold">
+            {isEditing ? "Edit" : "Add"} Supplier
+          </h2>
         </div>
 
         <div className="p-6 space-y-4">
@@ -241,6 +299,7 @@ function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
               onChange={(e) => setSupplierName(e.target.value)}
               className="input-base w-full"
               placeholder="Enter supplier name"
+              disabled={isEditing}
             />
           </div>
 
@@ -268,7 +327,11 @@ function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
         </div>
 
         <div className="p-6 border-t border-border flex gap-2">
-          <button onClick={onClose} className="btn-cancel flex-1" disabled={isSaving}>
+          <button
+            onClick={onClose}
+            className="btn-cancel flex-1"
+            disabled={isSaving}
+          >
             Cancel
           </button>
           <button
@@ -276,10 +339,16 @@ function AddSupplierModal({ onClose, onSuccess }: { onClose: () => void; onSucce
             className="btn-create flex-1"
             disabled={isSaving || !supplierName || !mobileNumber}
           >
-            {isSaving ? "Adding..." : "Add Supplier"}
+            {isSaving
+              ? isEditing
+                ? "Updating..."
+                : "Adding..."
+              : isEditing
+              ? "Update Supplier"
+              : "Add Supplier"}
           </button>
         </div>
       </div>
     </div>
-  )
+  );
 }
