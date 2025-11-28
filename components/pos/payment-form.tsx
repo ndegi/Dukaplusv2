@@ -76,6 +76,8 @@ export function PaymentForm({
   const [splitPayments, setSplitPayments] = useState<PaymentSplit[]>([
     { id: 1, mode: "Cash", amount: totalAmount, isPaid: false },
   ]);
+  const WALK_IN_CREDIT_ERROR =
+    "Credit sale is not allowed for walk-in customers. Please select a registered customer.";
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -265,23 +267,81 @@ export function PaymentForm({
 
   const canComplete = isPaymentComplete && !hasUnconfirmedSTKPayments;
 
+  useEffect(() => {
+    setSplitPayments((prev) => autoPopulateLastSplit(prev));
+  }, [creditAmount, pointsAmount, totalAmount]);
+
+  useEffect(() => {
+    if (
+      message?.text === WALK_IN_CREDIT_ERROR &&
+      (!isWalkInCustomer() ||
+        !splitPayments.some(
+          (payment) => payment.mode?.toLowerCase() === "credit"
+        ))
+    ) {
+      setMessage(null);
+    }
+  }, [customerNameState, splitPayments, message]);
+
+  const autoPopulateLastSplit = (splits: PaymentSplit[]): PaymentSplit[] => {
+    if (splits.length === 0) return splits;
+    const lastIndex = splits.length - 1;
+    const paidBeforeLast = splits
+      .slice(0, lastIndex)
+      .reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
+    const remainingAmount =
+      totalAmount - paidBeforeLast - creditAmount - pointsAmount;
+    const normalizedAmount = Number(Math.max(0, remainingAmount).toFixed(2));
+    const currentLastAmount = Number(
+      Math.max(0, splits[lastIndex]?.amount || 0).toFixed(2)
+    );
+
+    if (Math.abs(currentLastAmount - normalizedAmount) < 0.01) {
+      return splits;
+    }
+
+    const updatedSplits = [...splits];
+    updatedSplits[lastIndex] = {
+      ...updatedSplits[lastIndex],
+      amount: normalizedAmount,
+      isPaid: false,
+    };
+    return updatedSplits;
+  };
+
   const addPaymentSplit = () => {
-    const newId = Math.max(...splitPayments.map((p) => p.id), 0) + 1;
-    setSplitPayments([
-      ...splitPayments,
-      {
+    setSplitPayments((prev) => {
+      const newId = Math.max(...prev.map((p) => p.id), 0) + 1;
+      const currentTotal = prev.reduce(
+        (sum, payment) => sum + (Number(payment.amount) || 0),
+        0
+      );
+      const remainingAmount =
+        totalAmount - currentTotal - creditAmount - pointsAmount;
+      const newSplit: PaymentSplit = {
         id: newId,
         mode: paymentModes[0]?.mode_of_payment || "Cash",
-        amount: Math.max(0, remaining),
+        amount: Number(Math.max(0, remainingAmount).toFixed(2)),
         isPaid: false,
-      },
-    ]);
+      };
+      return autoPopulateLastSplit([...prev, newSplit]);
+    });
   };
 
   const removePaymentSplit = (id: number) => {
-    if (splitPayments.length > 1) {
-      setSplitPayments(splitPayments.filter((p) => p.id !== id));
-    }
+    setSplitPayments((prev) => {
+      if (prev.length <= 1) {
+        return prev;
+      }
+      const filtered = prev.filter((p) => p.id !== id);
+      if (filtered.length === prev.length) {
+        return prev;
+      }
+      if (filtered.length === 0) {
+        return filtered;
+      }
+      return autoPopulateLastSplit(filtered);
+    });
   };
 
   const updatePaymentSplit = (
@@ -289,37 +349,37 @@ export function PaymentForm({
     field: keyof PaymentSplit,
     value: any
   ) => {
-    const previous = splitPayments.find((p) => p.id === id);
-
-    // prevent credit for walk-in customers
-    if (field === "mode" && value.toLowerCase() === "credit") {
-      if (isWalkInCustomer()) {
-        setMessage({
-          type: "error",
-          text: "Credit sale is not allowed for walk-in customers. Please select a registered customer.",
-        });
-
-        // revert mode back to previous value
-        setSplitPayments(
-          splitPayments.map((p) =>
-            p.id === id ? { ...p, mode: previous?.mode || "Cash" } : p
-          )
-        );
-        return;
+    setSplitPayments((prev) => {
+      if (field === "mode" && value.toLowerCase() === "credit") {
+        if (isWalkInCustomer()) {
+          setMessage({
+            type: "error",
+            text: WALK_IN_CREDIT_ERROR,
+          });
+          return prev;
+        }
       }
-    }
 
-    setSplitPayments(
-      splitPayments.map((p) =>
+      const updatedSplits = prev.map((p) =>
         p.id === id
           ? {
-              ...p,
-              [field]: field === "amount" ? Number(value) : value,
-              isPaid: false,
-            }
+            ...p,
+            [field]: field === "amount" ? Number(value) : value,
+            isPaid: false,
+          }
           : p
-      )
-    );
+      );
+
+      if (
+        field === "amount" &&
+        prev.length > 1 &&
+        prev.findIndex((p) => p.id === id) !== prev.length - 1
+      ) {
+        return autoPopulateLastSplit(updatedSplits);
+      }
+
+      return updatedSplits;
+    });
   };
 
   const handleSTKPush = async (paymentId: number) => {
@@ -370,11 +430,11 @@ export function PaymentForm({
           splitPayments.map((p) =>
             p.id === paymentId
               ? {
-                  ...p,
-                  isPaid: true,
-                  reference:
-                    data.checkoutRequestId || data.message?.transaction_id,
-                }
+                ...p,
+                isPaid: true,
+                reference:
+                  data.checkoutRequestId || data.message?.transaction_id,
+              }
               : p
           )
         );
@@ -417,7 +477,7 @@ export function PaymentForm({
           </html>
         `);
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const sendReceipt = async (salesId: string, mobile: string) => {
@@ -444,7 +504,7 @@ export function PaymentForm({
           text: data.message?.message || "Failed to send receipt",
         });
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const saveDraft = async () => {
@@ -930,13 +990,12 @@ export function PaymentForm({
                                     type="button"
                                     onClick={() => handleSTKPush(payment.id)}
                                     disabled={isProcessingSTK}
-                                    className={`h-9 px-2.5 text-xs whitespace-nowrap ${
-                                      stkState === "processing"
-                                        ? "bg-yellow-600 hover:bg-yellow-700"
-                                        : stkState === "failure"
+                                    className={`h-9 px-2.5 text-xs whitespace-nowrap ${stkState === "processing"
+                                      ? "bg-yellow-600 hover:bg-yellow-700"
+                                      : stkState === "failure"
                                         ? "bg-red-600 hover:bg-red-700"
                                         : "bg-orange-600 hover:bg-orange-700"
-                                    } text-white`}
+                                      } text-white`}
                                   >
                                     {stkState === "processing" ? (
                                       <>
@@ -1158,10 +1217,10 @@ export function PaymentForm({
               {isProcessing
                 ? "Processing..."
                 : !hasActiveShift && !isInvoicePayment
-                ? "No Shift"
-                : canComplete
-                ? "Complete"
-                : `${currency} ${Math.abs(remaining).toFixed(2)}`}
+                  ? "No Shift"
+                  : canComplete
+                    ? "Complete"
+                    : `${currency} ${Math.abs(remaining).toFixed(2)}`}
             </Button>
           </div>
         </div>
