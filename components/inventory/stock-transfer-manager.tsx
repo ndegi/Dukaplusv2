@@ -281,23 +281,32 @@ export function StockTransferManager() {
     }
   }
 
-  const filteredTransfers = transfers.filter((transfer) => {
-    const matchesSearch =
-      transfer.material_transfer_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transfer.from_warehouse?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transfer.to_warehouse?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredTransfers = transfers
+    .filter((transfer) => {
+      const matchesSearch = transfer.material_transfer_id.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "draft" && transfer.docstatus === 0) ||
-      (statusFilter === "submitted" && transfer.docstatus === 1) ||
-      (statusFilter === "cancelled" && transfer.docstatus === 2)
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "draft" && transfer.docstatus === 0) ||
+        (statusFilter === "submitted" && transfer.docstatus === 1) ||
+        (statusFilter === "cancelled" && transfer.docstatus === 2)
 
-    const transferDate = new Date(transfer.posting_date)
-    const matchesDate = transferDate >= dateRange.from && transferDate <= dateRange.to
+      const transferDate = new Date(transfer.posting_date)
+      const matchesDate = transferDate >= dateRange.from && transferDate <= dateRange.to
 
-    return matchesSearch && matchesStatus && matchesDate
-  })
+      return matchesSearch && matchesStatus && matchesDate
+    })
+    .sort((a, b) => new Date(b.posting_date).getTime() - new Date(a.posting_date).getTime())
+
+  const clearFilters = () => {
+    setSearchTerm("")
+    setStatusFilter("all")
+    setDateRange({
+      from: new Date(new Date().setDate(new Date().getDate() - 30)),
+      to: new Date(),
+    })
+    setCurrentPage(1)
+  }
 
   const renderItemsTable = (items: StockTransfer["items"]) => {
     if (!items || items.length === 0) {
@@ -392,17 +401,17 @@ export function StockTransferManager() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <input
+          <Input
             type="text"
             placeholder="Search transfers..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-base flex-1 px-3 py-2 text-sm"
+            className="input-base flex-1"
           />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="input-base px-3 py-2 text-sm"
+            className="input-base px-3 py-2"
           >
             <option value="all">All Status</option>
             <option value="draft">Draft</option>
@@ -410,6 +419,13 @@ export function StockTransferManager() {
             <option value="cancelled">Cancelled</option>
           </select>
           <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+          {(searchTerm ||
+            statusFilter !== "all" ||
+            dateRange.from.getTime() !== new Date(new Date().setDate(new Date().getDate() - 30)).getTime()) && (
+            <Button onClick={clearFilters} variant="outline" size="sm">
+              Clear Filters
+            </Button>
+          )}
         </div>
 
         {showCreateForm && (

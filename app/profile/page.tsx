@@ -34,9 +34,20 @@ export default function ProfilePage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 p-4 sm:p-6">
-        <div>
-          <h1 className="page-title">Settings</h1>
-          <p className="page-subtitle">Manage your shifts and account settings</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="page-title">Settings</h1>
+            <p className="page-subtitle">Manage your shifts and account settings</p>
+          </div>
+          <a
+            href={typeof window !== "undefined" ? sessionStorage.getItem("tenant_base_url") || "#" : "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 active:bg-primary/80 transition-colors shadow-sm hover:shadow-md whitespace-nowrap"
+          >
+            <span>Open Back Office</span>
+            <ExternalLink className="w-4 h-4" />
+          </a>
         </div>
 
         <Tabs defaultValue="shifts" className="w-full">
@@ -84,24 +95,6 @@ export default function ProfilePage() {
                   <p className="text-muted-foreground">Manage your account information and preferences</p>
                 </div>
                 <UserProfile user={user} />
-              </div>
-
-              <div className="card-base p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">Back Office</h3>
-                    <p className="text-muted-foreground text-sm">Access the main DukaPlus back office system</p>
-                  </div>
-                  <a
-                    href={typeof window !== "undefined" ? sessionStorage.getItem("tenant_base_url") || "#" : "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 active:bg-primary/80 transition-colors shadow-sm hover:shadow-md whitespace-nowrap"
-                  >
-                    <span>Open Back Office</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
               </div>
             </div>
           </TabsContent>

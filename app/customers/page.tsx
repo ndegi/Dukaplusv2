@@ -145,6 +145,13 @@ export default function CustomersPage() {
     }
   }
 
+  const clearFilters = () => {
+    setSearchQuery("")
+    setSortField("customer_name")
+    setSortOrder("asc")
+    setCurrentPage(1)
+  }
+
   const filteredAndSorted = customers
     .filter(
       (c) =>
@@ -278,6 +285,11 @@ export default function CustomersPage() {
               className="input-base pl-10"
             />
           </div>
+          {searchQuery && (
+            <Button onClick={clearFilters} variant="outline" size="sm">
+              Clear Filters
+            </Button>
+          )}
         </div>
 
         <Card className="card-base overflow-hidden">

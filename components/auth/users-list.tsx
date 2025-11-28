@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { AlertCircle, Search, UserPlus } from 'lucide-react'
+import { AlertCircle, Search, UserPlus } from "lucide-react"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 
 interface User {
@@ -57,6 +57,10 @@ export function UsersList() {
     }
   }
 
+  const clearFilters = () => {
+    setSearchTerm("")
+  }
+
   return (
     <div className="space-y-6">
       {error && (
@@ -77,6 +81,11 @@ export function UsersList() {
             className="pl-10 input-base"
           />
         </div>
+        {searchTerm && (
+          <Button onClick={clearFilters} variant="outline" size="sm">
+            Clear Filters
+          </Button>
+        )}
         <Button className="btn-create">
           <UserPlus className="w-4 h-4" />
           Add User
@@ -118,8 +127,12 @@ export function UsersList() {
                       <TableActionButtons
                         showEdit={true}
                         showDelete={true}
-                        onEdit={() => {/* TODO: Add edit functionality */}}
-                        onDelete={() => {/* TODO: Add deactivate functionality */}}
+                        onEdit={() => {
+                          /* TODO: Add edit functionality */
+                        }}
+                        onDelete={() => {
+                          /* TODO: Add deactivate functionality */
+                        }}
                       />
                     </td>
                   </tr>

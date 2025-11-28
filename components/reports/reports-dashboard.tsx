@@ -271,6 +271,15 @@ function SalesReportTable({
   const itemsPerPage = 10
   const { formatCurrency } = useCurrency()
 
+  const clearFilters = () => {
+    setSearchTerm("")
+    onDateRangeChange({
+      from: new Date(new Date().setDate(new Date().getDate() - 30)),
+      to: new Date(),
+    })
+    setCurrentPage(1)
+  }
+
   if (isLoading) {
     return <div className="text-foreground p-6 text-center">Loading sales report...</div>
   }
@@ -335,6 +344,11 @@ function SalesReportTable({
           />
         </div>
         <DateRangeFilter dateRange={dateRange} onDateRangeChange={onDateRangeChange} />
+        {searchTerm && (
+          <Button onClick={clearFilters} variant="outline" size="sm">
+            Clear Filters
+          </Button>
+        )}
       </div>
 
       <div className="overflow-x-auto">
@@ -413,6 +427,15 @@ function CustomerStatementTable({
   const itemsPerPage = 10
   const { formatCurrency } = useCurrency()
 
+  const clearFilters = () => {
+    setSearchTerm("")
+    onDateRangeChange({
+      from: new Date(new Date().setDate(new Date().getDate() - 30)),
+      to: new Date(),
+    })
+    setCurrentPage(1)
+  }
+
   if (isLoading) {
     return <div className="text-foreground p-6 text-center">Loading customer statements...</div>
   }
@@ -476,6 +499,11 @@ function CustomerStatementTable({
           />
         </div>
         <DateRangeFilter dateRange={dateRange} onDateRangeChange={onDateRangeChange} />
+        {searchTerm && (
+          <Button onClick={clearFilters} variant="outline" size="sm">
+            Clear Filters
+          </Button>
+        )}
       </div>
 
       <div className="overflow-x-auto">

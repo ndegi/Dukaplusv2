@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input"
 import { useCurrency } from "@/lib/contexts/currency-context"
 import { useAuth } from "@/hooks/use-auth"
 import { AlertCircle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar } from "lucide-react"
+import { Search } from "lucide-react"
+import { Label } from "@/components/ui/label"
 
 interface SalesReceipt {
   sales_id: string
@@ -389,6 +391,29 @@ export default function SalesPage() {
     type: "receipt",
   })
 
+  const handleDatePreset = (days: number) => {
+    const to = new Date()
+    to.setHours(23, 59, 59, 999)
+
+    const from = new Date()
+    from.setDate(from.getDate() - days)
+    from.setHours(0, 0, 0, 0)
+
+    setDateRange({ from, to })
+    setShowDatePicker(false)
+  }
+
+  const clearFilters = () => {
+    setSearchTerm("")
+    setDateRange({
+      from: new Date(new Date().setDate(new Date().getDate() - 30)),
+      to: new Date(),
+    })
+    setSortBy("date")
+    setSortOrder("desc")
+    setCurrentPage(1)
+  }
+
   if (isLoading || !user) {
     return null
   }
@@ -487,37 +512,19 @@ export default function SalesPage() {
                 {showDatePicker && (
                   <div className="absolute top-full right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-50 p-4 space-y-3 min-w-64">
                     <button
-                      onClick={() => {
-                        const to = new Date()
-                        const from = new Date()
-                        from.setDate(from.getDate() - 7)
-                        setDateRange({ from, to })
-                        setShowDatePicker(false)
-                      }}
+                      onClick={() => handleDatePreset(7)}
                       className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm"
                     >
                       Last 7 days
                     </button>
                     <button
-                      onClick={() => {
-                        const to = new Date()
-                        const from = new Date()
-                        from.setDate(from.getDate() - 30)
-                        setDateRange({ from, to })
-                        setShowDatePicker(false)
-                      }}
+                      onClick={() => handleDatePreset(30)}
                       className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm"
                     >
                       Last 30 days
                     </button>
                     <button
-                      onClick={() => {
-                        const to = new Date()
-                        const from = new Date()
-                        from.setDate(from.getDate() - 90)
-                        setDateRange({ from, to })
-                        setShowDatePicker(false)
-                      }}
+                      onClick={() => handleDatePreset(90)}
                       className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm"
                     >
                       Last 90 days
@@ -529,7 +536,11 @@ export default function SalesPage() {
                         <Input
                           type="date"
                           value={dateRange.from.toISOString().split("T")[0]}
-                          onChange={(e) => setDateRange({ ...dateRange, from: new Date(e.target.value) })}
+                          onChange={(e) => {
+                            const from = new Date(e.target.value)
+                            from.setHours(0, 0, 0, 0)
+                            setDateRange({ ...dateRange, from })
+                          }}
                           className="input-base text-sm h-8"
                         />
                       </div>
@@ -538,7 +549,11 @@ export default function SalesPage() {
                         <Input
                           type="date"
                           value={dateRange.to.toISOString().split("T")[0]}
-                          onChange={(e) => setDateRange({ ...dateRange, to: new Date(e.target.value) })}
+                          onChange={(e) => {
+                            const to = new Date(e.target.value)
+                            to.setHours(23, 59, 59, 999)
+                            setDateRange({ ...dateRange, to })
+                          }}
                           className="input-base text-sm h-8"
                         />
                       </div>
@@ -547,7 +562,7 @@ export default function SalesPage() {
                       onClick={() => setShowDatePicker(false)}
                       className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm border-t border-border pt-2"
                     >
-                      Close
+                      Apply Range
                     </button>
                   </div>
                 )}
@@ -567,6 +582,106 @@ export default function SalesPage() {
                 {sortOrder === "asc" ? "↑" : "↓"}
               </button>
             </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
+              <Input
+                placeholder="Search receipts or invoices..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 input-base"
+              />
+            </div>
+
+            <div className="relative">
+              <Button
+                onClick={() => setShowDatePicker(!showDatePicker)}
+                className="bg-slate-700 hover:bg-slate-600 text-slate-300 flex items-center gap-2"
+              >
+                <Calendar className="w-4 h-4" />
+                {dateRange.from.toLocaleDateString("en-US", { month: "short", day: "numeric" })} -{" "}
+                {dateRange.to.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </Button>
+
+              {showDatePicker && (
+                <div className="absolute top-full right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-50 p-3 space-y-2 min-w-64">
+                  <button
+                    onClick={() => handleDatePreset(7)}
+                    className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300"
+                  >
+                    Last 7 days
+                  </button>
+                  <button
+                    onClick={() => handleDatePreset(30)}
+                    className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300"
+                  >
+                    Last 30 days
+                  </button>
+                  <button
+                    onClick={() => handleDatePreset(90)}
+                    className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300"
+                  >
+                    Last 90 days
+                  </button>
+
+                  <div className="border-t border-slate-700 pt-3 mt-2">
+                    <p className="text-xs text-slate-400 mb-2 px-3 font-semibold uppercase">Custom Range</p>
+                    <div className="space-y-2 px-3">
+                      <div>
+                        <Label className="text-xs text-slate-400">From</Label>
+                        <Input
+                          type="date"
+                          value={dateRange.from.toISOString().split("T")[0]}
+                          onChange={(e) => {
+                            const from = new Date(e.target.value)
+                            from.setHours(0, 0, 0, 0)
+                            setDateRange({ ...dateRange, from })
+                          }}
+                          className="bg-slate-700 border-slate-600 text-white text-sm h-8"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-400">To</Label>
+                        <Input
+                          type="date"
+                          value={dateRange.to.toISOString().split("T")[0]}
+                          onChange={(e) => {
+                            const to = new Date(e.target.value)
+                            to.setHours(23, 59, 59, 999)
+                            setDateRange({ ...dateRange, to })
+                          }}
+                          className="bg-slate-700 border-slate-600 text-white text-sm h-8"
+                        />
+                      </div>
+                      <Button
+                        onClick={() => setShowDatePicker(false)}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white h-8 text-sm"
+                      >
+                        Apply Range
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-slate-700 pt-2">
+                    <button
+                      onClick={() => setShowDatePicker(false)}
+                      className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 text-sm text-slate-300"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {(searchTerm ||
+              dateRange.from.getTime() !== new Date(new Date().setDate(new Date().getDate() - 30)).getTime()) && (
+              <Button onClick={clearFilters} variant="outline" size="sm">
+                Clear Filters
+              </Button>
+            )}
           </div>
 
           {isLoadingReceipts ? (

@@ -22,6 +22,10 @@ export default function POSPage() {
     }
   }, [user, isLoading, router])
 
+  useEffect(() => {
+    console.log("[DukaPlus] POS Page: selectedCustomer changed to:", selectedCustomer)
+  }, [selectedCustomer])
+
   if (isLoading || !user) {
     return null
   }
@@ -34,7 +38,10 @@ export default function POSPage() {
         selectedCustomer={selectedCustomer}
         onSearchChange={setSearchTerm}
         onQuantityChange={setQuantity}
-        onCustomerChange={setSelectedCustomer}
+        onCustomerChange={(customer) => {
+          console.log("[DukaPlus] POS Page: onCustomerChange called with:", customer)
+          setSelectedCustomer(customer)
+        }}
         currentSalesPerson={currentSalesPerson}
         onSalesPersonChange={setCurrentSalesPerson}
       >

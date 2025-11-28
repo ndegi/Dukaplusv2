@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Calendar } from 'lucide-react'
+import { Calendar } from "lucide-react"
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,28 +14,32 @@ interface DateRangeFilterProps {
 export function DateRangeFilter({ dateRange, onDateRangeChange }: DateRangeFilterProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [customFrom, setCustomFrom] = useState(
-    dateRange?.from instanceof Date ? dateRange.from.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
+    dateRange?.from instanceof Date
+      ? dateRange.from.toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0],
   )
   const [customTo, setCustomTo] = useState(
-    dateRange?.to instanceof Date ? dateRange.to.toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
+    dateRange?.to instanceof Date ? dateRange.to.toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
   )
 
   const handlePreset = (days: number) => {
     const to = new Date()
+    to.setHours(23, 59, 59, 999) // End of today
+
     const from = new Date()
     from.setDate(from.getDate() - days)
+    from.setHours(0, 0, 0, 0) // Start of the from date
+
     onDateRangeChange({ from, to })
     setIsOpen(false)
   }
 
   const handleCustomRange = () => {
     const from = new Date(customFrom)
-    const to = new Date(customTo)
+    from.setHours(0, 0, 0, 0) // Start of day
 
-    if (from > to) {
-      alert("Start date cannot be after end date")
-      return
-    }
+    const to = new Date(customTo)
+    to.setHours(23, 59, 59, 999) // End of day
 
     onDateRangeChange({ from, to })
     setIsOpen(false)

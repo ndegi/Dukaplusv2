@@ -494,6 +494,16 @@ export function PurchaseInvoicesManager() {
     })
   }
 
+  const clearFilters = () => {
+    setSearchTerm("")
+    setStatusFilter("all")
+    setDateRange({
+      from: new Date(new Date().setDate(new Date().getDate() - 30)),
+      to: new Date(),
+    })
+    setCurrentPage(1)
+  }
+
   return (
     <div className="space-y-6">
       <ConfirmationDialog
@@ -565,6 +575,13 @@ export function PurchaseInvoicesManager() {
             <option value="partially_paid">Partially Paid</option>
           </select>
           <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+          {(searchTerm ||
+            statusFilter !== "all" ||
+            dateRange.from.getTime() !== new Date(new Date().setDate(new Date().getDate() - 30)).getTime()) && (
+            <Button onClick={clearFilters} variant="outline" size="sm">
+              Clear Filters
+            </Button>
+          )}
         </div>
 
         {showCreateForm && (

@@ -250,23 +250,33 @@ export function ExpensesOverview() {
     }
   }
 
-  const filteredExpenses = expenses.filter((expense) => {
-    const matchesSearch =
-      expense.expense_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.expense_category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.mode_of_payment.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredExpenses = expenses
+    .filter((expense) => {
+      const matchesSearch =
+        expense.expense_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        expense.expense_category.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "draft" && expense.status === 0) ||
-      (statusFilter === "submitted" && expense.status === 1)
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "draft" && expense.status === 0) ||
+        (statusFilter === "submitted" && expense.status === 1)
 
-    // Date filtering
-    const expenseDate = new Date(expense.date)
-    const matchesDateRange = expenseDate >= dateRange.from && expenseDate <= dateRange.to
+      const expenseDate = new Date(expense.date)
+      const matchesDate = expenseDate >= dateRange.from && expenseDate <= dateRange.to
 
-    return matchesSearch && matchesStatus && matchesDateRange
-  })
+      return matchesSearch && matchesStatus && matchesDate
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+  const clearFilters = () => {
+    setSearchTerm("")
+    setStatusFilter("all")
+    setDateRange({
+      from: new Date(new Date().setDate(new Date().getDate() - 30)),
+      to: new Date(),
+    })
+    setCurrentPage(1)
+  }
 
   const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -368,27 +378,34 @@ export function ExpensesOverview() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
           <Input
-            placeholder="Search by ID, category, or payment method..."
+            type="text"
+            placeholder="Search expenses..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-base pl-10"
+            className="pl-9 input-base"
           />
         </div>
-        <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-          <SelectTrigger className="w-full sm:w-[180px] input-base">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent className="dialog-content">
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="submitted">Submitted</SelectItem>
-          </SelectContent>
-        </Select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as any)}
+          className="input-base px-3 py-2"
+        >
+          <option value="all">All Status</option>
+          <option value="draft">Draft</option>
+          <option value="submitted">Submitted</option>
+        </select>
         <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+        {(searchTerm ||
+          statusFilter !== "all" ||
+          dateRange.from.getTime() !== new Date(new Date().setDate(new Date().getDate() - 30)).getTime()) && (
+          <Button onClick={clearFilters} variant="outline" size="sm">
+            Clear Filters
+          </Button>
+        )}
       </div>
 
       <Card className="card-base">

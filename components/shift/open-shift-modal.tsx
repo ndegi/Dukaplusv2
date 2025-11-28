@@ -69,6 +69,8 @@ export function OpenShiftModal({ onClose, onSuccess }: { onClose: () => void; on
       const data = await response.json()
 
       if (response.ok) {
+        sessionStorage.setItem("active_shift_id", data.message?.shift_name || "active")
+
         setMessage({ type: "success", text: "Shift opened successfully" })
         window.dispatchEvent(new Event("shiftOpened"))
         setTimeout(() => {

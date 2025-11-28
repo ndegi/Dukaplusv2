@@ -249,6 +249,15 @@ export function PurchaseOrdersManager() {
   const endIndex = startIndex + itemsPerPage
   const paginatedOrders = filteredOrders.slice(startIndex, endIndex)
 
+  const clearFilters = () => {
+    setSearchQuery("")
+    setDateRange({
+      from: new Date(new Date().setDate(new Date().getDate() - 30)),
+      to: new Date(),
+    })
+    setCurrentPage(1)
+  }
+
   return (
     <div className="space-y-4">
       <ConfirmationDialog
@@ -342,6 +351,12 @@ export function PurchaseOrdersManager() {
           />
         </div>
         <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
+        {(searchQuery ||
+          dateRange.from.getTime() !== new Date(new Date().setDate(new Date().getDate() - 30)).getTime()) && (
+          <Button onClick={clearFilters} variant="outline" size="sm">
+            Clear Filters
+          </Button>
+        )}
       </div>
 
       {error && (

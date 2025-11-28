@@ -151,6 +151,8 @@ export function CloseShiftModal({ onClose, onSuccess, warehouseId }: CloseShiftM
       const data = await response.json()
 
       if (response.ok) {
+        sessionStorage.removeItem("active_shift_id")
+
         setMessage({ type: "success", text: "Shift closed successfully" })
         window.dispatchEvent(new Event("shiftClosed"))
         setTimeout(() => {

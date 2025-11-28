@@ -82,6 +82,33 @@ export function SalesHistory() {
     }
   }
 
+  const clearFilters = () => {
+    setSearchTerm("")
+    const to = new Date()
+    to.setHours(23, 59, 59, 999)
+    const from = new Date()
+    from.setDate(from.getDate() - 30)
+    from.setHours(0, 0, 0, 0)
+    setDateRange({ from, to })
+  }
+
+  const hasActiveFilters = () => {
+    if (searchTerm) return true
+
+    // Check if date range is different from default (last 30 days)
+    const defaultTo = new Date()
+    defaultTo.setHours(23, 59, 59, 999)
+    const defaultFrom = new Date()
+    defaultFrom.setDate(defaultFrom.getDate() - 30)
+    defaultFrom.setHours(0, 0, 0, 0)
+
+    // Compare dates by day, ignoring time differences
+    const fromDifferent = dateRange.from.toDateString() !== defaultFrom.toDateString()
+    const toDifferent = dateRange.to.toDateString() !== defaultTo.toDateString()
+
+    return fromDifferent || toDifferent
+  }
+
   return (
     <div className="space-y-6">
       {error && (
@@ -142,8 +169,10 @@ export function SalesHistory() {
               <button
                 onClick={() => {
                   const to = new Date()
+                  to.setHours(23, 59, 59, 999)
                   const from = new Date()
                   from.setDate(from.getDate() - 7)
+                  from.setHours(0, 0, 0, 0)
                   setDateRange({ from, to })
                   setShowDatePicker(false)
                 }}
@@ -154,8 +183,10 @@ export function SalesHistory() {
               <button
                 onClick={() => {
                   const to = new Date()
+                  to.setHours(23, 59, 59, 999)
                   const from = new Date()
                   from.setDate(from.getDate() - 30)
+                  from.setHours(0, 0, 0, 0)
                   setDateRange({ from, to })
                   setShowDatePicker(false)
                 }}
@@ -166,8 +197,10 @@ export function SalesHistory() {
               <button
                 onClick={() => {
                   const to = new Date()
+                  to.setHours(23, 59, 59, 999)
                   const from = new Date()
                   from.setDate(from.getDate() - 90)
+                  from.setHours(0, 0, 0, 0)
                   setDateRange({ from, to })
                   setShowDatePicker(false)
                 }}
@@ -182,7 +215,11 @@ export function SalesHistory() {
                   <Input
                     type="date"
                     value={dateRange.from.toISOString().split("T")[0]}
-                    onChange={(e) => setDateRange({ ...dateRange, from: new Date(e.target.value) })}
+                    onChange={(e) => {
+                      const from = new Date(e.target.value)
+                      from.setHours(0, 0, 0, 0)
+                      setDateRange({ ...dateRange, from })
+                    }}
                     className="bg-slate-700 border-slate-600 text-white text-sm h-8"
                   />
                 </div>
@@ -191,7 +228,11 @@ export function SalesHistory() {
                   <Input
                     type="date"
                     value={dateRange.to.toISOString().split("T")[0]}
-                    onChange={(e) => setDateRange({ ...dateRange, to: new Date(e.target.value) })}
+                    onChange={(e) => {
+                      const to = new Date(e.target.value)
+                      to.setHours(23, 59, 59, 999)
+                      setDateRange({ ...dateRange, to })
+                    }}
                     className="bg-slate-700 border-slate-600 text-white text-sm h-8"
                   />
                 </div>
@@ -205,6 +246,15 @@ export function SalesHistory() {
             </div>
           )}
         </div>
+        {hasActiveFilters() && (
+          <Button
+            onClick={clearFilters}
+            variant="outline"
+            className="border-slate-600 bg-slate-700 hover:bg-slate-600 text-white"
+          >
+            Clear Filters
+          </Button>
+        )}
       </div>
 
       {/* Transactions Table */}

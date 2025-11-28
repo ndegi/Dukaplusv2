@@ -34,6 +34,12 @@ export function ShiftStatusIndicator({ warehouseId }: ShiftStatusIndicatorProps)
         // API returns message: 1 if shift is open, 0 if closed
         const isOpen = data.message?.message === 1 || data.message === 1
         setHasActiveShift(isOpen)
+
+        if (isOpen) {
+          sessionStorage.setItem("active_shift_id", "active")
+        } else {
+          sessionStorage.removeItem("active_shift_id")
+        }
       }
     } catch (error) {
       console.error("[DukaPlus] Failed to check shift status:", error)

@@ -120,17 +120,43 @@ export function POSInterface({
   }, [cart])
 
   useEffect(() => {
-    if (selectedCustomer && selectedCustomer !== selectedCustomerId) {
-      // Find customer ID by name from the customers list
-      const customer = customers.find((c) => c.name === selectedCustomer || c.id === selectedCustomer)
-      if (customer) {
-        setSelectedCustomerId(customer.id)
-      } else if (selectedCustomer === "Walk In" || selectedCustomer === "walk-in") {
-        setSelectedCustomerId("walk-in")
-      } else {
-        // If not found in list, use the value as-is (could be customer name)
-        setSelectedCustomerId(selectedCustomer)
-      }
+    console.log("[DukaPlus] POSInterface: selectedCustomer prop changed to:", selectedCustomer)
+    console.log("[DukaPlus] POSInterface: Current customerName state:", customerName)
+    console.log(
+      "[DukaPlus] POSInterface: Available customers:",
+      customers.map((c) => c.name),
+    )
+
+    if (!selectedCustomer || selectedCustomer === customerName) {
+      console.log("[DukaPlus] POSInterface: No change needed")
+      return
+    }
+
+    // Find customer by exact name match
+    const customer = customers.find((c) => c.name === selectedCustomer)
+
+    if (customer) {
+      console.log("[DukaPlus] POSInterface: Found customer match:", customer)
+      setSelectedCustomerId(customer.id)
+      setCustomerName(customer.name)
+    } else if (selectedCustomer.toLowerCase() === "walk in" || selectedCustomer === "walk-in") {
+      console.log("[DukaPlus] POSInterface: Setting to walk-in")
+      setSelectedCustomerId("walk-in")
+      // Fetch the actual walk-in customer name from API
+      fetch("/api/sales/walk-in-customer")
+        .then((res) => res.json())
+        .then((data) => {
+          const walkInName = data.walk_in_customer || "Walk In"
+          console.log("[DukaPlus] POSInterface: Walk-in name from API:", walkInName)
+          setCustomerName(walkInName)
+        })
+        .catch(() => {
+          console.log("[DukaPlus] POSInterface: Walk-in API failed, using fallback")
+          setCustomerName("Walk In")
+        })
+    } else {
+      console.log("[DukaPlus] POSInterface: No match found, treating as new customer name:", selectedCustomer)
+      setCustomerName(selectedCustomer)
     }
   }, [selectedCustomer, customers])
 

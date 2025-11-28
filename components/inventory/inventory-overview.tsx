@@ -86,6 +86,11 @@ export function InventoryOverview() {
     }
   }
 
+  const clearFilters = () => {
+    setSearchTerm("")
+    setCurrentPage(1)
+  }
+
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
@@ -111,6 +116,11 @@ export function InventoryOverview() {
             className="pl-9 input-base text-sm"
           />
         </div>
+        {searchTerm && (
+          <Button onClick={clearFilters} variant="outline" size="sm">
+            Clear Filters
+          </Button>
+        )}
         <Button
           onClick={() => {
             setSelectedProduct(null)
