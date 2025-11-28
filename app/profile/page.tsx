@@ -13,6 +13,7 @@ export default function ProfilePage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const [currentWarehouse, setCurrentWarehouse] = useState("")
+  const [backOfficeUrl, setBackOfficeUrl] = useState("")
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -24,6 +25,19 @@ export default function ProfilePage() {
     const warehouse = sessionStorage.getItem("selected_warehouse")
     if (warehouse) {
       setCurrentWarehouse(warehouse)
+    }
+
+    // Get base URL from tenant_credentials
+    const credentialsStr = sessionStorage.getItem("tenant_credentials")
+    if (credentialsStr) {
+      try {
+        const credentials = JSON.parse(credentialsStr)
+        if (credentials.baseUrl) {
+          setBackOfficeUrl(credentials.baseUrl)
+        }
+      } catch (e) {
+        console.error("Failed to parse tenant credentials:", e)
+      }
     }
   }, [])
 
@@ -39,15 +53,17 @@ export default function ProfilePage() {
             <h1 className="page-title">Settings</h1>
             <p className="page-subtitle">Manage your shifts and account settings</p>
           </div>
-          <a
-            href={typeof window !== "undefined" ? sessionStorage.getItem("tenant_base_url") || "#" : "#"}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 active:bg-primary/80 transition-colors shadow-sm hover:shadow-md whitespace-nowrap"
-          >
-            <span>Open Back Office</span>
-            <ExternalLink className="w-4 h-4" />
-          </a>
+          {backOfficeUrl && (
+            <a
+              href={backOfficeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 active:bg-primary/80 transition-colors shadow-sm hover:shadow-md whitespace-nowrap"
+            >
+              <span>Open Back Office</span>
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
         </div>
 
         <Tabs defaultValue="shifts" className="w-full">
