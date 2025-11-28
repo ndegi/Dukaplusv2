@@ -89,7 +89,14 @@ export function DashboardLayout({
       console.log("[DukaPlus] Starting customer fetch...")
 
       // First fetch walk-in customer
-      const walkInResponse = await fetch("/api/sales/walk-in-customer")
+      const selectedWarehouse =
+        sessionStorage.getItem("selected_warehouse") || ""
+      const walkInUrl = selectedWarehouse
+        ? `/api/sales/walk-in-customer?warehouse_id=${encodeURIComponent(
+            selectedWarehouse,
+          )}`
+        : "/api/sales/walk-in-customer"
+      const walkInResponse = await fetch(walkInUrl)
       let walkInName = "Walk In"
 
       if (walkInResponse.ok) {

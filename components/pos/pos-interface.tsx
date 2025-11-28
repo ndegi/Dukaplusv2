@@ -64,6 +64,18 @@ export function POSInterface({
   const [barcodeSearching, setBarcodeSearching] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
 
+  const getWalkInCustomerUrl = () => {
+    if (typeof window === "undefined") {
+      return "/api/sales/walk-in-customer";
+    }
+    const warehouse = sessionStorage.getItem("selected_warehouse") || "";
+    return warehouse
+      ? `/api/sales/walk-in-customer?warehouse_id=${encodeURIComponent(
+          warehouse
+        )}`
+      : "/api/sales/walk-in-customer";
+  };
+
   useEffect(() => {
     const initCart = async () => {
       const savedCart = await offlineStore.getCart();
@@ -77,7 +89,7 @@ export function POSInterface({
   useEffect(() => {
     const fetchCustomersWithWalkIn = async () => {
       try {
-        const walkInResponse = await fetch("/api/sales/walk-in-customer");
+        const walkInResponse = await fetch(getWalkInCustomerUrl());
         let walkInName = "";
 
         if (walkInResponse.ok) {
@@ -144,7 +156,7 @@ export function POSInterface({
     ) {
       setSelectedCustomerId("walk-in");
       // Fetch the actual walk-in customer name from API
-      fetch("/api/sales/walk-in-customer")
+      fetch(getWalkInCustomerUrl())
         .then((res) => res.json())
         .then((data) => {
           const walkInName = data.walk_in_customer || "Walk In";
@@ -165,7 +177,7 @@ export function POSInterface({
     const updateCustomerInfo = async () => {
       if (selectedCustomerId === "walk-in") {
         try {
-          const response = await fetch("/api/sales/walk-in-customer");
+          const response = await fetch(getWalkInCustomerUrl());
           if (response.ok) {
             const data = await response.json();
             const walkInName = data.walk_in_customer;

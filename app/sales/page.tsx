@@ -89,11 +89,20 @@ export default function SalesPage() {
   })
   const [showDatePicker, setShowDatePicker] = useState(false)
   const { currency } = useCurrency()
+  const getWalkInCustomerUrl = () => {
+    if (typeof window === "undefined") {
+      return "/api/sales/walk-in-customer"
+    }
+    const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
+    return warehouseId
+      ? `/api/sales/walk-in-customer?warehouse_id=${encodeURIComponent(warehouseId)}`
+      : "/api/sales/walk-in-customer"
+  }
 
   useEffect(() => {
     const fetchWalkInCustomer = async () => {
       try {
-        const response = await fetch("/api/sales/walk-in-customer")
+        const response = await fetch(getWalkInCustomerUrl())
         const data = await response.json()
         if (data.walk_in_customer) {
           setWalkInCustomer(data.walk_in_customer)

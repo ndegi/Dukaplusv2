@@ -5,33 +5,41 @@ export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies()
     const credentialsCookie = cookieStore.get("tenant_credentials")?.value
-    const warehouseId = cookieStore.get("warehouse_id")?.value
+    const searchParams = request.nextUrl.searchParams
+    const warehouseIdFromQuery = searchParams.get("warehouse_id")
+    const warehouseId =
+      warehouseIdFromQuery?.trim() ||
+      cookieStore.get("warehouse_id")?.value ||
+      ""
 
     if (!credentialsCookie) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    if (!warehouseId) {
-      return NextResponse.json({ error: "Missing warehouse_id" }, { status: 400 })
-    }
-
     const credentials = JSON.parse(credentialsCookie)
     const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
 
+    const walkInUrl = new URL(
+      "/api/method/dukaplus.services.rest.get_walk_in_customer",
+      credentials.baseUrl,
+    )
+
+    if (warehouseId) {
+      walkInUrl.searchParams.set("warehouse_id", warehouseId)
+    }
+
     console.log("[DukaPlus] Fetching walk-in customer with:", {
-      url: `${credentials.baseUrl}/api/method/dukaplus.services.rest.get_walk_in_customer?warehouse_id=${warehouseId}`,
+      url: walkInUrl.toString(),
       hasAuth: !!authHeader,
+      warehouseId,
     })
 
-    const response = await fetch(
-      `${credentials.baseUrl}/api/method/dukaplus.services.rest.get_walk_in_customer?warehouse_id=${warehouseId}`,
-      {
-        headers: {
-          Authorization: authHeader,
-          "Content-Type": "application/json",
-        },
+    const response = await fetch(walkInUrl.toString(), {
+      headers: {
+        Authorization: authHeader,
+        "Content-Type": "application/json",
       },
-    )
+    })
 
     const responseText = await response.text()
     console.log("[DukaPlus] Walk-in API raw response:", { status: response.status, body: responseText })
