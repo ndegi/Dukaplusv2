@@ -7,6 +7,7 @@ import { AlertCircle, CheckCircle, Plus, Trash2, ArrowRightLeft, ChevronDown, Ch
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { DateRangeFilter } from "@/components/reports/date-range-filter"
+import { EnhancedPagination } from "@/components/reports/enhanced-pagination"
 
 interface StockTransfer {
   material_transfer_id: string
@@ -54,6 +55,8 @@ export function StockTransferManager() {
     to: new Date(),
   })
   const [expandedTransferId, setExpandedTransferId] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   useEffect(() => {
     fetchTransfers()
@@ -344,6 +347,11 @@ export function StockTransferManager() {
     variant: "success",
   })
 
+  const totalPages = Math.ceil(filteredTransfers.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedTransfers = filteredTransfers.slice(startIndex, endIndex)
+
   return (
     <div className="space-y-6 p-6">
       <ConfirmationDialog
@@ -523,87 +531,99 @@ export function StockTransferManager() {
                   : "No stock transfers found"}
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="table-header">
-                    <tr>
-                      <th className="table-header-cell w-10"></th>
-                      <th className="table-header-cell text-left">TRANSFER ID</th>
-                      <th className="table-header-cell text-left">FROM WAREHOUSE</th>
-                      <th className="table-header-cell text-left">TO WAREHOUSE</th>
-                      <th className="table-header-cell text-left">DATE</th>
-                      <th className="table-header-cell text-left">STATUS</th>
-                      <th className="table-header-cell text-center">ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {filteredTransfers.map((transfer) => {
-                      const isExpanded = expandedTransferId === transfer.material_transfer_id
-                      return (
-                        <Fragment key={transfer.material_transfer_id}>
-                          <tr className="table-row">
-                            <td className="px-2 sm:px-4 py-3">
-                              {transfer.items && transfer.items.length > 0 && (
-                                <button
-                                  onClick={() =>
-                                    setExpandedTransferId(isExpanded ? null : transfer.material_transfer_id)
-                                  }
-                                  className="p-1 hover:bg-muted rounded transition-colors"
-                                >
-                                  {isExpanded ? (
-                                    <ChevronUp className="w-4 h-4 text-foreground" />
-                                  ) : (
-                                    <ChevronDown className="w-4 h-4 text-foreground" />
-                                  )}
-                                </button>
-                              )}
-                            </td>
-                            <td className="table-cell font-mono text-warning text-sm">
-                              {transfer.material_transfer_id}
-                            </td>
-                            <td className="table-cell">{transfer.from_warehouse || "N/A"}</td>
-                            <td className="table-cell">{transfer.to_warehouse || "N/A"}</td>
-                            <td className="table-cell">{transfer.posting_date}</td>
-                            <td className="table-cell">{getStatusBadge(transfer.docstatus)}</td>
-                            <td className="px-4 py-3">
-                              {transfer.docstatus === 0 && (
-                                <TableActionButtons
-                                  showSubmit={true}
-                                  showCancel={true}
-                                  onSubmit={() => handleSubmitTransfer(transfer.material_transfer_id)}
-                                  onCancel={() =>
-                                    handleCancelOrDeleteTransfer(transfer.material_transfer_id, transfer.docstatus)
-                                  }
-                                  docstatus={transfer.docstatus}
-                                  size="sm"
-                                />
-                              )}
-                              {transfer.docstatus === 1 && (
-                                <TableActionButtons
-                                  showCancel={true}
-                                  onCancel={() =>
-                                    handleCancelOrDeleteTransfer(transfer.material_transfer_id, transfer.docstatus)
-                                  }
-                                  docstatus={transfer.docstatus}
-                                  size="sm"
-                                />
-                              )}
-                              {transfer.docstatus === 2 && <span className="text-foreground text-sm">Cancelled</span>}
-                            </td>
-                          </tr>
-                          {isExpanded && transfer.items && transfer.items.length > 0 && (
-                            <tr>
-                              <td colSpan={7} className="px-4 py-2 bg-muted/30">
-                                {renderItemsTable(transfer.items)}
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="table-header">
+                      <tr>
+                        <th className="table-header-cell w-10"></th>
+                        <th className="table-header-cell text-left">TRANSFER ID</th>
+                        <th className="table-header-cell text-left">FROM WAREHOUSE</th>
+                        <th className="table-header-cell text-left">TO WAREHOUSE</th>
+                        <th className="table-header-cell text-left">DATE</th>
+                        <th className="table-header-cell text-left">STATUS</th>
+                        <th className="table-header-cell text-center">ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {paginatedTransfers.map((transfer) => {
+                        const isExpanded = expandedTransferId === transfer.material_transfer_id
+                        return (
+                          <Fragment key={transfer.material_transfer_id}>
+                            <tr className="table-row">
+                              <td className="px-2 sm:px-4 py-3">
+                                {transfer.items && transfer.items.length > 0 && (
+                                  <button
+                                    onClick={() =>
+                                      setExpandedTransferId(isExpanded ? null : transfer.material_transfer_id)
+                                    }
+                                    className="p-1 hover:bg-muted rounded transition-colors"
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronUp className="w-4 h-4 text-foreground" />
+                                    ) : (
+                                      <ChevronDown className="w-4 h-4 text-foreground" />
+                                    )}
+                                  </button>
+                                )}
+                              </td>
+                              <td className="table-cell font-mono text-warning text-sm">
+                                {transfer.material_transfer_id}
+                              </td>
+                              <td className="table-cell">{transfer.from_warehouse || "N/A"}</td>
+                              <td className="table-cell">{transfer.to_warehouse || "N/A"}</td>
+                              <td className="table-cell">{transfer.posting_date}</td>
+                              <td className="table-cell">{getStatusBadge(transfer.docstatus)}</td>
+                              <td className="px-4 py-3">
+                                {transfer.docstatus === 0 && (
+                                  <TableActionButtons
+                                    showSubmit={true}
+                                    showCancel={true}
+                                    onSubmit={() => handleSubmitTransfer(transfer.material_transfer_id)}
+                                    onCancel={() =>
+                                      handleCancelOrDeleteTransfer(transfer.material_transfer_id, transfer.docstatus)
+                                    }
+                                    docstatus={transfer.docstatus}
+                                    size="sm"
+                                  />
+                                )}
+                                {transfer.docstatus === 1 && (
+                                  <TableActionButtons
+                                    showCancel={true}
+                                    onCancel={() =>
+                                      handleCancelOrDeleteTransfer(transfer.material_transfer_id, transfer.docstatus)
+                                    }
+                                    docstatus={transfer.docstatus}
+                                    size="sm"
+                                  />
+                                )}
+                                {transfer.docstatus === 2 && <span className="text-foreground text-sm">Cancelled</span>}
                               </td>
                             </tr>
-                          )}
-                        </Fragment>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            {isExpanded && transfer.items && transfer.items.length > 0 && (
+                              <tr>
+                                <td colSpan={7} className="px-4 py-2 bg-muted/30">
+                                  {renderItemsTable(transfer.items)}
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {totalPages > 1 && (
+                  <EnhancedPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    startIndex={startIndex}
+                    endIndex={endIndex}
+                    totalRecords={filteredTransfers.length}
+                  />
+                )}
+              </>
             )}
           </div>
         )}

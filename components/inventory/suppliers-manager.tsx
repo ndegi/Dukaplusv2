@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { AlertCircle, Plus, Pencil, Trash2 } from "lucide-react"
+import { AlertCircle, Plus, Edit, Trash2, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { EnhancedPagination } from "@/components/reports/enhanced-pagination"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 
 interface Supplier {
@@ -20,6 +22,8 @@ export function SuppliersManager() {
   const [showModal, setShowModal] = useState(false)
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean
     title: string
@@ -94,6 +98,11 @@ export function SuppliersManager() {
       s.mobile_number?.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
+  const totalPages = Math.ceil(filteredSuppliers.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedSuppliers = filteredSuppliers.slice(startIndex, endIndex)
+
   return (
     <div className="space-y-4">
       <ConfirmationDialog
@@ -107,12 +116,13 @@ export function SuppliersManager() {
       />
 
       <div className="flex justify-between items-center gap-4">
-        <input
+        <Input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="input-base flex-1 max-w-md"
           placeholder="Search suppliers..."
+          icon={Search}
         />
         <Button onClick={() => setShowModal(true)} size="sm" className="bg-orange-500 hover:bg-orange-600">
           <Plus className="w-4 h-4 mr-2" />
@@ -135,41 +145,58 @@ export function SuppliersManager() {
             {searchQuery ? "No suppliers found matching your search" : "No suppliers found"}
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="table-header">
-                <tr>
-                  <th className="table-header-cell text-left uppercase">Supplier Name</th>
-                  <th className="table-header-cell text-left uppercase">Mobile Number</th>
-                  <th className="table-header-cell text-left uppercase">Email</th>
-                  <th className="table-header-cell text-center uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredSuppliers.map((supplier, idx) => (
-                  <tr key={idx} className="table-row">
-                    <td className="table-cell font-medium">{supplier.supplier_name}</td>
-                    <td className="table-cell">{supplier.mobile_number || "-"}</td>
-                    <td className="table-cell">{supplier.email || "-"}</td>
-                    <td className="table-cell text-center">
-                      <div className="flex justify-center gap-2">
-                        <button onClick={() => handleEdit(supplier)} className="action-btn-edit" title="Edit supplier">
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(supplier.supplier_name)}
-                          className="action-btn-delete"
-                          title="Delete supplier"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="table-header">
+                  <tr>
+                    <th className="table-header-cell text-left uppercase">Supplier Name</th>
+                    <th className="table-header-cell text-left uppercase">Mobile Number</th>
+                    <th className="table-header-cell text-left uppercase">Email</th>
+                    <th className="table-header-cell text-center uppercase">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedSuppliers.map((supplier, idx) => (
+                    <tr key={idx} className="table-row">
+                      <td className="table-cell font-medium">{supplier.supplier_name}</td>
+                      <td className="table-cell">{supplier.mobile_number || "-"}</td>
+                      <td className="table-cell">{supplier.email || "-"}</td>
+                      <td className="table-cell text-center">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => handleEdit(supplier)}
+                            className="action-btn-edit"
+                            title="Edit supplier"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(supplier.supplier_name)}
+                            className="action-btn-delete"
+                            title="Delete supplier"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <EnhancedPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                totalRecords={filteredSuppliers.length}
+              />
+            )}
+          </>
         )}
       </div>
 
@@ -260,7 +287,7 @@ function AddSupplierModal({
 
           <div>
             <label className="form-label">Supplier Name *</label>
-            <input
+            <Input
               type="text"
               value={supplierName}
               onChange={(e) => setSupplierName(e.target.value)}
@@ -272,7 +299,7 @@ function AddSupplierModal({
 
           <div>
             <label className="form-label">Mobile Number *</label>
-            <input
+            <Input
               type="tel"
               value={mobileNumber}
               onChange={(e) => setMobileNumber(e.target.value)}
@@ -283,7 +310,7 @@ function AddSupplierModal({
 
           <div>
             <label className="form-label">Email (Optional)</label>
-            <input
+            <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

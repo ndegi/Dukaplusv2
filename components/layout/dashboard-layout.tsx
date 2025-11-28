@@ -80,27 +80,55 @@ export function DashboardLayout({
 
   useEffect(() => {
     if (isPOS) {
-      fetchCustomers()
+      fetchWalkInCustomerFirst()
     }
   }, [isPOS])
 
-  const fetchCustomers = async () => {
+  const fetchWalkInCustomerFirst = async () => {
     try {
-      const response = await fetch("/api/customers/list")
-      if (response.ok) {
-        const data = await response.json()
-        const customerList = data.customers || []
-        setCustomers(
-          customerList.map((c: any) => ({
-            id: c.customer_id || c.customer_name,
-            name: c.customer_name,
-            mobile_number: c.mobile_number || c.mobile_no || c.phone || c.mobile || "",
-          })),
-        )
-        console.log("[DukaPlus] Fetched customers with mobile numbers:", customerList.length)
+      console.log("[DukaPlus] Starting customer fetch...")
+
+      // First fetch walk-in customer
+      const walkInResponse = await fetch("/api/sales/walk-in-customer")
+      let walkInName = "Walk In"
+
+      if (walkInResponse.ok) {
+        const walkInData = await walkInResponse.json()
+        walkInName = walkInData.walk_in_customer || "Walk In"
+        console.log("[DukaPlus] Fetched walk-in customer:", walkInName)
+      } else {
+        console.warn("[DukaPlus] Failed to fetch walk-in customer:", walkInResponse.status)
       }
+
+      // Then fetch regular customers
+      console.log("[DukaPlus] Fetching customers list...")
+      const customersResponse = await fetch("/api/customers/list")
+
+      if (!customersResponse.ok) {
+        console.error("[DukaPlus] Customers list API returned error:", customersResponse.status)
+        throw new Error(`Failed to fetch customers: ${customersResponse.status}`)
+      }
+
+      const customersData = await customersResponse.json()
+      console.log("[DukaPlus] Customers response:", customersData)
+
+      const customerList = customersData.customers || customersData.message?.customers || []
+      console.log("[DukaPlus] Extracted customer list:", customerList.length, "customers")
+
+      const allCustomers = [
+        { id: "walk-in", name: walkInName, mobile_number: "" },
+        ...customerList.map((c: any) => ({
+          id: c.customer_id || c.id,
+          name: c.customer_name || c.name,
+          mobile_number: c.mobile_number || "",
+        })),
+      ]
+
+      console.log("[DukaPlus] Setting customers state with", allCustomers.length, "total customers")
+      setCustomers(allCustomers)
     } catch (error) {
-      console.error("[DukaPlus] Failed to fetch customers:", error)
+      console.error("[DukaPlus] Error in fetchWalkInCustomerFirst:", error)
+      setCustomers([{ id: "walk-in", name: "Walk In", mobile_number: "" }])
     }
   }
 
@@ -320,16 +348,6 @@ export function DashboardLayout({
                 />
                 {showCustomerDropdown && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
-                    <button
-                      onClick={() => {
-                        setCustomerSearch("Walk In")
-                        onCustomerChange?.("Walk In")
-                        setShowCustomerDropdown(false)
-                      }}
-                      className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-900 dark:text-white text-sm border-b border-slate-200 dark:border-slate-600"
-                    >
-                      Walk In
-                    </button>
                     {customers
                       .filter(
                         (c) =>

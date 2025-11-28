@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
       invoice_items: body.invoice_items,
       payment_details: body.payment_details,
       warehouse_id: body.warehouse_id,
-      customer_name: body.customer_name || "Walk In",
-      customer_id: body.customer_id || "Walk In",
+      customer_name: body.customer_name || "", // Don't default to "Walk In", let backend handle it
+      customer_id: body.customer_id || "",
       total_sales_price: body.total_sales_price,
       mobile_number: body.mobile_number || "",
       logged_in_user: body.logged_in_user,

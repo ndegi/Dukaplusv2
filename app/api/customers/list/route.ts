@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
     const credentialsCookie = cookieStore.get("tenant_credentials")?.value
 
     if (!credentialsCookie) {
+      console.log("[DukaPlus] No credentials cookie found")
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
@@ -20,6 +21,8 @@ export async function GET(req: NextRequest) {
 
     const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
 
+    console.log("[DukaPlus] Fetching customers from:", credentials.baseUrl)
+
     const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.rest.get_all_customers`, {
       method: "GET",
       headers: {
@@ -30,17 +33,26 @@ export async function GET(req: NextRequest) {
 
     const data = await response.json()
 
+    console.log("[DukaPlus] Customers API response status:", response.status, "data:", data)
+
     if (!response.ok) {
       console.error("[DukaPlus] Get customers error:", { status: response.status, data })
       return NextResponse.json({ error: "Failed to fetch customers" }, { status: response.status })
     }
 
-    const customers = (data.message?.customers || []).map((customer: any) => ({
-      ...customer,
+    const customerList = data.message?.customers || data.customers || []
+    console.log("[DukaPlus] Extracted customer list length:", customerList.length)
+
+    const customers = customerList.map((customer: any) => ({
+      customer_id: customer.customer_id || customer.id,
+      customer_name: customer.customer_name || customer.name,
       mobile_number: customer.mobile_number || customer.mobile_no || customer.phone || customer.mobile || "",
+      paid_invoices: customer.paid_invoices || { count: 0, total: 0 },
+      unpaid_invoices: customer.unpaid_invoices || { count: 0, total: 0 },
+      total_sales: customer.total_sales || 0,
     }))
 
-    return NextResponse.json({ customers })
+    return NextResponse.json({ customers, message: { customers } })
   } catch (error) {
     console.error("[DukaPlus] Get customers error:", error)
     return NextResponse.json(

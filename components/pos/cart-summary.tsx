@@ -43,7 +43,7 @@ export function CartSummary({
   onClearCart,
   warehouse = "",
   user = "",
-  customerName = "Walk In",
+  customerName = "", // Removed hardcoded "Walk In" default
   mobileNumber = "",
   customerCredit = 0,
   loyaltyPoints = 0,
@@ -135,8 +135,8 @@ export function CartSummary({
         body: JSON.stringify({
           invoice_items: invoiceItems,
           warehouse_id: actualWarehouse,
-          customer_name: customerName,
-          customer_id: customerName,
+          customer_name: customerName || "Walk In", // Use provided customer or fallback
+          customer_id: customerName || "Walk In",
           total_sales_price: totalAmount,
           mobile_number: mobileNumber,
           logged_in_user: user,
@@ -175,7 +175,7 @@ export function CartSummary({
               rate: item.rate,
               amount: item.amount,
             })),
-            customer: draft.customer || "Walk In",
+            customer: draft.customer || "", // Removed hardcoded "Walk In"
             mobile: draft.store_mobile_number || "",
             draftId: draft.sales_id, // Pass draft ID for deletion
           },
@@ -197,7 +197,7 @@ export function CartSummary({
               rate: item.rate,
               amount: item.amount,
             })),
-            customer: draft.customer || "Walk In",
+            customer: draft.customer || "", // Removed hardcoded "Walk In"
             mobile: draft.store_mobile_number || "",
             draftId: draft.sales_id, // Pass draft ID for deletion
           },

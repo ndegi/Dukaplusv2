@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle, Plus, ChevronDown, ChevronUp, FileText, Trash
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { DateRangeFilter } from "@/components/reports/date-range-filter"
+import { EnhancedPagination } from "@/components/reports/enhanced-pagination"
 
 interface PurchaseReceipt {
   name: string
@@ -84,6 +85,8 @@ export function PurchaseReceiptsManager() {
   const [isLoadingOrders, setIsLoadingOrders] = useState(true)
   const [currency, setCurrency] = useState<string>("KES")
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   useEffect(() => {
     const warehouseId = sessionStorage.getItem("selected_warehouse") || ""
@@ -465,6 +468,11 @@ export function PurchaseReceiptsManager() {
     )
   }
 
+  const totalPages = Math.ceil(filteredReceipts.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedReceipts = filteredReceipts.slice(startIndex, endIndex)
+
   return (
     <div className="space-y-6">
       <ConfirmationDialog
@@ -725,106 +733,114 @@ export function PurchaseReceiptsManager() {
         {isLoading || isLoadingOrders ? (
           <p className="text-foreground p-6 text-center">Loading purchase receipts...</p>
         ) : filteredReceipts.length === 0 ? (
-          <p className="text-foreground text-center py-8">
-            {searchTerm || statusFilter !== "all" || (dateRange.from && dateRange.to)
-              ? "No receipts match your filters"
-              : "No purchase receipts found"}
-          </p>
+          <p className="p-6 text-center text-foreground text-sm">No purchase receipts found</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="table-header">
-                <tr>
-                  <th className="table-header-cell w-10"></th>
-                  <th className="table-header-cell text-left">Receipt ID</th>
-                  <th className="table-header-cell text-left">Supplier</th>
-                  <th className="table-header-cell text-left">Warehouse</th>
-                  <th className="table-header-cell text-left">Date</th>
-                  <th className="table-header-cell text-left">Status</th>
-                  <th className="table-header-cell text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredReceipts.map((receipt) => {
-                  const isExpanded = expandedReceipts.has(receipt.name)
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="table-header">
+                  <tr>
+                    <th className="table-header-cell w-10"></th>
+                    <th className="table-header-cell text-left uppercase">Receipt ID</th>
+                    <th className="table-header-cell text-left uppercase">Supplier</th>
+                    <th className="table-header-cell text-left uppercase">Warehouse</th>
+                    <th className="table-header-cell text-left uppercase">Date</th>
+                    <th className="table-header-cell text-left uppercase">Status</th>
+                    <th className="table-header-cell text-center uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedReceipts.map((receipt) => {
+                    const isExpanded = expandedReceipts.has(receipt.name)
 
-                  return (
-                    <>
-                      <tr key={receipt.name} className="table-row">
-                        <td className="px-2 sm:px-4 py-3">
-                          {receipt.items && receipt.items.length > 0 && (
-                            <button
-                              onClick={() => toggleReceiptExpansion(receipt.name)}
-                              className="p-1 hover:bg-muted rounded transition-colors"
-                            >
-                              {isExpanded ? (
-                                <ChevronUp className="w-4 h-4 text-foreground" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4 text-foreground" />
-                              )}
-                            </button>
-                          )}
-                        </td>
-                        <td className="table-cell font-mono text-warning text-sm">{receipt.name}</td>
-                        <td className="table-cell">{receipt.supplier}</td>
-                        <td className="table-cell">{receipt.set_warehouse}</td>
-                        <td className="table-cell">{receipt.posting_date}</td>
-                        <td className="table-cell">{getStatusBadge(receipt.status)}</td>
-                        <td className="px-4 py-3">
-                          <TableActionButtons
-                            showEdit={receipt.status.toLowerCase() === "draft"}
-                            onEdit={() => handleEditReceipt(receipt)}
-                            showSubmit={receipt.status.toLowerCase() === "draft"}
-                            onSubmit={() => handleSubmitReceipt(receipt.name)}
-                            showCancel={true}
-                            onCancel={() => handleCancelOrDeleteReceipt(receipt.name, receipt.status)}
-                            docstatus={receipt.status.toLowerCase() === "draft" ? 0 : 1}
-                            status={receipt.status}
-                            size="sm"
-                          />
-                        </td>
-                      </tr>
-                      {isExpanded && receipt.items && receipt.items.length > 0 && (
-                        <tr>
-                          <td colSpan={7} className="px-4 py-2 bg-muted/30">
-                            <div className="p-4">
-                              <h4 className="font-semibold text-sm mb-2 text-foreground">Items:</h4>
-                              <table className="w-full text-xs">
-                                <thead className="bg-muted">
-                                  <tr>
-                                    <th className="table-header-cell text-left">Item Code</th>
-                                    <th className="table-header-cell text-left">Item Name</th>
-                                    <th className="table-header-cell text-right">Quantity</th>
-                                    <th className="table-header-cell text-right">Rate</th>
-                                    <th className="table-header-cell text-right">Amount</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {receipt.items.map((item, idx) => (
-                                    <tr key={idx} className="border-b border-border">
-                                      <td className="p-2 font-mono text-muted-foreground">{item.item_code}</td>
-                                      <td className="p-2 text-foreground">{item.item_name}</td>
-                                      <td className="p-2 text-right text-foreground">{item.qty}</td>
-                                      <td className="p-2 text-right text-muted-foreground">
-                                        {currency} {item.rate.toFixed(2)}
-                                      </td>
-                                      <td className="p-2 text-right font-semibold text-foreground">
-                                        {currency} {item.amount.toFixed(2)}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
+                    return (
+                      <>
+                        <tr key={receipt.name} className="table-row">
+                          <td className="px-2 sm:px-4 py-3">
+                            {receipt.items && receipt.items.length > 0 && (
+                              <button
+                                onClick={() => toggleReceiptExpansion(receipt.name)}
+                                className="p-1 hover:bg-muted rounded transition-colors"
+                              >
+                                {isExpanded ? (
+                                  <ChevronUp className="w-4 h-4 text-foreground" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4 text-foreground" />
+                                )}
+                              </button>
+                            )}
+                          </td>
+                          <td className="table-cell font-mono text-warning text-sm">{receipt.name}</td>
+                          <td className="table-cell">{receipt.supplier}</td>
+                          <td className="table-cell">{receipt.set_warehouse}</td>
+                          <td className="table-cell">{receipt.posting_date}</td>
+                          <td className="table-cell">{getStatusBadge(receipt.status)}</td>
+                          <td className="px-4 py-3">
+                            <TableActionButtons
+                              showEdit={receipt.status.toLowerCase() === "draft"}
+                              onEdit={() => handleEditReceipt(receipt)}
+                              showSubmit={receipt.status.toLowerCase() === "draft"}
+                              onSubmit={() => handleSubmitReceipt(receipt.name)}
+                              showCancel={true}
+                              onCancel={() => handleCancelOrDeleteReceipt(receipt.name, receipt.status)}
+                              docstatus={receipt.status.toLowerCase() === "draft" ? 0 : 1}
+                              status={receipt.status}
+                              size="sm"
+                            />
                           </td>
                         </tr>
-                      )}
-                    </>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {isExpanded && receipt.items && receipt.items.length > 0 && (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-2 bg-muted/30">
+                              <div className="p-4">
+                                <h4 className="font-semibold text-sm mb-2 text-foreground">Items:</h4>
+                                <table className="w-full text-xs">
+                                  <thead className="bg-muted">
+                                    <tr>
+                                      <th className="table-header-cell text-left">Item Code</th>
+                                      <th className="table-header-cell text-left">Item Name</th>
+                                      <th className="table-header-cell text-right">Quantity</th>
+                                      <th className="table-header-cell text-right">Rate</th>
+                                      <th className="table-header-cell text-right">Amount</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {receipt.items.map((item, idx) => (
+                                      <tr key={idx} className="border-b border-border">
+                                        <td className="p-2 font-mono text-muted-foreground">{item.item_code}</td>
+                                        <td className="p-2 text-foreground">{item.item_name}</td>
+                                        <td className="p-2 text-right text-foreground">{item.qty}</td>
+                                        <td className="p-2 text-right text-muted-foreground">
+                                          {currency} {item.rate.toFixed(2)}
+                                        </td>
+                                        <td className="p-2 text-right font-semibold text-foreground">
+                                          {currency} {item.amount.toFixed(2)}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {totalPages > 1 && (
+              <EnhancedPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                totalRecords={filteredReceipts.length}
+              />
+            )}
+          </>
         )}
       </div>
     </div>

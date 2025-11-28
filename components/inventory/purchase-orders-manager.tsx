@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import { EnhancedPagination } from "@/components/reports/enhanced-pagination"
 import { useEffect, useState } from "react"
 import { AlertCircle, Plus, ChevronDown, ChevronUp, Trash2, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -59,6 +59,8 @@ export function PurchaseOrdersManager() {
     variant: "default",
   })
   const [message, setMessage] = useState<{ type: string; text: string } | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   useEffect(() => {
     fetchPurchaseOrders()
@@ -242,6 +244,11 @@ export function PurchaseOrdersManager() {
     })
   }
 
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex)
+
   return (
     <div className="space-y-4">
       <ConfirmationDialog
@@ -350,115 +357,127 @@ export function PurchaseOrdersManager() {
         ) : filteredOrders.length === 0 ? (
           <p className="p-6 text-center text-foreground text-sm">No purchase orders found</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="table-header">
-                <tr>
-                  <th className="table-header-cell w-10"></th>
-                  <th className="table-header-cell text-left uppercase">Order ID</th>
-                  <th className="table-header-cell text-left uppercase">Supplier</th>
-                  <th className="table-header-cell text-left uppercase">Date</th>
-                  <th className="table-header-cell text-right uppercase">Grand Total</th>
-                  <th className="table-header-cell text-center uppercase">Status</th>
-                  <th className="table-header-cell text-center uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredOrders.map((order) => {
-                  const isExpanded = expandedOrders.has(order.order_id)
-                  return (
-                    <>
-                      <tr key={order.order_id} className="table-row">
-                        <td className="table-cell">
-                          {order.items && order.items.length > 0 && (
-                            <button
-                              onClick={() => toggleOrderExpansion(order.order_id)}
-                              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="table-header">
+                  <tr>
+                    <th className="table-header-cell w-10"></th>
+                    <th className="table-header-cell text-left uppercase">Order ID</th>
+                    <th className="table-header-cell text-left uppercase">Supplier</th>
+                    <th className="table-header-cell text-left uppercase">Date</th>
+                    <th className="table-header-cell text-right uppercase">Grand Total</th>
+                    <th className="table-header-cell text-center uppercase">Status</th>
+                    <th className="table-header-cell text-center uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedOrders.map((order) => {
+                    const isExpanded = expandedOrders.has(order.order_id)
+                    return (
+                      <>
+                        <tr key={order.order_id} className="table-row">
+                          <td className="table-cell">
+                            {order.items && order.items.length > 0 && (
+                              <button
+                                onClick={() => toggleOrderExpansion(order.order_id)}
+                                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                              >
+                                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                              </button>
+                            )}
+                          </td>
+                          <td className="table-cell font-mono text-warning">{order.order_id}</td>
+                          <td className="table-cell">{order.supplier}</td>
+                          <td className="table-cell">{new Date(order.date).toLocaleDateString()}</td>
+                          <td className="table-cell text-right font-semibold">
+                            KES{" "}
+                            {order.grand_total.toLocaleString("en-KE", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td className="table-cell text-center">
+                            <span
+                              className={`badge ${
+                                order.status === "Draft"
+                                  ? "badge-secondary"
+                                  : order.status === "To Bill"
+                                    ? "badge-warning"
+                                    : order.status === "Completed"
+                                      ? "badge-success"
+                                      : "badge-info"
+                              }`}
                             >
-                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                            </button>
-                          )}
-                        </td>
-                        <td className="table-cell font-mono text-warning">{order.order_id}</td>
-                        <td className="table-cell">{order.supplier}</td>
-                        <td className="table-cell">{new Date(order.date).toLocaleDateString()}</td>
-                        <td className="table-cell text-right font-semibold">
-                          KES{" "}
-                          {order.grand_total.toLocaleString("en-KE", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td className="table-cell text-center">
-                          <span
-                            className={`badge ${
-                              order.status === "Draft"
-                                ? "badge-secondary"
-                                : order.status === "To Bill"
-                                  ? "badge-warning"
-                                  : order.status === "Completed"
-                                    ? "badge-success"
-                                    : "badge-info"
-                            }`}
-                          >
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="table-cell text-center">
-                          <TableActionButtons
-                            showEdit={order.docstatus === 0}
-                            onEdit={() => handleEditOrder(order.order_id)}
-                            showSubmit={order.docstatus === 0}
-                            onSubmit={() => handleSubmitOrder(order.order_id)}
-                            showCancel={true}
-                            showCreateReceipt={order.status !== "Draft"}
-                            onCancel={() => handleCancelOrDeleteOrder(order.order_id, order.docstatus)}
-                            onCreateReceipt={() => handleCreateReceipt(order.order_id)}
-                            docstatus={order.docstatus}
-                            status={order.status}
-                            size="sm"
-                          />
-                        </td>
-                      </tr>
-                      {isExpanded && order.items && order.items.length > 0 && (
-                        <tr>
-                          <td colSpan={7} className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50">
-                            <div className="p-4">
-                              <h4 className="font-semibold text-sm mb-2">Items:</h4>
-                              <table className="w-full text-xs">
-                                <thead className="bg-slate-100 dark:bg-slate-800 text-foreground">
-                                  <tr>
-                                    <th className="text-left p-2 font-semibold text-foreground">Item Code</th>
-                                    <th className="text-left p-2 font-semibold text-foreground">Item Name</th>
-                                    <th className="text-right p-2 font-semibold text-foreground">Quantity</th>
-                                    <th className="text-right p-2 font-semibold text-foreground">Rate</th>
-                                    <th className="text-right p-2 font-semibold text-foreground">Amount</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {order.items.map((item, idx) => (
-                                    <tr key={idx} className="border-b border-slate-200 dark:border-slate-700">
-                                      <td className="p-2 font-mono text-foreground">{item.item_code}</td>
-                                      <td className="p-2 text-foreground">{item.item_name}</td>
-                                      <td className="p-2 text-right text-foreground">{item.qty}</td>
-                                      <td className="p-2 text-right text-foreground">KES {item.rate.toFixed(2)}</td>
-                                      <td className="p-2 text-right font-semibold text-foreground">
-                                        KES {item.amount.toFixed(2)}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
+                              {order.status}
+                            </span>
+                          </td>
+                          <td className="table-cell text-center">
+                            <TableActionButtons
+                              showEdit={order.docstatus === 0}
+                              onEdit={() => handleEditOrder(order.order_id)}
+                              showSubmit={order.docstatus === 0}
+                              onSubmit={() => handleSubmitOrder(order.order_id)}
+                              showCancel={true}
+                              showCreateReceipt={order.status !== "Draft"}
+                              onCancel={() => handleCancelOrDeleteOrder(order.order_id, order.docstatus)}
+                              onCreateReceipt={() => handleCreateReceipt(order.order_id)}
+                              docstatus={order.docstatus}
+                              status={order.status}
+                              size="sm"
+                            />
                           </td>
                         </tr>
-                      )}
-                    </>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {isExpanded && order.items && order.items.length > 0 && (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50">
+                              <div className="p-4">
+                                <h4 className="font-semibold text-sm mb-2">Items:</h4>
+                                <table className="w-full text-xs">
+                                  <thead className="bg-slate-100 dark:bg-slate-800 text-foreground">
+                                    <tr>
+                                      <th className="text-left p-2 font-semibold text-foreground">Item Code</th>
+                                      <th className="text-left p-2 font-semibold text-foreground">Item Name</th>
+                                      <th className="text-right p-2 font-semibold text-foreground">Quantity</th>
+                                      <th className="text-right p-2 font-semibold text-foreground">Rate</th>
+                                      <th className="text-right p-2 font-semibold text-foreground">Amount</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {order.items.map((item, idx) => (
+                                      <tr key={idx} className="border-b border-slate-200 dark:border-slate-700">
+                                        <td className="p-2 font-mono text-foreground">{item.item_code}</td>
+                                        <td className="p-2 text-foreground">{item.item_name}</td>
+                                        <td className="p-2 text-right text-foreground">{item.qty}</td>
+                                        <td className="p-2 text-right text-foreground">KES {item.rate.toFixed(2)}</td>
+                                        <td className="p-2 text-right font-semibold text-foreground">
+                                          KES {item.amount.toFixed(2)}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {totalPages > 1 && (
+              <EnhancedPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                totalRecords={filteredOrders.length}
+              />
+            )}
+          </>
         )}
       </div>
     </div>
@@ -792,7 +811,7 @@ function NewOrderInlineForm({
           </div>
 
           <div>
-            <label className="block text-xs font-medium mb-1.5">Required By</label>
+            <label className="block text-xs font-medium">Required By</label>
             <input
               type="date"
               value={requiredBy}

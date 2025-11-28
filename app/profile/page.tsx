@@ -4,10 +4,10 @@ import { useAuth } from "@/hooks/use-auth"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { UserProfile } from "@/components/auth/user-profile"
 import { ShiftHistory } from "@/components/shift/shift-history"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Clock, User } from 'lucide-react'
+import { Clock, User, ExternalLink } from "lucide-react"
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth()
@@ -41,15 +41,15 @@ export default function ProfilePage() {
 
         <Tabs defaultValue="shifts" className="w-full">
           <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 rounded-lg h-auto">
-            <TabsTrigger 
-              value="shifts" 
+            <TabsTrigger
+              value="shifts"
               className="flex items-center gap-2 px-4 py-3 rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all"
             >
               <Clock className="w-4 h-4" />
               <span className="font-medium">Shifts</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="profile" 
+            <TabsTrigger
+              value="profile"
               className="flex items-center gap-2 px-4 py-3 rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all"
             >
               <User className="w-4 h-4" />
@@ -76,12 +76,33 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="profile" className="mt-6">
-            <div className="card-base p-6">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-foreground mb-2">Profile Settings</h2>
-                <p className="text-muted-foreground">Manage your account information and preferences</p>
+            <div className="space-y-6">
+              {/* Profile Settings Card */}
+              <div className="card-base p-6">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-foreground mb-2">Profile Settings</h2>
+                  <p className="text-muted-foreground">Manage your account information and preferences</p>
+                </div>
+                <UserProfile user={user} />
               </div>
-              <UserProfile user={user} />
+
+              <div className="card-base p-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Back Office</h3>
+                    <p className="text-muted-foreground text-sm">Access the main DukaPlus back office system</p>
+                  </div>
+                  <a
+                    href={typeof window !== "undefined" ? sessionStorage.getItem("tenant_base_url") || "#" : "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 active:bg-primary/80 transition-colors shadow-sm hover:shadow-md whitespace-nowrap"
+                  >
+                    <span>Open Back Office</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

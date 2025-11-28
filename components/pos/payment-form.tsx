@@ -48,7 +48,7 @@ export function PaymentForm({
   cartItems,
   onClose,
   onSuccess,
-  customerName: initialCustomerName = "Walk In",
+  customerName: initialCustomerName = "",
   mobileNumber: initialMobileNumber = "",
   invoiceId,
   isInvoicePayment = false,
@@ -88,7 +88,9 @@ export function PaymentForm({
       hasValue: !!initialMobileNumber,
     })
 
-    setCustomerName(initialCustomerName)
+    if (initialCustomerName) {
+      setCustomerName(initialCustomerName)
+    }
     setMobileNumber(initialMobileNumber || "")
   }, [initialCustomerName, initialMobileNumber])
 

@@ -321,8 +321,8 @@ export default function CustomersPage() {
                           )}
                         </button>
                       </th>
-                      <th className="table-header-cell text-right">Paid</th>
-                      <th className="table-header-cell text-right">Unpaid</th>
+                      <th className="table-header-cell text-right">Paid Total</th>
+                      <th className="table-header-cell text-right">Unpaid Total</th>
                       <th className="table-header-cell">Actions</th>
                     </tr>
                   </thead>
@@ -335,8 +335,12 @@ export default function CustomersPage() {
                         <td className="px-4 py-3 text-right text-warning font-semibold">
                           {formatCurrency(customer.total_sales)}
                         </td>
-                        <td className="table-cell-secondary text-right">{customer.paid_invoices.count}</td>
-                        <td className="table-cell-secondary text-right">{customer.unpaid_invoices.count}</td>
+                        <td className="table-cell-secondary text-right">
+                          {formatCurrency(customer.paid_invoices?.total || 0)}
+                        </td>
+                        <td className="table-cell-secondary text-right">
+                          {formatCurrency(customer.unpaid_invoices?.total || 0)}
+                        </td>
                         <td className="px-4 py-3">
                           <TableActionButtons showEdit={true} onEdit={() => handleEditCustomer(customer)} size="sm" />
                         </td>

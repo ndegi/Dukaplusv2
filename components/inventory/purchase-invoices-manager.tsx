@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle, Plus, ChevronDown, ChevronUp, FileText, Trash
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { DateRangeFilter } from "@/components/reports/date-range-filter"
+import { EnhancedPagination } from "@/components/reports/enhanced-pagination"
 
 interface PurchaseInvoice {
   name: string
@@ -78,6 +79,8 @@ export function PurchaseInvoicesManager() {
   const [showEditForm, setShowEditForm] = useState(false)
   const [editingInvoice, setEditingInvoice] = useState<PurchaseInvoice | null>(null)
   const currency = "KES" // Assuming currency is KES for simplicity
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   useEffect(() => {
     fetchInvoices()
@@ -215,7 +218,7 @@ export function PurchaseInvoicesManager() {
             setMessage({ type: "success", text: "Purchase invoice submitted successfully" })
             fetchInvoices()
           } else {
-            setMessage({ type: "error", text: data.message?.message || "Failed to submit purchase invoice" })
+            setMessage({ type: "error", text: data.message || "Failed to submit purchase invoice" })
           }
         } catch (error) {
           setMessage({ type: "error", text: "Error submitting purchase invoice" })
@@ -226,15 +229,11 @@ export function PurchaseInvoicesManager() {
     })
   }
 
-  const handleCancelOrDeleteInvoice = async (invoiceId: string, docstatus: number) => {
-    const isDraft = docstatus === 0
-
+  const handleCancelInvoice = async (invoiceId: string) => {
     setConfirmDialog({
       open: true,
-      title: isDraft ? "Delete Purchase Invoice?" : "Cancel Purchase Invoice?",
-      description: isDraft
-        ? `Delete draft invoice ${invoiceId}? This action cannot be undone.`
-        : `Cancel invoice ${invoiceId}? This action cannot be undone.`,
+      title: "Cancel Purchase Invoice?",
+      description: `Cancel invoice ${invoiceId}? This action cannot be undone.`,
       action: async () => {
         try {
           const response = await fetch("/api/purchase-invoices/cancel", {
@@ -246,17 +245,14 @@ export function PurchaseInvoicesManager() {
           const data = await response.json()
 
           if (response.ok) {
-            setMessage({ type: "success", text: `Purchase invoice ${isDraft ? "deleted" : "cancelled"} successfully` })
+            setMessage({ type: "success", text: "Purchase invoice cancelled successfully" })
             fetchInvoices()
           } else {
-            setMessage({
-              type: "error",
-              text: data.message?.message || `Failed to ${isDraft ? "delete" : "cancel"} purchase invoice`,
-            })
+            setMessage({ type: "error", text: data.message || "Failed to cancel purchase invoice" })
           }
         } catch (error) {
-          setMessage({ type: "error", text: `Error ${isDraft ? "deleting" : "canceling"} purchase invoice` })
-          console.error("[DukaPlus] Error:", error)
+          setMessage({ type: "error", text: "Error cancelling purchase invoice" })
+          console.error("[DukaPlus] Error cancelling purchase invoice:", error)
         }
       },
       variant: "danger",
@@ -363,6 +359,11 @@ export function PurchaseInvoicesManager() {
 
     return matchesSearch && matchesStatus && matchesDateRange
   })
+
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedInvoices = filteredInvoices.slice(startIndex, endIndex)
 
   const toggleInvoiceExpansion = (invoiceId: string) => {
     setExpandedInvoices((prev) => {
@@ -881,7 +882,7 @@ export function PurchaseInvoicesManager() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filteredInvoices.map((invoice) => {
+                {paginatedInvoices.map((invoice) => {
                   const isExpanded = expandedInvoices.has(invoice.name)
                   const isDraft = invoice.docstatus === 0
                   const isUnpaid = invoice.status.toLowerCase() === "unpaid"
@@ -919,9 +920,7 @@ export function PurchaseInvoicesManager() {
                               setShowPaymentView(true)
                             }}
                             showCancel={true}
-                            onCancel={() => handleCancelOrDeleteInvoice(invoice.name, invoice.docstatus)}
-                            docstatus={invoice.docstatus}
-                            status={invoice.status}
+                            onCancel={() => handleCancelInvoice(invoice.name)}
                             size="sm"
                           />
                         </td>
@@ -966,6 +965,16 @@ export function PurchaseInvoicesManager() {
                 })}
               </tbody>
             </table>
+            {totalPages > 1 && (
+              <EnhancedPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                totalRecords={filteredInvoices.length}
+              />
+            )}
           </div>
         )}
       </div>

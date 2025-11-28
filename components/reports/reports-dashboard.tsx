@@ -4,12 +4,13 @@ import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DateRangeFilter } from "./date-range-filter"
 import { ExportButton } from "./export-button"
-import { AlertCircle, ChevronLeft, ChevronRight, Search, ChevronsLeft, ChevronsRight } from "lucide-react"
+import { AlertCircle, Search } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useCurrency } from "@/hooks/use-currency"
+import { EnhancedPagination } from "./enhanced-pagination"
 
 interface User {
   id: string
@@ -250,115 +251,6 @@ export function ReportsDashboard({ user }: { user: User }) {
           />
         </TabsContent>
       </Tabs>
-    </div>
-  )
-}
-
-function EnhancedPagination({
-  currentPage,
-  totalPages,
-  onPageChange,
-  startIndex,
-  endIndex,
-  totalRecords,
-}: {
-  currentPage: number
-  totalPages: number
-  onPageChange: (page: number) => void
-  startIndex: number
-  endIndex: number
-  totalRecords: number
-}) {
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = []
-
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i)
-      }
-    } else {
-      if (currentPage <= 3) {
-        pages.push(1, 2, 3, 4, "...", totalPages)
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
-      } else {
-        pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages)
-      }
-    }
-
-    return pages
-  }
-
-  return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-200 dark:border-slate-700">
-      <div className="text-sm text-gray-600 dark:text-gray-400">
-        Showing {startIndex + 1} to {Math.min(endIndex, totalRecords)} of {totalRecords} records
-      </div>
-
-      <div className="flex items-center gap-1">
-        {/* First page */}
-        <Button
-          onClick={() => onPageChange(1)}
-          disabled={currentPage === 1}
-          variant="outline"
-          size="sm"
-          className="h-8 w-8 p-0"
-        >
-          <ChevronsLeft className="w-4 h-4" />
-        </Button>
-
-        {/* Previous page */}
-        <Button
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          variant="outline"
-          size="sm"
-          className="h-8 w-8 p-0"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-
-        {/* Page numbers */}
-        {getPageNumbers().map((page, idx) =>
-          page === "..." ? (
-            <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">
-              ...
-            </span>
-          ) : (
-            <Button
-              key={page}
-              onClick={() => onPageChange(page as number)}
-              variant={currentPage === page ? "default" : "outline"}
-              size="sm"
-              className={`h-8 w-8 p-0 ${currentPage === page ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
-            >
-              {page}
-            </Button>
-          ),
-        )}
-
-        {/* Next page */}
-        <Button
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          variant="outline"
-          size="sm"
-          className="h-8 w-8 p-0"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-
-        {/* Last page */}
-        <Button
-          onClick={() => onPageChange(totalPages)}
-          disabled={currentPage === totalPages}
-          variant="outline"
-          size="sm"
-          className="h-8 w-8 p-0"
-        >
-          <ChevronsRight className="w-4 h-4" />
-        </Button>
-      </div>
     </div>
   )
 }

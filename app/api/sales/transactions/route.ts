@@ -11,7 +11,8 @@ export async function POST(request: NextRequest) {
     }
 
     const credentials = JSON.parse(credentialsCookie)
-    const { totalAmount, itemCount, payments } = await request.json()
+    const body = await request.json()
+    const { totalAmount, itemCount, payments } = body
 
     const authHeader = `token ${credentials.api_key}:${credentials.api_secret}`
 
@@ -36,8 +37,8 @@ export async function POST(request: NextRequest) {
         Authorization: authHeader,
       },
       body: JSON.stringify({
-        warehouse_id: "Emidan Farm - DP",
-        customer_name: "Walk In",
+        warehouse_id: body.warehouse_id || "Emidan Farm - DP", // Use provided warehouse or fallback
+        customer_name: body.customer_name || "", // Don't hardcode "Walk In"
         ...paymentData,
         timestamp: new Date().toISOString(),
       }),

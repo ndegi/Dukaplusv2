@@ -46,8 +46,8 @@ export function POSInterface({
   const [showPayment, setShowPayment] = useState(false)
   const [totalAmount, setTotalAmount] = useState(0)
   const [customers, setCustomers] = useState<Customer[]>([])
-  const [selectedCustomerId, setSelectedCustomerId] = useState(selectedCustomer)
-  const [customerName, setCustomerName] = useState("Walk In")
+  const [selectedCustomerId, setSelectedCustomerId] = useState(selectedCustomer || "walk-in")
+  const [customerName, setCustomerName] = useState("")
   const [mobileNumber, setMobileNumber] = useState("")
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null)
   const [invoiceOutstandingAmount, setInvoiceOutstandingAmount] = useState<number | null>(null)
@@ -68,19 +68,44 @@ export function POSInterface({
   }, [])
 
   useEffect(() => {
-    const fetchCustomers = async () => {
+    const fetchCustomersWithWalkIn = async () => {
       try {
-        const response = await fetch("/api/customers/list")
-        if (!response.ok) throw new Error("Failed to fetch customers")
+        const walkInResponse = await fetch("/api/sales/walk-in-customer")
+        let walkInName = ""
+
+        if (walkInResponse.ok) {
+          const walkInData = await walkInResponse.json()
+          walkInName = walkInData.walk_in_customer || "Walk In"
+        } else {
+          walkInName = "Walk In"
+        }
+
+        const response = await fetch("/api/sales/customers")
+        if (!response.ok) {
+          throw new Error(`Failed to fetch customers: ${response.status}`)
+        }
 
         const data = await response.json()
-        setCustomers(data.customers || [])
+        const customerList = data.message?.customers || data.customers || []
+
+        const allCustomers = [
+          { id: "walk-in", name: walkInName },
+          ...customerList.map((c: any) => ({ id: c.customer_id || c.customer_name, name: c.customer_name })),
+        ]
+
+        setCustomers(allCustomers)
+        if (!selectedCustomerId) {
+          setSelectedCustomerId("walk-in")
+          setCustomerName(walkInName)
+        }
       } catch (error) {
-        console.error("[DukaPlus] Failed to fetch customers:", error)
+        setCustomers([{ id: "walk-in", name: "Walk In" }])
+        setSelectedCustomerId("walk-in")
+        setCustomerName("Walk In")
       }
     }
 
-    fetchCustomers()
+    fetchCustomersWithWalkIn()
   }, [])
 
   useEffect(() => {
@@ -95,17 +120,41 @@ export function POSInterface({
   }, [cart])
 
   useEffect(() => {
+    if (selectedCustomer && selectedCustomer !== selectedCustomerId) {
+      // Find customer ID by name from the customers list
+      const customer = customers.find((c) => c.name === selectedCustomer || c.id === selectedCustomer)
+      if (customer) {
+        setSelectedCustomerId(customer.id)
+      } else if (selectedCustomer === "Walk In" || selectedCustomer === "walk-in") {
+        setSelectedCustomerId("walk-in")
+      } else {
+        // If not found in list, use the value as-is (could be customer name)
+        setSelectedCustomerId(selectedCustomer)
+      }
+    }
+  }, [selectedCustomer, customers])
+
+  useEffect(() => {
     const updateCustomerInfo = async () => {
-      if (selectedCustomer === "Walk In" || selectedCustomer === "walk-in") {
-        setCustomerName("Walk In")
-        setMobileNumber("")
-        setCustomerCredit(0)
-        setLoyaltyPoints(0)
-        console.log("[DukaPlus] Reset to Walk In customer")
+      if (selectedCustomerId === "walk-in") {
+        try {
+          const response = await fetch("/api/sales/walk-in-customer")
+          if (response.ok) {
+            const data = await response.json()
+            const walkInName = data.walk_in_customer
+            setCustomerName(walkInName)
+            setMobileNumber("")
+            setCustomerCredit(0)
+            setLoyaltyPoints(0)
+            return
+          }
+        } catch (error) {
+          console.error("Failed to fetch walk-in customer:", error)
+        }
         return
       }
 
-      const customer = customers.find((c) => c.id === selectedCustomer)
+      const customer = customers.find((c) => c.id === selectedCustomerId || c.name === selectedCustomerId)
       if (customer) {
         setCustomerName(customer.name)
         try {
@@ -114,10 +163,9 @@ export function POSInterface({
             const data = await response.json()
             const fullCustomer = data.customers?.find(
               (c: any) =>
-                (c.customer_id || c.customer_name) === selectedCustomer ||
-                c.customer_name === selectedCustomer ||
-                c.id === selectedCustomer ||
-                c.name === selectedCustomer,
+                (c.customer_id || c.customer_name) === selectedCustomerId ||
+                c.customer_name === selectedCustomerId ||
+                c.name === selectedCustomerId,
             )
 
             if (fullCustomer) {
@@ -129,50 +177,19 @@ export function POSInterface({
                 fullCustomer.contact_mobile ||
                 ""
 
-              console.log("[DukaPlus] Full customer data received:", {
-                id: fullCustomer.id,
-                customerId: fullCustomer.customer_id,
-                name: fullCustomer.customer_name || fullCustomer.name,
-                allFields: fullCustomer,
-                resolvedMobile: mobile,
-              })
-
               setMobileNumber(mobile)
               setCustomerCredit(fullCustomer.account_credit || 0)
               setLoyaltyPoints(fullCustomer.loyalty_points || 0)
-
-              console.log("[DukaPlus] POS Interface updated customer info:", {
-                name: fullCustomer.customer_name || fullCustomer.name,
-                mobile,
-                credit: fullCustomer.account_credit,
-                points: fullCustomer.loyalty_points,
-              })
-            } else {
-              console.log("[DukaPlus] Customer not found in API response. Searched for:", selectedCustomer)
-              console.log(
-                "[DukaPlus] Available customers:",
-                data.customers?.map((c: any) => ({
-                  id: c.id,
-                  customerId: c.customer_id,
-                  name: c.customer_name || c.name,
-                })),
-              )
-              setCustomerName(selectedCustomer)
             }
-          } else {
-            console.error("[DukaPlus] Failed to fetch customer list")
           }
         } catch (error) {
-          console.error("[DukaPlus] Failed to fetch customer details:", error)
+          console.error("Failed to fetch customer details:", error)
         }
-      } else {
-        console.log("[DukaPlus] Customer not found in local state, using selected name:", selectedCustomer)
-        setCustomerName(selectedCustomer)
       }
     }
 
     updateCustomerInfo()
-  }, [selectedCustomer, customers])
+  }, [selectedCustomerId, customers])
 
   useEffect(() => {
     const handleLoadDraftItems = (event: any) => {
@@ -207,7 +224,6 @@ export function POSInterface({
     if (pendingInvoice) {
       try {
         const invoice = JSON.parse(pendingInvoice)
-        console.log("[DukaPlus] Loading pending invoice payment:", invoice)
         setCustomerName(invoice.customer_name || "Walk In")
         setMobileNumber(invoice.mobile_number || "")
         setPendingInvoiceId(invoice.sales_id)
@@ -307,13 +323,11 @@ export function POSInterface({
         return
       }
 
-      // Search for product by barcode in the products list
       let foundProduct = products.find(
         (p) => p.barcode?.toLowerCase() === barcode.toLowerCase() || p.sku?.toLowerCase() === barcode.toLowerCase(),
       )
 
       if (!foundProduct) {
-        // If not found locally, fetch all products and search
         const response = await fetch(`/api/inventory/products?warehouse_id=${encodeURIComponent(warehouse)}`, {
           method: "GET",
           headers: {
