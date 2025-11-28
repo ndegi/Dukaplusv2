@@ -107,12 +107,6 @@ export function PaymentForm({
   const pointsToEarn = Math.floor(totalAmount * 0.1);
 
   useEffect(() => {
-    console.log("[DukaPlus] PaymentForm received customer data:", {
-      name: initialCustomerName,
-      mobile: initialMobileNumber,
-      hasValue: !!initialMobileNumber,
-    });
-
     if (initialCustomerName) {
       setCustomerName(initialCustomerName);
     }
@@ -157,7 +151,6 @@ export function PaymentForm({
         }
       }
     } catch (error) {
-      console.error("[DukaPlus] Failed to check shift status:", error);
     } finally {
       setShiftCheckComplete(true);
     }
@@ -205,7 +198,6 @@ export function PaymentForm({
         }
       }
     } catch (error) {
-      console.error("[DukaPlus] Failed to fetch payment modes:", error);
       const fallbackModes = [
         { mode_of_payment: "Cash" },
         { mode_of_payment: "Mpesa" },
@@ -225,36 +217,26 @@ export function PaymentForm({
   };
 
   useEffect(() => {
-    console.log(
-      "[DukaPlus] PaymentForm: initialCustomerName prop changed to:",
-      initialCustomerName
-    );
-    console.log(
-      "[DukaPlus] PaymentForm: Current customerNameState:",
-      customerNameState
-    );
+    initialCustomerName;
+    customerNameState;
 
     if (initialCustomerName && initialCustomerName !== customerNameState) {
-      console.log(
-        "[DukaPlus] PaymentForm: Updating customer name to:",
-        initialCustomerName
-      );
       setCustomerName(initialCustomerName);
     }
   }, [initialCustomerName]);
 
   useEffect(() => {
-    console.log(
-      "[DukaPlus] PaymentForm: initialMobileNumber prop changed to:",
-      initialMobileNumber
-    );
-    console.log(
-      "[DukaPlus] PaymentForm: Current mobileNumberState:",
-      mobileNumberState
-    );
+    initialMobileNumber;
+
+    mobileNumberState;
 
     setMobileNumber(initialMobileNumber || "");
   }, [initialMobileNumber]);
+
+  const isWalkInCustomer = () => {
+    const name = (customerNameState || "").trim().toLowerCase();
+    return !name || name === "walk in" || name === "walkin" || name === "walk-in";
+  };
 
   const creditAmount = useCredit;
   const pointsAmount = redeemPoints * pointsValue;
@@ -283,20 +265,6 @@ export function PaymentForm({
 
   const canComplete = isPaymentComplete && !hasUnconfirmedSTKPayments;
 
-  console.log("[DukaPlus] Payment state:", {
-    totalPaid,
-    remaining,
-    isPaymentComplete,
-    hasUnconfirmedSTKPayments,
-    canComplete,
-    stkStatus,
-    splitPayments: splitPayments.map((p) => ({
-      mode: p.mode,
-      amount: p.amount,
-      isPaid: p.isPaid,
-    })),
-  });
-
   const addPaymentSplit = () => {
     const newId = Math.max(...splitPayments.map((p) => p.id), 0) + 1;
     setSplitPayments([
@@ -321,6 +289,26 @@ export function PaymentForm({
     field: keyof PaymentSplit,
     value: any
   ) => {
+    const previous = splitPayments.find((p) => p.id === id);
+
+    // prevent credit for walk-in customers
+    if (field === "mode" && value.toLowerCase() === "credit") {
+      if (isWalkInCustomer()) {
+        setMessage({
+          type: "error",
+          text: "Credit sale is not allowed for walk-in customers. Please select a registered customer.",
+        });
+
+        // revert mode back to previous value
+        setSplitPayments(
+          splitPayments.map((p) =>
+            p.id === id ? { ...p, mode: previous?.mode || "Cash" } : p
+          )
+        );
+        return;
+      }
+    }
+
     setSplitPayments(
       splitPayments.map((p) =>
         p.id === id
@@ -399,7 +387,6 @@ export function PaymentForm({
         setMessage({ type: "error", text: errorMessage });
       }
     } catch (error) {
-      console.error("[DukaPlus] STK Push error:", error);
       setStkStatus((prev) => ({ ...prev, [paymentId]: "failure" }));
       setMessage({
         type: "error",
@@ -414,10 +401,6 @@ export function PaymentForm({
 
   const printReceipt = async (salesId: string) => {
     try {
-      console.log(
-        "[DukaPlus] Printing receipt to 192.168.1.100 for sale:",
-        salesId
-      );
       const printWindow = window.open("", "_blank");
       if (printWindow) {
         printWindow.document.write(`
@@ -434,20 +417,15 @@ export function PaymentForm({
           </html>
         `);
       }
-      console.log("[DukaPlus] Print job sent successfully");
-    } catch (error) {
-      console.error("[DukaPlus] Failed to print receipt:", error);
-    }
+    } catch (error) {}
   };
 
   const sendReceipt = async (salesId: string, mobile: string) => {
     if (!mobile) {
-      console.log("[DukaPlus] No mobile number provided, skipping send");
       return;
     }
 
     try {
-      console.log("[DukaPlus] Sending receipt to customer:", mobile);
       const response = await fetch("/api/sales/send-receipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -459,14 +437,14 @@ export function PaymentForm({
 
       const data = await response.json();
       if (response.ok) {
-        console.log("[DukaPlus] Receipt sent successfully");
         setMessage({ type: "success", text: "Receipt sent to customer" });
       } else {
-        console.error("[DukaPlus] Failed to send receipt:", data.message);
+        setMessage({
+          type: "error",
+          text: data.message?.message || "Failed to send receipt",
+        });
       }
-    } catch (error) {
-      console.error("[DukaPlus] Error sending receipt:", error);
-    }
+    } catch (error) {}
   };
 
   const saveDraft = async () => {
@@ -520,7 +498,6 @@ export function PaymentForm({
         });
       }
     } catch (error) {
-      console.error("[DukaPlus] Error saving draft:", error);
       setMessage({ type: "error", text: "Failed to save to queue" });
     } finally {
       setIsProcessing(false);
@@ -552,24 +529,42 @@ export function PaymentForm({
       setMessage(null);
 
       try {
+        const nonCreditPayments = splitPayments.filter(
+          (payment) => payment.mode.toLowerCase() !== "credit"
+        );
+
+        const invoicePayload: {
+          sales_id: string;
+          payment_details?: {
+            mode_of_payment: string;
+            amount: number;
+            total_sales_price: number;
+            reference: string;
+          }[];
+        } = {
+          sales_id: invoiceId,
+        };
+
+        if (nonCreditPayments.length > 0) {
+          invoicePayload.payment_details = nonCreditPayments.map((payment) => ({
+            mode_of_payment: payment.mode,
+            amount: payment.amount,
+            total_sales_price: totalAmount,
+            reference: payment.reference || "",
+          }));
+        }
+
+        console.log("Submitting invoice payment payload:", invoicePayload);
+
         const response = await fetch("/api/sales/invoice/submit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sales_id: invoiceId,
-            payment_details: splitPayments.map((payment) => ({
-              mode_of_payment: payment.mode,
-              amount: payment.amount,
-              reference:
-                payment.mode.toLowerCase() === "credit"
-                  ? ""
-                  : payment.reference || "",
-            })),
-          }),
+          body: JSON.stringify(invoicePayload),
         });
 
         const data = await response.json();
         if (response.ok) {
+          console.log("Invoice payment response:", data);
           setMessage({
             type: "success",
             text: "Payment processed successfully",
@@ -584,7 +579,6 @@ export function PaymentForm({
           });
         }
       } catch (error) {
-        console.error("[DukaPlus] Payment error:", error);
         setMessage({
           type: "error",
           text: "An error occurred while processing payment",
@@ -603,6 +597,20 @@ export function PaymentForm({
       return;
     }
 
+    if (isWalkInCustomer()) {
+      const hasCreditMode = splitPayments.some(
+        (payment) => payment.mode.toLowerCase() === "credit"
+      );
+
+      if (hasCreditMode) {
+        setMessage({
+          type: "error",
+          text: "Walk-in customers cannot be assigned credit payments.",
+        });
+        return;
+      }
+    }
+
     setIsProcessing(true);
     setMessage(null);
 
@@ -614,18 +622,16 @@ export function PaymentForm({
       const [year, month, day] = salesDate.split("-");
       const formattedDate = `${day}-${month}-${year}`;
 
+      const nonCreditPayments = splitPayments.filter(
+        (payment) => payment.mode.toLowerCase() !== "credit"
+      );
+
       const payload: any = {
         invoice_items: cartItems.map((item) => ({
           product_id: item.id,
           quantity: item.quantity,
           product_name: item.name,
           product_price: item.price,
-        })),
-        payment_details: splitPayments.map((payment) => ({
-          mode_of_payment: payment.mode,
-          amount: payment.amount,
-          reference:
-            payment.mode.toLowerCase() === "" ? "" : payment.reference || "",
         })),
         warehouse_id: warehouse,
         customer_name: customerNameState,
@@ -639,6 +645,17 @@ export function PaymentForm({
         loyalty_points_redeemed: redeemPoints,
       };
 
+      if (nonCreditPayments.length > 0) {
+        payload.payment_details = nonCreditPayments.map((payment) => ({
+          mode_of_payment: payment.mode,
+          amount: payment.amount,
+          total_sales_price: totalAmount,
+          reference: payment.reference || "",
+        }));
+      }
+
+      console.log("Submitting POS payment payload:", payload);
+
       if (draftId) {
         payload.sales_id = draftId;
       }
@@ -651,6 +668,7 @@ export function PaymentForm({
 
       const data = await response.json();
       if (response.ok) {
+        console.log("POS payment response:", data);
         const salesId =
           data.sales_id || data.message?.sales_id || data.data?.sales_id;
 
@@ -677,7 +695,6 @@ export function PaymentForm({
         setMessage({ type: "error", text: data.message || "Payment failed" });
       }
     } catch (error) {
-      console.error("[DukaPlus] Payment error:", error);
       setMessage({
         type: "error",
         text: "An error occurred while processing payment",

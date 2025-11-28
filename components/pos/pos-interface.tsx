@@ -1,34 +1,37 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { ProductBrowser } from "./product-browser"
-import { CartSummary } from "./cart-summary"
-import { PaymentForm } from "./payment-form"
-import { offlineStore } from "@/lib/db/offline-store"
-import { BarcodeInput } from "./barcode-input"
+import { useState, useEffect } from "react";
+import { ProductBrowser } from "./product-browser";
+import { CartSummary } from "./cart-summary";
+import { PaymentForm } from "./payment-form";
+import { offlineStore } from "@/lib/db/offline-store";
+import { BarcodeInput } from "./barcode-input";
 
 interface User {
-  id: string
-  name: string
-  warehouse: string
+  id: string;
+  name: string;
+  warehouse: string;
 }
 
 interface CartItem {
-  id: string
-  name: string
-  sku: string
-  price: number
-  quantity: number
-  subtotal: number
-  unit_of_measure?: string
-  sellingPrices?: Array<{ unit_of_measure: string; unit_selling_price: number }>
+  id: string;
+  name: string;
+  sku: string;
+  price: number;
+  quantity: number;
+  subtotal: number;
+  unit_of_measure?: string;
+  sellingPrices?: Array<{
+    unit_of_measure: string;
+    unit_selling_price: number;
+  }>;
 }
 
 interface Customer {
-  id: string
-  name: string
-  account_credit?: number
-  loyalty_points?: number
+  id: string;
+  name: string;
+  account_credit?: number;
+  loyalty_points?: number;
 }
 
 export function POSInterface({
@@ -37,162 +40,162 @@ export function POSInterface({
   quantity,
   selectedCustomer,
 }: {
-  user: User
-  searchTerm: string
-  quantity: number
-  selectedCustomer: string
+  user: User;
+  searchTerm: string;
+  quantity: number;
+  selectedCustomer: string;
 }) {
-  const [cart, setCart] = useState<CartItem[]>([])
-  const [showPayment, setShowPayment] = useState(false)
-  const [totalAmount, setTotalAmount] = useState(0)
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [selectedCustomerId, setSelectedCustomerId] = useState(selectedCustomer || "walk-in")
-  const [customerName, setCustomerName] = useState("")
-  const [mobileNumber, setMobileNumber] = useState("")
-  const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null)
-  const [invoiceOutstandingAmount, setInvoiceOutstandingAmount] = useState<number | null>(null)
-  const [draftId, setDraftId] = useState<string | null>(null)
-  const [customerCredit, setCustomerCredit] = useState(0)
-  const [loyaltyPoints, setLoyaltyPoints] = useState(0)
-  const [barcodeSearching, setBarcodeSearching] = useState(false)
-  const [products, setProducts] = useState<any[]>([])
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [showPayment, setShowPayment] = useState(false);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState(
+    selectedCustomer || "walk-in"
+  );
+  const [customerName, setCustomerName] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null);
+  const [invoiceOutstandingAmount, setInvoiceOutstandingAmount] = useState<
+    number | null
+  >(null);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [customerCredit, setCustomerCredit] = useState(0);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [barcodeSearching, setBarcodeSearching] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
 
   useEffect(() => {
     const initCart = async () => {
-      const savedCart = await offlineStore.getCart()
+      const savedCart = await offlineStore.getCart();
       if (savedCart.length > 0) {
-        setCart(savedCart)
+        setCart(savedCart);
       }
-    }
-    initCart()
-  }, [])
+    };
+    initCart();
+  }, []);
 
   useEffect(() => {
     const fetchCustomersWithWalkIn = async () => {
       try {
-        const walkInResponse = await fetch("/api/sales/walk-in-customer")
-        let walkInName = ""
+        const walkInResponse = await fetch("/api/sales/walk-in-customer");
+        let walkInName = "";
 
         if (walkInResponse.ok) {
-          const walkInData = await walkInResponse.json()
-          walkInName = walkInData.walk_in_customer || "Walk In"
+          const walkInData = await walkInResponse.json();
+          walkInName = walkInData.walk_in_customer || "Walk In";
         } else {
-          walkInName = "Walk In"
+          walkInName = "Walk In";
         }
 
-        const response = await fetch("/api/sales/customers")
+        const response = await fetch("/api/sales/customers");
         if (!response.ok) {
-          throw new Error(`Failed to fetch customers: ${response.status}`)
+          throw new Error(`Failed to fetch customers: ${response.status}`);
         }
 
-        const data = await response.json()
-        const customerList = data.message?.customers || data.customers || []
+        const data = await response.json();
+        const customerList = data.message?.customers || data.customers || [];
 
         const allCustomers = [
           { id: "walk-in", name: walkInName },
-          ...customerList.map((c: any) => ({ id: c.customer_id || c.customer_name, name: c.customer_name })),
-        ]
+          ...customerList.map((c: any) => ({
+            id: c.customer_id || c.customer_name,
+            name: c.customer_name,
+          })),
+        ];
 
-        setCustomers(allCustomers)
+        setCustomers(allCustomers);
         if (!selectedCustomerId) {
-          setSelectedCustomerId("walk-in")
-          setCustomerName(walkInName)
+          setSelectedCustomerId("walk-in");
+          setCustomerName(walkInName);
         }
       } catch (error) {
-        setCustomers([{ id: "walk-in", name: "Walk In" }])
-        setSelectedCustomerId("walk-in")
-        setCustomerName("Walk In")
+        setCustomers([{ id: "walk-in", name: "Walk In" }]);
+        setSelectedCustomerId("walk-in");
+        setCustomerName("Walk In");
       }
-    }
+    };
 
-    fetchCustomersWithWalkIn()
-  }, [])
-
-  useEffect(() => {
-    offlineStore.saveCart(cart).catch((error) => {
-      console.error("[DukaPlus] Failed to save cart:", error)
-    })
-  }, [cart])
+    fetchCustomersWithWalkIn();
+  }, []);
 
   useEffect(() => {
-    const total = cart.reduce((sum, item) => sum + item.subtotal, 0)
-    setTotalAmount(total)
-  }, [cart])
+    offlineStore.saveCart(cart).catch((error) => {});
+  }, [cart]);
 
   useEffect(() => {
-    console.log("[DukaPlus] POSInterface: selectedCustomer prop changed to:", selectedCustomer)
-    console.log("[DukaPlus] POSInterface: Current customerName state:", customerName)
-    console.log(
-      "[DukaPlus] POSInterface: Available customers:",
-      customers.map((c) => c.name),
-    )
+    const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
+    setTotalAmount(total);
+  }, [cart]);
 
+  useEffect(() => {
     if (!selectedCustomer || selectedCustomer === customerName) {
-      console.log("[DukaPlus] POSInterface: No change needed")
-      return
+      return;
     }
 
     // Find customer by exact name match
-    const customer = customers.find((c) => c.name === selectedCustomer)
+    const customer = customers.find((c) => c.name === selectedCustomer);
 
     if (customer) {
-      console.log("[DukaPlus] POSInterface: Found customer match:", customer)
-      setSelectedCustomerId(customer.id)
-      setCustomerName(customer.name)
-    } else if (selectedCustomer.toLowerCase() === "walk in" || selectedCustomer === "walk-in") {
-      console.log("[DukaPlus] POSInterface: Setting to walk-in")
-      setSelectedCustomerId("walk-in")
+      setSelectedCustomerId(customer.id);
+      setCustomerName(customer.name);
+    } else if (
+      selectedCustomer.toLowerCase() === "walk in" ||
+      selectedCustomer === "walk-in"
+    ) {
+      setSelectedCustomerId("walk-in");
       // Fetch the actual walk-in customer name from API
       fetch("/api/sales/walk-in-customer")
         .then((res) => res.json())
         .then((data) => {
-          const walkInName = data.walk_in_customer || "Walk In"
-          console.log("[DukaPlus] POSInterface: Walk-in name from API:", walkInName)
-          setCustomerName(walkInName)
+          const walkInName = data.walk_in_customer || "Walk In";
+          setCustomerName(walkInName);
         })
         .catch(() => {
-          console.log("[DukaPlus] POSInterface: Walk-in API failed, using fallback")
-          setCustomerName("Walk In")
-        })
+          console.log(
+            "[DukaPlus] POSInterface: Walk-in API failed, using fallback"
+          );
+          setCustomerName("Walk In");
+        });
     } else {
-      console.log("[DukaPlus] POSInterface: No match found, treating as new customer name:", selectedCustomer)
-      setCustomerName(selectedCustomer)
+      setCustomerName(selectedCustomer);
     }
-  }, [selectedCustomer, customers])
+  }, [selectedCustomer, customers]);
 
   useEffect(() => {
     const updateCustomerInfo = async () => {
       if (selectedCustomerId === "walk-in") {
         try {
-          const response = await fetch("/api/sales/walk-in-customer")
+          const response = await fetch("/api/sales/walk-in-customer");
           if (response.ok) {
-            const data = await response.json()
-            const walkInName = data.walk_in_customer
-            setCustomerName(walkInName)
-            setMobileNumber("")
-            setCustomerCredit(0)
-            setLoyaltyPoints(0)
-            return
+            const data = await response.json();
+            const walkInName = data.walk_in_customer;
+            setCustomerName(walkInName);
+            setMobileNumber("");
+            setCustomerCredit(0);
+            setLoyaltyPoints(0);
+            return;
           }
         } catch (error) {
-          console.error("Failed to fetch walk-in customer:", error)
+          console.error("Failed to fetch walk-in customer:", error);
         }
-        return
+        return;
       }
 
-      const customer = customers.find((c) => c.id === selectedCustomerId || c.name === selectedCustomerId)
+      const customer = customers.find(
+        (c) => c.id === selectedCustomerId || c.name === selectedCustomerId
+      );
       if (customer) {
-        setCustomerName(customer.name)
+        setCustomerName(customer.name);
         try {
-          const response = await fetch(`/api/customers/list`)
+          const response = await fetch(`/api/customers/list`);
           if (response.ok) {
-            const data = await response.json()
+            const data = await response.json();
             const fullCustomer = data.customers?.find(
               (c: any) =>
                 (c.customer_id || c.customer_name) === selectedCustomerId ||
                 c.customer_name === selectedCustomerId ||
-                c.name === selectedCustomerId,
-            )
+                c.name === selectedCustomerId
+            );
 
             if (fullCustomer) {
               const mobile =
@@ -201,31 +204,31 @@ export function POSInterface({
                 fullCustomer.phone ||
                 fullCustomer.mobile ||
                 fullCustomer.contact_mobile ||
-                ""
+                "";
 
-              setMobileNumber(mobile)
-              setCustomerCredit(fullCustomer.account_credit || 0)
-              setLoyaltyPoints(fullCustomer.loyalty_points || 0)
+              setMobileNumber(mobile);
+              setCustomerCredit(fullCustomer.account_credit || 0);
+              setLoyaltyPoints(fullCustomer.loyalty_points || 0);
             }
           }
         } catch (error) {
-          console.error("Failed to fetch customer details:", error)
+          console.error("Failed to fetch customer details:", error);
         }
       }
-    }
+    };
 
-    updateCustomerInfo()
-  }, [selectedCustomerId, customers])
+    updateCustomerInfo();
+  }, [selectedCustomerId, customers]);
 
   useEffect(() => {
     const handleLoadDraftItems = (event: any) => {
-      const { items, customer, mobile, draftId } = event.detail
+      const { items, customer, mobile, draftId } = event.detail;
 
-      setCart([])
+      setCart([]);
 
-      if (customer) setCustomerName(customer)
-      if (mobile) setMobileNumber(mobile)
-      if (draftId) setDraftId(draftId)
+      if (customer) setCustomerName(customer);
+      if (mobile) setMobileNumber(mobile);
+      if (draftId) setDraftId(draftId);
 
       items.forEach((item: any) => {
         const cartItem: CartItem = {
@@ -236,37 +239,34 @@ export function POSInterface({
           quantity: item.qty,
           subtotal: item.amount,
           unit_of_measure: "Each",
-        }
-        setCart((prev) => [...prev, cartItem])
-      })
-    }
+        };
+        setCart((prev) => [...prev, cartItem]);
+      });
+    };
 
-    window.addEventListener("loadDraftItems", handleLoadDraftItems)
-    return () => window.removeEventListener("loadDraftItems", handleLoadDraftItems)
-  }, [])
+    window.addEventListener("loadDraftItems", handleLoadDraftItems);
+    return () =>
+      window.removeEventListener("loadDraftItems", handleLoadDraftItems);
+  }, []);
 
   useEffect(() => {
-    const pendingInvoice = sessionStorage.getItem("pending_invoice_payment")
+    const pendingInvoice = sessionStorage.getItem("pending_invoice_payment");
     if (pendingInvoice) {
       try {
-        const invoice = JSON.parse(pendingInvoice)
-        setCustomerName(invoice.customer_name || "Walk In")
-        setMobileNumber(invoice.mobile_number || "")
-        setPendingInvoiceId(invoice.sales_id)
-        setInvoiceOutstandingAmount(invoice.outstanding_amount || 0)
-        setShowPayment(true)
-        sessionStorage.removeItem("pending_invoice_payment")
-      } catch (err) {
-        console.error("[DukaPlus] Failed to load pending invoice:", err)
-      }
+        const invoice = JSON.parse(pendingInvoice);
+        setCustomerName(invoice.customer_name || "Walk In");
+        setMobileNumber(invoice.mobile_number || "");
+        setPendingInvoiceId(invoice.sales_id);
+        setInvoiceOutstandingAmount(invoice.outstanding_amount || 0);
+        setShowPayment(true);
+        sessionStorage.removeItem("pending_invoice_payment");
+      } catch (err) {}
     }
-  }, [])
+  }, []);
 
   const addToCart = (product: any) => {
-    console.log("[DukaPlus] Adding product to cart:", product.name, "all_selling_prices:", product.all_selling_prices)
-
     setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id)
+      const existingItem = prevCart.find((item) => item.id === product.id);
 
       if (existingItem) {
         return prevCart.map((item) =>
@@ -276,13 +276,14 @@ export function POSInterface({
                 quantity: item.quantity + 1,
                 subtotal: (item.quantity + 1) * item.price,
               }
-            : item,
-        )
+            : item
+        );
       }
 
-      const prices = product.all_selling_prices || []
-      const defaultPrice = prices.length > 0 ? prices[0].unit_selling_price : product.price
-      const defaultUom = prices.length > 0 ? prices[0].unit_of_measure : "Each"
+      const prices = product.all_selling_prices || [];
+      const defaultPrice =
+        prices.length > 0 ? prices[0].unit_selling_price : product.price;
+      const defaultUom = prices.length > 0 ? prices[0].unit_of_measure : "Each";
 
       const newItem = {
         id: product.id,
@@ -294,17 +295,21 @@ export function POSInterface({
         unit_of_measure: defaultUom,
         sellingPrices: prices,
         all_selling_prices: prices,
-      }
+      };
 
-      console.log("[DukaPlus] New cart item:", newItem)
-      return [...prevCart, newItem]
-    })
-  }
+      return [...prevCart, newItem];
+    });
+  };
 
-  const updateCartItem = (id: string, quantity: number, price?: number, unit?: string) => {
+  const updateCartItem = (
+    id: string,
+    quantity: number,
+    price?: number,
+    unit?: string
+  ) => {
     if (quantity <= 0) {
-      removeFromCart(id)
-      return
+      removeFromCart(id);
+      return;
     }
 
     setCart((prevCart) =>
@@ -317,101 +322,108 @@ export function POSInterface({
               price: price !== undefined ? price : item.price,
               subtotal: quantity * (price !== undefined ? price : item.price),
             }
-          : item,
-      ),
-    )
-  }
+          : item
+      )
+    );
+  };
 
   const removeFromCart = (id: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id))
-  }
+    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
+  };
 
   const clearCart = () => {
-    setCart([])
-    offlineStore.clearCart().catch((error) => {
-      console.error("[DukaPlus] Failed to clear cart:", error)
-    })
-    setShowPayment(false)
-    setPendingInvoiceId(null)
-    setInvoiceOutstandingAmount(null)
-    setDraftId(null)
-  }
+    setCart([]);
+    offlineStore.clearCart().catch((error) => {});
+    setShowPayment(false);
+    setPendingInvoiceId(null);
+    setInvoiceOutstandingAmount(null);
+    setDraftId(null);
+  };
 
   const handleBarcodeScan = async (barcode: string) => {
-    setBarcodeSearching(true)
+    setBarcodeSearching(true);
     try {
-      const credentialsStr = sessionStorage.getItem("tenant_credentials")
-      const credentials = credentialsStr ? JSON.parse(credentialsStr) : null
-      const warehouse = sessionStorage.getItem("selected_warehouse")
+      const credentialsStr = sessionStorage.getItem("tenant_credentials");
+      const credentials = credentialsStr ? JSON.parse(credentialsStr) : null;
+      const warehouse = sessionStorage.getItem("selected_warehouse");
 
       if (!warehouse) {
-        setBarcodeSearching(false)
-        return
+        setBarcodeSearching(false);
+        return;
       }
 
       let foundProduct = products.find(
-        (p) => p.barcode?.toLowerCase() === barcode.toLowerCase() || p.sku?.toLowerCase() === barcode.toLowerCase(),
-      )
+        (p) =>
+          p.barcode?.toLowerCase() === barcode.toLowerCase() ||
+          p.sku?.toLowerCase() === barcode.toLowerCase()
+      );
 
       if (!foundProduct) {
-        const response = await fetch(`/api/inventory/products?warehouse_id=${encodeURIComponent(warehouse)}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(credentials
-              ? {
-                  Authorization: `token ${credentials.username}:${credentials.apiKey}`,
-                }
-              : {}),
-          },
-        })
+        const response = await fetch(
+          `/api/inventory/products?warehouse_id=${encodeURIComponent(
+            warehouse
+          )}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...(credentials
+                ? {
+                    Authorization: `token ${credentials.username}:${credentials.apiKey}`,
+                  }
+                : {}),
+            },
+          }
+        );
 
         if (response.ok) {
-          const data = await response.json()
-          const allProducts = data.products || []
-          setProducts(allProducts)
+          const data = await response.json();
+          const allProducts = data.products || [];
+          setProducts(allProducts);
 
           foundProduct = allProducts.find(
             (p: any) =>
-              p.barcode?.toLowerCase() === barcode.toLowerCase() || p.sku?.toLowerCase() === barcode.toLowerCase(),
-          )
+              p.barcode?.toLowerCase() === barcode.toLowerCase() ||
+              p.sku?.toLowerCase() === barcode.toLowerCase()
+          );
         }
       }
 
       if (foundProduct) {
-        console.log("[DukaPlus] Product found by barcode:", foundProduct.name)
-        addToCart(foundProduct)
+        addToCart(foundProduct);
       } else {
-        console.log("[DukaPlus] No product found for barcode:", barcode)
       }
     } catch (error) {
-      console.error("[DukaPlus] Error searching by barcode:", error)
     } finally {
-      setBarcodeSearching(false)
+      setBarcodeSearching(false);
     }
-  }
+  };
 
   if (showPayment) {
     return (
       <div className="h-full bg-slate-50 dark:bg-slate-800 overflow-y-auto">
         <PaymentForm
-          totalAmount={invoiceOutstandingAmount !== null ? invoiceOutstandingAmount : totalAmount}
+          totalAmount={
+            invoiceOutstandingAmount !== null
+              ? invoiceOutstandingAmount
+              : totalAmount
+          }
           itemCount={cart.length}
           cartItems={cart}
           invoiceId={pendingInvoiceId || undefined}
           isInvoicePayment={!!pendingInvoiceId}
           onClose={() => {
-            setShowPayment(false)
-            setPendingInvoiceId(null)
-            setInvoiceOutstandingAmount(null)
-            setDraftId(null)
+            setShowPayment(false);
+            setPendingInvoiceId(null);
+            setInvoiceOutstandingAmount(null);
+            setDraftId(null);
           }}
           onSuccess={() => {
-            clearCart()
-            setShowPayment(false)
-            setPendingInvoiceId(null)
-            setInvoiceOutstandingAmount(null)
-            setDraftId(null)
+            clearCart();
+            setShowPayment(false);
+            setPendingInvoiceId(null);
+            setInvoiceOutstandingAmount(null);
+            setDraftId(null);
           }}
           customerName={customerName}
           mobileNumber={mobileNumber}
@@ -421,7 +433,7 @@ export function POSInterface({
           draftId={draftId || undefined}
         />
       </div>
-    )
+    );
   }
 
   return (
@@ -429,7 +441,10 @@ export function POSInterface({
       {/* Product Browser Section - Full width on mobile, left half on desktop */}
       <div className="w-full lg:w-1/2 overflow-y-auto order-2 lg:order-1 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-slate-700 flex flex-col">
         <div className="p-2 sm:p-3 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
-          <BarcodeInput onScan={handleBarcodeScan} isLoading={barcodeSearching} />
+          <BarcodeInput
+            onScan={handleBarcodeScan}
+            isLoading={barcodeSearching}
+          />
         </div>
         <div className="flex-1 overflow-y-auto">
           <ProductBrowser onAddToCart={addToCart} searchTerm={searchTerm} />
@@ -454,5 +469,5 @@ export function POSInterface({
         />
       </div>
     </div>
-  )
+  );
 }
