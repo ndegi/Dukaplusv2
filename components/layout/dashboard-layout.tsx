@@ -63,6 +63,7 @@ export function DashboardLayout({
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [warehouseId, setWarehouseId] = useState("")
 
   const isPOS = pathname === "/pos"
 
@@ -75,7 +76,20 @@ export function DashboardLayout({
     } else {
       const storedName = sessionStorage.getItem("selected_warehouse_name")
       setCurrentWarehouse(storedName || stored)
+      setWarehouseId(stored)
     }
+  }, [])
+
+  useEffect(() => {
+    const handleWarehouseChange = (event: Event) => {
+      const customEvent = event as CustomEvent
+      const newWarehouseId = customEvent.detail
+      setWarehouseId(newWarehouseId)
+      console.log("[DukaPlus] Warehouse changed event received, updating warehouseId to:", newWarehouseId)
+    }
+
+    window.addEventListener("warehouseChanged", handleWarehouseChange)
+    return () => window.removeEventListener("warehouseChanged", handleWarehouseChange)
   }, [])
 
   useEffect(() => {
@@ -89,14 +103,7 @@ export function DashboardLayout({
       console.log("[DukaPlus] Starting customer fetch...")
 
       // First fetch walk-in customer
-      const selectedWarehouse =
-        sessionStorage.getItem("selected_warehouse") || ""
-      const walkInUrl = selectedWarehouse
-        ? `/api/sales/walk-in-customer?warehouse_id=${encodeURIComponent(
-            selectedWarehouse,
-          )}`
-        : "/api/sales/walk-in-customer"
-      const walkInResponse = await fetch(walkInUrl)
+      const walkInResponse = await fetch("/api/sales/walk-in-customer")
       let walkInName = "Walk In"
 
       if (walkInResponse.ok) {
@@ -155,6 +162,7 @@ export function DashboardLayout({
     const warehouseName = warehouse
     sessionStorage.setItem("selected_warehouse_name", warehouseName)
     setCurrentWarehouse(warehouseName)
+    setWarehouseId(warehouse)
     setShowWarehouseModal(false)
     setMustSelectWarehouse(false)
     window.location.reload()
@@ -268,7 +276,7 @@ export function DashboardLayout({
 
             {/* Header Controls - Dynamic based on page */}
             <div className="flex items-center gap-2 md:gap-3 flex-wrap justify-end">
-              {isPOS && currentWarehouse && <ShiftStatusIndicator warehouseId={currentWarehouse} />}
+              {isPOS && warehouseId && <ShiftStatusIndicator warehouseId={warehouseId} />}
 
               {/* Theme Toggle */}
               {mounted && (
