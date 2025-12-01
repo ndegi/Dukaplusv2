@@ -444,10 +444,14 @@ export function POSInterface({
             setInvoiceOutstandingAmount(null)
             setDraftId(null)
 
-            // Reset customer selection back to walk-in, using API-provided name.
+            // Reset local POS customer state so the next sale starts from walk-in.
             setSelectedId(undefined)
             setCustomerName("")
             setMobileNumber("")
+
+            // Notify the layout header / POS page to reset to the walk-in customer
+            // using the API-provided name & id.
+            window.dispatchEvent(new Event("resetToWalkInCustomer"))
           }}
           customerName={customerName}
           customerId={selectedId}

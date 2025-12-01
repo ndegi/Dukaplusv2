@@ -98,6 +98,31 @@ export function DashboardLayout({
     }
   }, [isPOS])
 
+  // Listen for POS asking to reset the active customer back to the API walk-in
+  useEffect(() => {
+    if (!isPOS) return
+
+    const handleResetToWalkIn = () => {
+      const walkIn = customers.find((c) => c.id === "walk-in")
+      if (!walkIn) return
+
+      // Update the header input text
+      setCustomerSearch(walkIn.name || "")
+
+      // Notify parent (POS page) so POSInterface also receives the walk-in selection
+      onCustomerChange?.(
+        JSON.stringify({
+          id: walkIn.id,
+          name: walkIn.name || "",
+          mobile_number: walkIn.mobile_number || "",
+        }),
+      )
+    }
+
+    window.addEventListener("resetToWalkInCustomer", handleResetToWalkIn)
+    return () => window.removeEventListener("resetToWalkInCustomer", handleResetToWalkIn)
+  }, [isPOS, customers, onCustomerChange])
+
   const fetchWalkInCustomerFirst = async () => {
     try {
       console.log("[DukaPlus] Starting customer fetch...")
