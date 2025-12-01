@@ -76,7 +76,7 @@ export function PurchaseReceiptsManager() {
     open: false,
     title: "",
     description: "",
-    action: () => {},
+    action: () => { },
     variant: "success",
   })
   const [productSearchTerms, setProductSearchTerms] = useState<string[]>([""])
@@ -566,10 +566,10 @@ export function PurchaseReceiptsManager() {
           {(searchTerm ||
             statusFilter !== "all" ||
             dateRange.from.getTime() !== new Date(new Date().setDate(new Date().getDate() - 30)).getTime()) && (
-            <Button onClick={clearFilters} variant="outline" size="sm">
-              Clear Filters
-            </Button>
-          )}
+              <Button onClick={clearFilters} variant="outline" size="sm">
+                Clear Filters
+              </Button>
+            )}
         </div>
 
         {showCreateForm && (
@@ -605,11 +605,11 @@ export function PurchaseReceiptsManager() {
                     {currency}{" "}
                     {selectedOrderId
                       ? orders
-                          .find((o) => o.order_id === selectedOrderId)
-                          ?.grand_total.toLocaleString("en-KE", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          }) || "0.00"
+                        .find((o) => o.order_id === selectedOrderId)
+                        ?.grand_total.toLocaleString("en-KE", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }) || "0.00"
                       : "0.00"}
                   </div>
                 </div>

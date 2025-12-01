@@ -55,7 +55,7 @@ export function PurchaseOrdersManager() {
     open: false,
     title: "",
     description: "",
-    action: () => { },
+    action: () => {},
     variant: "default",
   })
   const [message, setMessage] = useState<{ type: string; text: string } | null>(null)
@@ -353,10 +353,10 @@ export function PurchaseOrdersManager() {
         <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
         {(searchQuery ||
           dateRange.from.getTime() !== new Date(new Date().setDate(new Date().getDate() - 30)).getTime()) && (
-            <Button onClick={clearFilters} variant="outline" size="sm">
-              Clear Filters
-            </Button>
-          )}
+          <Button onClick={clearFilters} variant="outline" size="sm">
+            Clear Filters
+          </Button>
+        )}
       </div>
 
       {error && (
@@ -414,14 +414,15 @@ export function PurchaseOrdersManager() {
                           </td>
                           <td className="table-cell text-center">
                             <span
-                              className={`badge ${order.status === "Draft"
+                              className={`badge ${
+                                order.status === "Draft"
                                   ? "badge-secondary"
                                   : order.status === "To Bill"
                                     ? "badge-warning"
                                     : order.status === "Completed"
                                       ? "badge-success"
                                       : "badge-info"
-                                }`}
+                              }`}
                             >
                               {order.status}
                             </span>
@@ -716,7 +717,7 @@ function NewOrderInlineForm({
         const month = String(dateObj.getMonth() + 1).padStart(2, "0")
         const day = String(dateObj.getDate()).padStart(2, "0")
         const year = dateObj.getFullYear()
-        formattedDate = `${day}-${month}-${year}`
+        formattedDate = `${month}-${day}-${year}`
       }
 
       const payload: any = {
