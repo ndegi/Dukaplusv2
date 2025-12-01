@@ -36,10 +36,10 @@ export function WarehouseSwitcher({ onSuccess, onCancel }: WarehouseSwitcherProp
       const response = await fetch("/api/warehouses", {
         headers: credentials
           ? {
-              "X-API-Key": credentials.api_key,
-              "X-API-Secret": credentials.api_secret,
-              "X-Base-URL": credentials.base_url,
-            }
+            "X-API-Key": credentials.api_key,
+            "X-API-Secret": credentials.api_secret,
+            "X-Base-URL": credentials.base_url,
+          }
           : {},
       })
 
