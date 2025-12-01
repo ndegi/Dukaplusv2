@@ -352,7 +352,7 @@ export function StockTransferManager() {
     open: false,
     title: "",
     description: "",
-    action: () => {},
+    action: () => { },
     variant: "success",
   })
 
@@ -422,10 +422,10 @@ export function StockTransferManager() {
           {(searchTerm ||
             statusFilter !== "all" ||
             dateRange.from.getTime() !== new Date(new Date().setDate(new Date().getDate() - 30)).getTime()) && (
-            <Button onClick={clearFilters} variant="outline" size="sm">
-              Clear Filters
-            </Button>
-          )}
+              <Button onClick={clearFilters} variant="outline" size="sm">
+                Clear Filters
+              </Button>
+            )}
         </div>
 
         {showCreateForm && (

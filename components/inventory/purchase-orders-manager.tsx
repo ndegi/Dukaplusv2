@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { DateRangeFilter } from "@/components/reports/date-range-filter"
+import { useCurrency } from "@/lib/contexts/currency-context"
 
 interface PurchaseOrder {
   order_id: string
@@ -55,12 +56,13 @@ export function PurchaseOrdersManager() {
     open: false,
     title: "",
     description: "",
-    action: () => {},
+    action: () => { },
     variant: "default",
   })
   const [message, setMessage] = useState<{ type: string; text: string } | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+  const { currency } = useCurrency()
 
   useEffect(() => {
     fetchPurchaseOrders()
@@ -353,10 +355,10 @@ export function PurchaseOrdersManager() {
         <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange} />
         {(searchQuery ||
           dateRange.from.getTime() !== new Date(new Date().setDate(new Date().getDate() - 30)).getTime()) && (
-          <Button onClick={clearFilters} variant="outline" size="sm">
-            Clear Filters
-          </Button>
-        )}
+            <Button onClick={clearFilters} variant="outline" size="sm">
+              Clear Filters
+            </Button>
+          )}
       </div>
 
       {error && (
@@ -406,7 +408,7 @@ export function PurchaseOrdersManager() {
                           <td className="table-cell">{order.supplier}</td>
                           <td className="table-cell">{new Date(order.date).toLocaleDateString()}</td>
                           <td className="table-cell text-right font-semibold">
-                            KES{" "}
+                            {currency}{" "}
                             {order.grand_total.toLocaleString("en-KE", {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
@@ -414,15 +416,14 @@ export function PurchaseOrdersManager() {
                           </td>
                           <td className="table-cell text-center">
                             <span
-                              className={`badge ${
-                                order.status === "Draft"
+                              className={`badge ${order.status === "Draft"
                                   ? "badge-secondary"
                                   : order.status === "To Bill"
                                     ? "badge-warning"
                                     : order.status === "Completed"
                                       ? "badge-success"
                                       : "badge-info"
-                              }`}
+                                }`}
                             >
                               {order.status}
                             </span>
@@ -464,9 +465,11 @@ export function PurchaseOrdersManager() {
                                         <td className="p-2 font-mono text-foreground">{item.item_code}</td>
                                         <td className="p-2 text-foreground">{item.item_name}</td>
                                         <td className="p-2 text-right text-foreground">{item.qty}</td>
-                                        <td className="p-2 text-right text-foreground">KES {item.rate.toFixed(2)}</td>
+                                        <td className="p-2 text-right text-foreground">
+                                          {currency} {item.rate.toFixed(2)}
+                                        </td>
                                         <td className="p-2 text-right font-semibold text-foreground">
-                                          KES {item.amount.toFixed(2)}
+                                          {currency} {item.amount.toFixed(2)}
                                         </td>
                                       </tr>
                                     ))}
@@ -543,6 +546,7 @@ function NewOrderInlineForm({
   const [requiredBy, setRequiredBy] = useState(editingOrder?.date || "")
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { currency } = useCurrency()
 
   useEffect(() => {
     fetchSuppliers()
@@ -896,7 +900,7 @@ function NewOrderInlineForm({
                           >
                             <div className="font-medium truncate">{p.name}</div>
                             <div className="text-[10px] text-secondary truncate">
-                              {p.id} • KES {p.cost?.toFixed(2)} • Stock: {p.quantity}
+                              {p.id} • {currency} {p.cost?.toFixed(2)} • Stock: {p.quantity}
                             </div>
                           </button>
                         ))}
@@ -934,7 +938,7 @@ function NewOrderInlineForm({
                 <div className="sm:col-span-2 flex items-center">
                   <label className="sm:hidden text-xs font-medium text-secondary mr-2">Subtotal:</label>
                   <div className="text-sm font-semibold text-foreground sm:text-right sm:w-full">
-                    KES {(item.quantity * item.buying_price).toFixed(2)}
+                    {currency} {(item.quantity * item.buying_price).toFixed(2)}
                   </div>
                 </div>
 
@@ -960,7 +964,7 @@ function NewOrderInlineForm({
                 Total ({items.length} item{items.length > 1 ? "s" : ""}):
               </span>
               <span className="font-bold text-lg text-warning">
-                KES{" "}
+                {currency}{" "}
                 {items
                   .reduce((sum, item) => sum + item.quantity * item.buying_price, 0)
                   .toLocaleString("en-KE", {
@@ -994,6 +998,7 @@ function NewSupplierInlineForm({ onClose, onSuccess }: { onClose: () => void; on
   const [mobileNumber, setMobileNumber] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { currency } = useCurrency()
 
   const handleSubmit = async () => {
     if (!supplier || !mobileNumber) {

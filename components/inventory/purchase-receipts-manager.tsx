@@ -7,6 +7,7 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { DateRangeFilter } from "@/components/reports/date-range-filter"
 import { EnhancedPagination } from "@/components/reports/enhanced-pagination"
+import { useCurrency } from "@/lib/contexts/currency-context"
 
 interface PurchaseReceipt {
   name: string
@@ -83,10 +84,11 @@ export function PurchaseReceiptsManager() {
   const [showProductDropdowns, setShowProductDropdowns] = useState<boolean[]>([false])
   const [error, setError] = useState<string | null>(null)
   const [isLoadingOrders, setIsLoadingOrders] = useState(true)
-  const [currency, setCurrency] = useState<string>("KES")
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+
+  const { currency } = useCurrency()
 
   useEffect(() => {
     const warehouseId = sessionStorage.getItem("selected_warehouse") || ""

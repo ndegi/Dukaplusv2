@@ -29,6 +29,7 @@ interface CartSummaryProps {
   warehouse?: string
   user?: string
   customerName?: string
+  customerId?: string
   mobileNumber?: string
   customerCredit?: number
   loyaltyPoints?: number
@@ -43,7 +44,8 @@ export function CartSummary({
   onClearCart,
   warehouse = "",
   user = "",
-  customerName = "", // Removed hardcoded "Walk In" default
+  customerName = "",
+  customerId,
   mobileNumber = "",
   customerCredit = 0,
   loyaltyPoints = 0,
@@ -55,6 +57,7 @@ export function CartSummary({
   const [showQueueModal, setShowQueueModal] = useState(false)
   const [actualWarehouse, setActualWarehouse] = useState("")
   const { currency } = useCurrency()
+  const [quantityInputs, setQuantityInputs] = useState<{ [key: string]: string }>({})
 
   useEffect(() => {
     const storedWarehouse = sessionStorage.getItem("selected_warehouse")
@@ -136,7 +139,7 @@ export function CartSummary({
           invoice_items: invoiceItems,
           warehouse_id: actualWarehouse,
           customer_name: customerName || "Walk In", // Use provided customer or fallback
-          customer_id: customerName || "Walk In",
+          customer_id: customerId || customerName || "Walk In",
           total_sales_price: totalAmount,
           mobile_number: mobileNumber,
           logged_in_user: user,
@@ -258,6 +261,15 @@ export function CartSummary({
     return () => window.removeEventListener("draftCompleted", handleDraftCompletedWithId as EventListener)
   }, [])
 
+  useEffect(() => {
+    const newInputs: { [key: string]: string } = {}
+    cart.forEach((item) => {
+      // Always update to reflect current cart quantity
+      newInputs[item.id] = item.quantity.toString()
+    })
+    setQuantityInputs(newInputs)
+  }, [cart])
+
   return (
     <div className="flex flex-col h-full bg-card">
       {error && (
@@ -310,10 +322,29 @@ export function CartSummary({
                 </div>
                 <div>
                   <Input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => onUpdateQuantity(item.id, Number(e.target.value) || 1)}
+                    type="text"
+                    inputMode="decimal"
+                    value={quantityInputs[item.id] ?? item.quantity.toString()}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      // Allow numbers, decimals, and empty string
+                      if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                        setQuantityInputs((prev) => ({ ...prev, [item.id]: value }))
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const value = e.target.value
+                      const numValue = Number.parseFloat(value)
+
+                      if (value === "" || isNaN(numValue) || numValue < 0.01) {
+                        // Reset to previous valid value
+                        setQuantityInputs((prev) => ({ ...prev, [item.id]: item.quantity.toString() }))
+                      } else {
+                        // Update cart with new quantity
+                        onUpdateQuantity(item.id, numValue)
+                        setQuantityInputs((prev) => ({ ...prev, [item.id]: numValue.toString() }))
+                      }
+                    }}
                     className="h-7 sm:h-8 input-base text-center text-xs"
                   />
                 </div>

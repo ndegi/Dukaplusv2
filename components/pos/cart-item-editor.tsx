@@ -68,9 +68,10 @@ export function CartItemEditor({ isOpen, onClose, item, sellingPrices, onUpdate 
             <Label className="form-label">Quantity</Label>
             <Input
               type="number"
-              min="1"
+              step="0.01"
+              min="0.01"
               value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value) || 1)}
+              onChange={(e) => setQuantity(Number(e.target.value) || 0.01)}
               className="input-base"
             />
           </div>

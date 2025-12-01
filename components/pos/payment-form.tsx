@@ -45,6 +45,7 @@ interface PaymentFormProps {
   onClose: () => void;
   onSuccess: () => void;
   customerName?: string;
+  customerId?: string;
   mobileNumber?: string;
   invoiceId?: string;
   isInvoicePayment?: boolean;
@@ -61,6 +62,7 @@ export function PaymentForm({
   onClose,
   onSuccess,
   customerName: initialCustomerName = "",
+  customerId,
   mobileNumber: initialMobileNumber = "",
   invoiceId,
   isInvoicePayment = false,
@@ -105,6 +107,8 @@ export function PaymentForm({
   const pointsValue = 1; // Currency per point (now dynamic)
   const [autoPrint, setAutoPrint] = useState(true); // Set print to checked by default
   const [autoSend, setAutoSend] = useState(false);
+
+  const resolvedCustomerId = customerId || (customerNameState?.trim().toLowerCase().startsWith("walk") ? "walk-in" : customerNameState);
 
   const pointsToEarn = Math.floor(totalAmount * 0.1);
 
@@ -532,7 +536,7 @@ export function PaymentForm({
           invoice_items: invoiceItems,
           warehouse_id: warehouse,
           customer_name: customerNameState,
-          customer_id: customerNameState,
+          customer_id: resolvedCustomerId,
           total_sales_price: totalAmount,
           mobile_number: mobileNumberState,
           logged_in_user: user,
@@ -695,7 +699,7 @@ export function PaymentForm({
         })),
         warehouse_id: warehouse,
         customer_name: customerNameState,
-        customer_id: customerNameState,
+        customer_id: resolvedCustomerId,
         total_sales_price: totalAmount,
         mobile_number: mobileNumberState,
         logged_in_user: user,

@@ -7,6 +7,7 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { DateRangeFilter } from "@/components/reports/date-range-filter"
 import { EnhancedPagination } from "@/components/reports/enhanced-pagination"
+import { useCurrency } from "@/lib/contexts/currency-context"
 
 interface PurchaseInvoice {
   name: string
@@ -14,8 +15,6 @@ interface PurchaseInvoice {
   status: string
   posting_date: string
   docstatus: number
-  outstanding_amount?: number
-  total_amount?: number
   items: {
     item_code: string
     item_name: string
@@ -80,7 +79,7 @@ export function PurchaseInvoicesManager() {
   const [payments, setPayments] = useState<Payment[]>([{ id: 1, mode: "Cash", amount: "" }])
   const [showEditForm, setShowEditForm] = useState(false)
   const [editingInvoice, setEditingInvoice] = useState<PurchaseInvoice | null>(null)
-  const currency = "KES" // Assuming currency is KES for simplicity
+  const { currency } = useCurrency()
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
@@ -98,15 +97,7 @@ export function PurchaseInvoicesManager() {
       const data = await response.json()
 
       if (response.ok && data.message?.data) {
-        const normalizedInvoices = data.message.data.map((invoice: PurchaseInvoice) => ({
-          ...invoice,
-          outstanding_amount: Number(invoice.outstanding_amount ?? invoice.total_amount ?? 0),
-          total_amount:
-            typeof invoice.total_amount === "number"
-              ? invoice.total_amount
-              : invoice.items?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0,
-        }))
-        setInvoices(normalizedInvoices)
+        setInvoices(data.message.data)
       } else {
         setMessage({ type: "error", text: data.message || "Failed to fetch purchase invoices" })
       }
@@ -779,26 +770,15 @@ export function PurchaseInvoicesManager() {
                 <p className="text-sm text-muted-foreground mt-1">Invoice: {selectedInvoice}</p>
                 {(() => {
                   const currentInvoice = invoices.find((inv) => inv.name === selectedInvoice)
-                  if (!currentInvoice) return null
-                  const totalAmount =
-                    typeof currentInvoice.total_amount === "number"
-                      ? currentInvoice.total_amount
-                      : currentInvoice.items?.reduce((sum, item) => sum + item.amount, 0) || 0
-                  const outstandingAmount =
-                    typeof currentInvoice.outstanding_amount === "number"
-                      ? currentInvoice.outstanding_amount
-                      : totalAmount
-
-                  return (
-                    <div className="mt-1 space-y-1">
-                      <p className="text-sm font-semibold text-warning">
+                  if (currentInvoice?.items) {
+                    const totalAmount = currentInvoice.items.reduce((sum, item) => sum + item.amount, 0)
+                    return (
+                      <p className="text-sm font-semibold text-warning mt-1">
                         Invoice Total: {currency} {totalAmount.toFixed(2)}
                       </p>
-                      <p className="text-sm font-semibold text-danger">
-                        Outstanding: {currency} {outstandingAmount.toFixed(2)}
-                      </p>
-                    </div>
-                  )
+                    )
+                  }
+                  return null
                 })()}
               </div>
               <button
@@ -915,7 +895,6 @@ export function PurchaseInvoicesManager() {
                   <th className="table-header-cell text-left">Invoice ID</th>
                   <th className="table-header-cell text-left">Supplier</th>
                   <th className="table-header-cell text-left">Date</th>
-                  <th className="table-header-cell text-right">Outstanding</th>
                   <th className="table-header-cell text-left">Status</th>
                   <th className="table-header-cell text-center">Actions</th>
                 </tr>
@@ -924,11 +903,7 @@ export function PurchaseInvoicesManager() {
                 {paginatedInvoices.map((invoice) => {
                   const isExpanded = expandedInvoices.has(invoice.name)
                   const isDraft = invoice.docstatus === 0
-                  const outstandingAmount =
-                    typeof invoice.outstanding_amount === "number"
-                      ? invoice.outstanding_amount
-                      : invoice.items?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0
-                  const isOutstanding = outstandingAmount > 0.01
+                  const isUnpaid = invoice.status.toLowerCase() === "unpaid"
 
                   return (
                     <>
@@ -950,9 +925,6 @@ export function PurchaseInvoicesManager() {
                         <td className="table-cell font-mono text-warning text-sm">{invoice.name}</td>
                         <td className="table-cell">{invoice.supplier}</td>
                         <td className="table-cell">{invoice.posting_date}</td>
-                        <td className="table-cell text-right font-semibold text-red-600 dark:text-red-400">
-                          {currency} {outstandingAmount.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
                         <td className="table-cell">{getStatusBadge(invoice.status)}</td>
                         <td className="table-cell text-center">
                           <TableActionButtons
@@ -960,7 +932,7 @@ export function PurchaseInvoicesManager() {
                             onEdit={() => handleEditInvoice(invoice)}
                             showSubmit={invoice.docstatus === 0}
                             onSubmit={() => handleSubmitInvoice(invoice.name)}
-                            showPay={invoice.docstatus === 1 && isOutstanding}
+                            showPay={invoice.docstatus === 1}
                             onPay={() => {
                               setSelectedInvoice(invoice.name)
                               setShowPaymentView(true)
@@ -973,7 +945,7 @@ export function PurchaseInvoicesManager() {
                       </tr>
                       {isExpanded && invoice.items && invoice.items.length > 0 && (
                         <tr>
-                          <td colSpan={7} className="px-4 py-2 bg-muted/30">
+                          <td colSpan={6} className="px-4 py-2 bg-muted/30">
                             <div className="p-4">
                               <h4 className="font-semibold text-sm mb-2 text-foreground">Items:</h4>
                               <table className="w-full text-xs">

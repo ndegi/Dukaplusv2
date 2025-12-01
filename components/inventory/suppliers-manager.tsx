@@ -33,7 +33,7 @@ export function SuppliersManager() {
     open: false,
     title: "",
     description: "",
-    action: () => {},
+    action: () => { },
   })
 
   useEffect(() => {

@@ -66,13 +66,9 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
       }
 
       const response = await fetch(`/api/inventory/products?warehouse_id=${encodeURIComponent(warehouse)}`, {
-        headers: credentials
-          ? {
-              "X-API-Key": credentials.api_key,
-              "X-API-Secret": credentials.api_secret,
-              "X-Base-URL": credentials.base_url,
-            }
-          : {},
+        headers: {
+          Authorization: `token ${credentials.apiKey}:${credentials.apiSecret}`,
+        },
       })
 
       if (response.ok) {
@@ -92,6 +88,12 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
       console.error("[DukaPlus] Error fetching products:", err)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleAddProduct = (product: Product) => {
+    if (product.quantity > 0) {
+      onAddToCart(product)
     }
   }
 
@@ -117,9 +119,8 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
       <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-thin">
         <button
           onClick={() => setSelectedCategory("all")}
-          className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full whitespace-nowrap transition-colors font-medium text-xs sm:text-sm ${
-            selectedCategory === "all" ? "bg-blue-600 text-white" : "bg-muted text-muted-foreground hover:bg-accent"
-          }`}
+          className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full whitespace-nowrap transition-colors font-medium text-xs sm:text-sm ${selectedCategory === "all" ? "bg-blue-600 text-white" : "bg-muted text-muted-foreground hover:bg-accent"
+            }`}
         >
           All items
         </button>
@@ -127,11 +128,10 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
           <button
             key={category}
             onClick={() => setSelectedCategory(category)}
-            className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full whitespace-nowrap transition-colors font-medium text-xs sm:text-sm ${
-              selectedCategory === category
-                ? "bg-blue-600 text-white"
-                : "bg-muted text-muted-foreground hover:bg-accent"
-            }`}
+            className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full whitespace-nowrap transition-colors font-medium text-xs sm:text-sm ${selectedCategory === category
+              ? "bg-blue-600 text-white"
+              : "bg-muted text-muted-foreground hover:bg-accent"
+              }`}
           >
             {category}
           </button>
@@ -161,10 +161,9 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
             return (
               <div
                 key={product.id}
-                className={`card-hover overflow-hidden flex flex-col justify-between ${
-                  isOutOfStock ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-                }`}
-                onClick={() => !isOutOfStock && onAddToCart(product)}
+                className={`card-hover overflow-hidden flex flex-col justify-between ${isOutOfStock ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+                  }`}
+                onClick={() => !isOutOfStock && handleAddProduct(product)}
               >
                 <div className="w-full h-16 sm:h-20 md:h-24 bg-muted flex items-center justify-center overflow-hidden relative">
                   {product.img ? (
@@ -173,7 +172,7 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
                       alt={product.name}
                       className="w-full h-full object-contain"
                       onError={(e) => {
-                        ;(e.target as HTMLImageElement).style.display = "none"
+                        ; (e.target as HTMLImageElement).style.display = "none"
                       }}
                     />
                   ) : (

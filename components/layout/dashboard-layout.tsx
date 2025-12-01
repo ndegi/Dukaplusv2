@@ -372,7 +372,14 @@ export function DashboardLayout({
                           key={customer.id}
                           onClick={() => {
                             setCustomerSearch(customer.name)
-                            onCustomerChange?.(customer.name)
+                            // Pass full customer payload (id, name, mobile_number) as JSON string
+                            onCustomerChange?.(
+                              JSON.stringify({
+                                id: customer.id,
+                                name: customer.name,
+                                mobile_number: customer.mobile_number || "",
+                              }),
+                            )
                             setShowCustomerDropdown(false)
                           }}
                           className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-900 dark:text-white text-sm"

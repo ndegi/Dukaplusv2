@@ -405,7 +405,7 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
           </div>
 
           <div>
-            <label className="form-label">Selling Price (KES)</label>
+            <label className="form-label">Selling Price </label>
             <Input
               type="number"
               name="price"

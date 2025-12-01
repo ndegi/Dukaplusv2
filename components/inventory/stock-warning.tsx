@@ -14,9 +14,8 @@ export function StockWarning({ product }: { product: Product }) {
 
   return (
     <div
-      className={`p-4 rounded-lg border flex items-start gap-3 ${
-        isOutOfStock ? "bg-red-500/10 border-red-500/20" : "bg-yellow-500/10 border-yellow-500/20"
-      }`}
+      className={`p-4 rounded-lg border flex items-start gap-3 ${isOutOfStock ? "bg-red-500/10 border-red-500/20" : "bg-yellow-500/10 border-yellow-500/20"
+        }`}
     >
       {isOutOfStock ? (
         <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
