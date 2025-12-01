@@ -65,15 +65,7 @@ export function POSInterface({
   const [products, setProducts] = useState<any[]>([])
   const [productMap, setProductMap] = useState<{ [key: string]: any }>({})
 
-  const getWalkInCustomerUrl = () => {
-    if (typeof window === "undefined") {
-      return "/api/sales/walk-in-customer"
-    }
-    const warehouse = sessionStorage.getItem("selected_warehouse") || ""
-    return warehouse
-      ? `/api/sales/walk-in-customer?warehouse_id=${encodeURIComponent(warehouse)}`
-      : "/api/sales/walk-in-customer"
-  }
+
 
   useEffect(() => {
     const initCart = async () => {
@@ -88,40 +80,60 @@ export function POSInterface({
   useEffect(() => {
     const fetchCustomersWithWalkIn = async () => {
       try {
-        const walkInResponse = await fetch(getWalkInCustomerUrl())
+        // First, get the walk-in customer name from the API
+        const walkInResponse = await fetch("/api/sales/walk-in-customer")
         let walkInName = ""
+        let walkInCustomerId = ""
 
         if (walkInResponse.ok) {
           const walkInData = await walkInResponse.json()
-          walkInName = walkInData.walk_in_customer
+          walkInName = walkInData.walk_in_customer || ""
         }
-        const response = await fetch("/api/sales/customers")
+
+        // Then fetch all customers to find the walk-in customer's actual ID
+        const response = await fetch("/api/customers/list")
         if (!response.ok) {
           throw new Error(`Failed to fetch customers: ${response.status}`)
         }
 
-        const data = await response.json()
-        const customerList = data.message?.customers || data.customers || []
+        const customersData = await response.json()
+        const customerList = customersData.customers || customersData.message?.customers || []
 
-        const allCustomers = [
-          { id: "walk-in", name: walkInName, mobile_number: "" },
-          ...customerList.map((c: any) => ({
-            id: c.customer_id || c.id || c.customer_name,
-            name: c.customer_name || c.name,
-            mobile_number:
-              c.mobile_number ||
-              c.mobile_no ||
-              c.phone ||
-              c.mobile ||
-              c.contact_mobile ||
-              "",
-          })),
-        ] as Customer[]
+        // Find the walk-in customer in the list using the name from the walk-in API
+        const walkInCustomer = customerList.find(
+          (c: any) => (c.customer_id || c.customer_name) === walkInName || (c.customer_name || c.name) === walkInName
+        )
+
+        // Use the actual customer_id from the API if found, otherwise use the name
+        if (walkInCustomer) {
+          walkInCustomerId = walkInCustomer.customer_id || walkInCustomer.id || walkInName
+        } else if (walkInName) {
+          walkInCustomerId = walkInName
+        }
+
+        // Map all customers, ensuring walk-in is included with its actual ID
+        const allCustomers = customerList.map((c: any) => ({
+          id: c.customer_id || c.id || c.customer_name,
+          name: c.customer_name || c.name,
+          mobile_number:
+            c.mobile_number ||
+            c.mobile_no ||
+            c.phone ||
+            c.mobile ||
+            c.contact_mobile || "",
+        })) as Customer[]
+
+        // If walk-in customer exists in the list, it's already included. Otherwise add it.
+        if (walkInCustomerId && !allCustomers.find((c) => c.id === walkInCustomerId)) {
+          allCustomers.unshift({
+            id: walkInCustomerId,
+            name: walkInName,
+            mobile_number: "",
+          })
+        }
 
         setCustomers(allCustomers)
       } catch (error) {
-        // If fetching customers fails, don't fall back to any hard-coded walk-in name.
-        // Leave selection empty and let downstream logic handle errors gracefully.
         console.error("[DukaPlus] Failed to fetch customers with walk-in:", error)
       }
     }
@@ -129,7 +141,6 @@ export function POSInterface({
     fetchCustomersWithWalkIn()
   }, [])
 
-  // Sync selected customer coming from the layout header (JSON string with id/name/mobile)
   useEffect(() => {
     if (!selectedCustomer) return
 
@@ -176,22 +187,41 @@ export function POSInterface({
   useEffect(() => {
     const updateCustomerInfo = async () => {
       if (!selectedId) {
+        // When no customer is selected, fetch walk-in customer from API
         try {
-          const response = await fetch(getWalkInCustomerUrl())
-          if (response.ok) {
-            const data = await response.json()
-            const walkInName = data.walk_in_customer
-            setCustomerName(walkInName)
+          const walkInResponse = await fetch("/api/sales/walk-in-customer")
+          if (walkInResponse.ok) {
+            const walkInData = await walkInResponse.json()
+            const walkInName = walkInData.walk_in_customer || ""
+
+            // Find the walk-in customer in the customers list to get its actual ID
+            const customersResponse = await fetch("/api/customers/list")
+            if (customersResponse.ok) {
+              const customersData = await customersResponse.json()
+              const customerList = customersData.customers || customersData.message?.customers || []
+              const walkInCustomer = customerList.find(
+                (c: any) => (c.customer_id || c.customer_name) === walkInName || (c.customer_name || c.name) === walkInName
+              )
+
+              // Use the actual customer_id from the API
+              const walkInCustomerId = walkInCustomer
+                ? walkInCustomer.customer_id || walkInCustomer.id || walkInName
+                : walkInName
+
+              setSelectedId(walkInCustomerId)
+              setCustomerName(walkInName)
+            } else {
+              // Fallback: use the name as ID if customers list fetch fails
+              setSelectedId(walkInName)
+              setCustomerName(walkInName)
+            }
             setMobileNumber("")
             setCustomerCredit(0)
             setLoyaltyPoints(0)
-            // Mark current selection as the walk-in customer sentinel so downstream
-            // logic (e.g. PaymentForm) can use the correct customer_id.
-            setSelectedId("walk-in")
             return
           }
         } catch (error) {
-          console.error("Failed to fetch walk-in customer:", error)
+          console.error("[DukaPlus] Failed to fetch walk-in customer:", error)
         }
         return
       }
@@ -211,16 +241,13 @@ export function POSInterface({
                 fullCustomer.mobile_no ||
                 fullCustomer.phone ||
                 fullCustomer.mobile ||
-                fullCustomer.contact_mobile ||
-                ""
-
+                fullCustomer.contact_mobile || ""
               setMobileNumber(mobile)
               setCustomerCredit(fullCustomer.account_credit || 0)
               setLoyaltyPoints(fullCustomer.loyalty_points || 0)
             }
           }
         } catch (error) {
-          console.error("Failed to fetch customer details:", error)
         }
       }
     }
@@ -262,8 +289,8 @@ export function POSInterface({
     if (pendingInvoice) {
       try {
         const invoice = JSON.parse(pendingInvoice)
-        setCustomerName(invoice.customer_name )
-        setMobileNumber(invoice.mobile_number )
+        setCustomerName(invoice.customer_name)
+        setMobileNumber(invoice.mobile_number)
         setPendingInvoiceId(invoice.sales_id)
         setInvoiceOutstandingAmount(invoice.outstanding_amount || 0)
         setShowPayment(true)
@@ -275,7 +302,6 @@ export function POSInterface({
   const addToCart = (product: any) => {
     const availableQty = product.quantity || 0
     if (availableQty <= 0) {
-      console.warn("[DukaPlus] Cannot add out of stock item:", product.name)
       return
     }
 

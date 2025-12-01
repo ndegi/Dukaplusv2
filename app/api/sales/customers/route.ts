@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     )
 
     const data = await response.json()
-    const formattedData = data.customers.map((customer) => ({
+    const formattedData = data.customers.map((customer: any) => ({
       id: customer.customer_id,
       name: customer.customer_name,
       email: customer.customer_email,

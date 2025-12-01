@@ -102,21 +102,36 @@ export function DashboardLayout({
   useEffect(() => {
     if (!isPOS) return
 
-    const handleResetToWalkIn = () => {
-      const walkIn = customers.find((c) => c.id === "walk-in")
-      if (!walkIn) return
+    const handleResetToWalkIn = async () => {
+      // Fetch walk-in customer from API to ensure we have the latest data
+      try {
+        const walkInResponse = await fetch("/api/sales/walk-in-customer")
+        if (walkInResponse.ok) {
+          const walkInData = await walkInResponse.json()
+          const walkInName = walkInData.walk_in_customer || ""
 
-      // Update the header input text
-      setCustomerSearch(walkIn.name || "")
+          // Find the walk-in customer in the customers list to get its actual ID
+          const walkIn = customers.find(
+            (c) => c.name === walkInName || c.id === walkInName || c.name.toLowerCase().includes("walk")
+          )
 
-      // Notify parent (POS page) so POSInterface also receives the walk-in selection
-      onCustomerChange?.(
-        JSON.stringify({
-          id: walkIn.id,
-          name: walkIn.name || "",
-          mobile_number: walkIn.mobile_number || "",
-        }),
-      )
+          if (walkIn) {
+            // Update the header input text
+            setCustomerSearch(walkIn.name || "")
+
+            // Notify parent (POS page) so POSInterface also receives the walk-in selection
+            onCustomerChange?.(
+              JSON.stringify({
+                id: walkIn.id, // Use the actual customer_id from API
+                name: walkIn.name || "",
+                mobile_number: walkIn.mobile_number || "",
+              }),
+            )
+          }
+        }
+      } catch (error) {
+        console.error("[DukaPlus] Failed to reset to walk-in customer:", error)
+      }
     }
 
     window.addEventListener("resetToWalkInCustomer", handleResetToWalkIn)
@@ -154,16 +169,34 @@ export function DashboardLayout({
       const customerList = customersData.customers || customersData.message?.customers || []
       console.log("[DukaPlus] Extracted customer list:", customerList.length, "customers")
 
+      // Find the walk-in customer in the list to get its actual customer_id from the API
+      const walkInCustomer = customerList.find(
+        (c: any) => (c.customer_id || c.customer_name) === walkInName || (c.customer_name || c.name) === walkInName
+      )
+
+      // Use the actual customer_id from the API if found, otherwise use the name
+      const walkInCustomerId = walkInCustomer
+        ? walkInCustomer.customer_id || walkInCustomer.id || walkInName
+        : walkInName
+
       const allCustomers = [
-        { id: "walk-in", name: walkInName, mobile_number: "" },
-        ...customerList.map((c: any) => ({
-          id: c.customer_id || c.id,
-          name: c.customer_name || c.name,
-          mobile_number: c.mobile_number || "",
-        })),
+        { id: walkInCustomerId, name: walkInName, mobile_number: "" },
+        ...customerList
+          .filter((c: any) => {
+            // Exclude walk-in from the regular list since we're adding it separately
+            const cId = c.customer_id || c.id || c.customer_name
+            const cName = c.customer_name || c.name
+            return cId !== walkInCustomerId && cName !== walkInName
+          })
+          .map((c: any) => ({
+            id: c.customer_id || c.id,
+            name: c.customer_name || c.name,
+            mobile_number: c.mobile_number || "",
+          })),
       ]
 
       console.log("[DukaPlus] Setting customers state with", allCustomers.length, "total customers")
+      console.log("[DukaPlus] Walk-in customer ID from API:", walkInCustomerId)
       setCustomers(allCustomers)
     } catch (error) {
       console.error("[DukaPlus] Error in fetchWalkInCustomerFirst:", error)

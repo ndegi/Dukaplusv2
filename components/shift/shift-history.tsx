@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { formatCurrency, formatDate } from "@/lib/utils/format"
+import { formatDate } from "@/lib/utils/format"
+import { useCurrency } from "@/hooks/use-currency"
 import { AlertCircle, Search, Filter, Calendar } from 'lucide-react'
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -39,6 +40,7 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
     to: new Date()
   })
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const { formatCurrency } = useCurrency()
 
   useEffect(() => {
     fetchShifts()
@@ -54,7 +56,7 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
     })
 
     if (statusFilter !== "all") {
-      filtered = filtered.filter(shift => 
+      filtered = filtered.filter(shift =>
         statusFilter === "open" ? shift.status === 0 : shift.status === 1
       )
     }
@@ -75,17 +77,15 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
     try {
       setIsLoading(true)
       const response = await fetch(`/api/shift/list?warehouse_id=${encodeURIComponent(warehouseId)}`)
-      
+
       if (response.ok) {
         const data = await response.json()
         const shiftsList = data.message?.shifts || []
-        console.log("[DukaPlus] Shift data received:", shiftsList)
         setShifts(shiftsList)
       } else {
         setError("Failed to load shifts")
       }
     } catch (err) {
-      console.error("[DukaPlus] Failed to fetch shifts:", err)
       setError("An error occurred while loading shifts")
     } finally {
       setIsLoading(false)
@@ -145,7 +145,7 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
               {dateRange.from.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {dateRange.to.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
           </Button>
-          
+
           {showDatePicker && (
             <div className="absolute top-full right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-50 p-4 space-y-3 min-w-64">
               <button onClick={() => {
@@ -179,11 +179,11 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
                 <p className="text-xs text-muted-foreground font-semibold uppercase">Custom Range</p>
                 <div>
                   <label className="text-xs text-muted-foreground">From</label>
-                  <Input type="date" value={dateRange.from.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, from: new Date(e.target.value)})} className="input-base text-sm h-8" />
+                  <Input type="date" value={dateRange.from.toISOString().split('T')[0]} onChange={(e) => setDateRange({ ...dateRange, from: new Date(e.target.value) })} className="input-base text-sm h-8" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground">To</label>
-                  <Input type="date" value={dateRange.to.toISOString().split('T')[0]} onChange={(e) => setDateRange({...dateRange, to: new Date(e.target.value)})} className="input-base text-sm h-8" />
+                  <Input type="date" value={dateRange.to.toISOString().split('T')[0]} onChange={(e) => setDateRange({ ...dateRange, to: new Date(e.target.value) })} className="input-base text-sm h-8" />
                 </div>
               </div>
               <button onClick={() => setShowDatePicker(false)} className="w-full text-left px-3 py-2 rounded hover:bg-muted text-sm border-t border-border pt-2">
@@ -247,12 +247,11 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
                                   <td className="px-2 py-1.5 text-right text-muted-foreground">{formatCurrency(detail.opening_amount ?? 0)}</td>
                                   <td className="px-2 py-1.5 text-right text-success">{formatCurrency(detail.total_sales ?? 0)}</td>
                                   <td className="px-2 py-1.5 text-right text-warning">{formatCurrency(detail.expected_closing_balance ?? 0)}</td>
-                                  <td className={`px-2 py-1.5 text-right font-semibold ${
-                                    (detail.difference ?? 0) === 0 ? 'text-muted-foreground' :
+                                  <td className={`px-2 py-1.5 text-right font-semibold ${(detail.difference ?? 0) === 0 ? 'text-muted-foreground' :
                                     (detail.difference ?? 0) > 0 ? 'text-success' : 'text-danger'
-                                  }`}>
-                                    {(detail.difference ?? 0) === 0 ? '-' : 
-                                     `${formatCurrency(Math.abs(detail.difference ?? 0))} ${(detail.difference ?? 0) > 0 ? '↑' : '↓'}`
+                                    }`}>
+                                    {(detail.difference ?? 0) === 0 ? '-' :
+                                      `${formatCurrency(Math.abs(detail.difference ?? 0))} ${(detail.difference ?? 0) > 0 ? '↑' : '↓'}`
                                     }
                                   </td>
                                 </tr>

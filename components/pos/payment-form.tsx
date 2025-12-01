@@ -242,9 +242,17 @@ export function PaymentForm({
   }, [initialMobileNumber]);
 
   const isWalkInCustomer = () => {
-    // Treat missing ID or explicit "walk-in" sentinel as walk-in;
-    // rely on upstream POS logic to set this correctly from the API.
-    return !customerId || customerId === "walk-in";
+    // Check if customer ID is missing, or if the name/ID indicates walk-in customer
+    // The walk-in customer ID from API is typically "Walk In" (the name itself)
+    const name = (customerNameState || "").trim().toLowerCase();
+    return (
+      !customerId ||
+      customerId.toLowerCase() === "walk-in" ||
+      customerId.toLowerCase() === "walk in" ||
+      name === "walk in" ||
+      name === "walkin" ||
+      name === "walk-in"
+    );
   };
 
   const creditAmount = useCredit;

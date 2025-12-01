@@ -14,12 +14,10 @@ export async function GET(request: NextRequest) {
     try {
       credentials = JSON.parse(credentialsCookie)
     } catch (parseError) {
-      console.error("[DukaPlus] Failed to parse credentials:", parseError)
       return NextResponse.json({ message: "Invalid credentials format" }, { status: 401 })
     }
 
     if (!credentials.username || !credentials.apiKey || !credentials.baseUrl) {
-      console.error("[DukaPlus] Missing required credentials in products route")
       return NextResponse.json({ message: "Incomplete credentials" }, { status: 401 })
     }
 
@@ -40,7 +38,6 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error("[DukaPlus] API Error:", { status: response.status, body: errorData })
       return NextResponse.json({ message: `Failed to fetch products: ${response.status}` }, { status: response.status })
     }
 
@@ -71,7 +68,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ products })
   } catch (error) {
-    console.error("[DukaPlus] Inventory fetch error:", error)
     return NextResponse.json(
       { message: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 },
@@ -105,13 +101,11 @@ export async function POST(request: NextRequest) {
     const data = await response.json()
 
     if (!response.ok) {
-      console.error("Product creation error:", data)
       return NextResponse.json({ message: data.message || "Failed to create product" }, { status: response.status })
     }
 
     return NextResponse.json({ success: true, message: "Product created successfully", data })
   } catch (error) {
-    console.error("Product creation error:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }
