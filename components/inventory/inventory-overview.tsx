@@ -9,6 +9,7 @@ import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
 import { ProductFormInline } from "./product-form-inline"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { useCurrency } from "@/lib/contexts/currency-context"
+import { EnhancedPagination } from "../reports/enhanced-pagination"
 
 interface Product {
   id: string
@@ -64,10 +65,10 @@ export function InventoryOverview() {
       const response = await fetch(`/api/inventory/products?warehouse_id=${encodeURIComponent(warehouse)}`, {
         headers: credentials
           ? {
-              "X-API-Key": credentials.api_key,
-              "X-API-Secret": credentials.api_secret,
-              "X-Base-URL": credentials.base_url,
-            }
+            "X-API-Key": credentials.api_key,
+            "X-API-Secret": credentials.api_secret,
+            "X-Base-URL": credentials.base_url,
+          }
           : {},
       })
 
@@ -229,46 +230,18 @@ export function InventoryOverview() {
                 </tbody>
               </table>
             </div>
-
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-                <div className="text-sm text-secondary">
-                  Showing {startIndex + 1} to {Math.min(endIndex, filteredProducts.length)} of {filteredProducts.length}{" "}
-                  products
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <Button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        className={currentPage === page ? "btn-warning" : ""}
-                      >
-                        {page}
-                      </Button>
-                    ))}
-                  </div>
-                  <Button
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
+              <EnhancedPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                totalRecords={filteredProducts.length}
+              />
             )}
+
+
           </>
         )}
       </div>
