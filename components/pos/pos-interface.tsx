@@ -53,7 +53,7 @@ export function POSInterface({
   const [showPayment, setShowPayment] = useState(false)
   const [totalAmount, setTotalAmount] = useState(0)
   const [customers, setCustomers] = useState<Customer[]>([])
-  const [selectedId, setSelectedId] = useState(selectedCustomerId || "walk-in")
+  const [selectedId, setSelectedId] = useState(selectedCustomerId)
   const [customerName, setCustomerName] = useState("")
   const [mobileNumber, setMobileNumber] = useState("")
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null)
@@ -93,11 +93,8 @@ export function POSInterface({
 
         if (walkInResponse.ok) {
           const walkInData = await walkInResponse.json()
-          walkInName = walkInData.walk_in_customer || "Walk In"
-        } else {
-          walkInName = "Walk In"
+          walkInName = walkInData.walk_in_customer
         }
-
         const response = await fetch("/api/sales/customers")
         if (!response.ok) {
           throw new Error(`Failed to fetch customers: ${response.status}`)
@@ -122,14 +119,10 @@ export function POSInterface({
         ] as Customer[]
 
         setCustomers(allCustomers)
-        if (!selectedId) {
-          setSelectedId("walk-in")
-          setCustomerName(walkInName)
-        }
       } catch (error) {
-        setCustomers([{ id: "walk-in", name: "Walk In" }])
-        setSelectedId("walk-in")
-        setCustomerName("Walk In")
+        // If fetching customers fails, don't fall back to any hard-coded walk-in name.
+        // Leave selection empty and let downstream logic handle errors gracefully.
+        console.error("[DukaPlus] Failed to fetch customers with walk-in:", error)
       }
     }
 
@@ -182,7 +175,7 @@ export function POSInterface({
 
   useEffect(() => {
     const updateCustomerInfo = async () => {
-      if (selectedId === "walk-in") {
+      if (!selectedId) {
         try {
           const response = await fetch(getWalkInCustomerUrl())
           if (response.ok) {
@@ -192,6 +185,9 @@ export function POSInterface({
             setMobileNumber("")
             setCustomerCredit(0)
             setLoyaltyPoints(0)
+            // Mark current selection as the walk-in customer sentinel so downstream
+            // logic (e.g. PaymentForm) can use the correct customer_id.
+            setSelectedId("walk-in")
             return
           }
         } catch (error) {
@@ -266,8 +262,8 @@ export function POSInterface({
     if (pendingInvoice) {
       try {
         const invoice = JSON.parse(pendingInvoice)
-        setCustomerName(invoice.customer_name || "Walk In")
-        setMobileNumber(invoice.mobile_number || "")
+        setCustomerName(invoice.customer_name )
+        setMobileNumber(invoice.mobile_number )
         setPendingInvoiceId(invoice.sales_id)
         setInvoiceOutstandingAmount(invoice.outstanding_amount || 0)
         setShowPayment(true)
@@ -441,11 +437,17 @@ export function POSInterface({
             setDraftId(null)
           }}
           onSuccess={() => {
+            // Clear cart and reset state after successful payment
             clearCart()
             setShowPayment(false)
             setPendingInvoiceId(null)
             setInvoiceOutstandingAmount(null)
             setDraftId(null)
+
+            // Reset customer selection back to walk-in, using API-provided name.
+            setSelectedId(undefined)
+            setCustomerName("")
+            setMobileNumber("")
           }}
           customerName={customerName}
           customerId={selectedId}

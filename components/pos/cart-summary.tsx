@@ -138,8 +138,8 @@ export function CartSummary({
         body: JSON.stringify({
           invoice_items: invoiceItems,
           warehouse_id: actualWarehouse,
-          customer_name: customerName || "Walk In", // Use provided customer or fallback
-          customer_id: customerId || customerName || "Walk In",
+          customer_name: customerName || "",
+          customer_id: customerId || "",
           total_sales_price: totalAmount,
           mobile_number: mobileNumber,
           logged_in_user: user,

@@ -108,7 +108,9 @@ export function PaymentForm({
   const [autoPrint, setAutoPrint] = useState(true); // Set print to checked by default
   const [autoSend, setAutoSend] = useState(false);
 
-  const resolvedCustomerId = customerId || (customerNameState?.trim().toLowerCase().startsWith("walk") ? "walk-in" : customerNameState);
+  // Use the customerId provided by POS (which already knows the walk-in customer),
+  // and avoid any hard-coded walk-in fallbacks here.
+  const resolvedCustomerId = customerId || "";
 
   const pointsToEarn = Math.floor(totalAmount * 0.1);
 
@@ -240,8 +242,9 @@ export function PaymentForm({
   }, [initialMobileNumber]);
 
   const isWalkInCustomer = () => {
-    const name = (customerNameState || "").trim().toLowerCase();
-    return !name || name === "walk in" || name === "walkin" || name === "walk-in";
+    // Treat missing ID or explicit "walk-in" sentinel as walk-in;
+    // rely on upstream POS logic to set this correctly from the API.
+    return !customerId || customerId === "walk-in";
   };
 
   const creditAmount = useCredit;

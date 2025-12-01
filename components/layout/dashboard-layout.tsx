@@ -104,11 +104,11 @@ export function DashboardLayout({
 
       // First fetch walk-in customer
       const walkInResponse = await fetch("/api/sales/walk-in-customer")
-      let walkInName = "Walk In"
+      let walkInName = ""
 
       if (walkInResponse.ok) {
         const walkInData = await walkInResponse.json()
-        walkInName = walkInData.walk_in_customer || "Walk In"
+        walkInName = walkInData.walk_in_customer || ""
         console.log("[DukaPlus] Fetched walk-in customer:", walkInName)
       } else {
         console.warn("[DukaPlus] Failed to fetch walk-in customer:", walkInResponse.status)
@@ -142,7 +142,7 @@ export function DashboardLayout({
       setCustomers(allCustomers)
     } catch (error) {
       console.error("[DukaPlus] Error in fetchWalkInCustomerFirst:", error)
-      setCustomers([{ id: "walk-in", name: "Walk In", mobile_number: "" }])
+      setCustomers([{ id: "walk-in", name: "", mobile_number: "" }])
     }
   }
 

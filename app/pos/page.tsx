@@ -12,7 +12,9 @@ export default function POSPage() {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [quantity, setQuantity] = useState(1)
-  const [selectedCustomer, setSelectedCustomer] = useState("walk-in")
+  // Selected customer is a JSON string payload from the header dropdown (id, name, mobile_number)
+  // Start empty and let POS fetch walk-in customer details from the API.
+  const [selectedCustomer, setSelectedCustomer] = useState("")
   const [currentSalesPerson, setCurrentSalesPerson] = useState<string | null>(null)
   const [showOpenShift, setShowOpenShift] = useState(false)
 
