@@ -417,12 +417,12 @@ export function PurchaseOrdersManager() {
                           <td className="table-cell text-center">
                             <span
                               className={`badge ${order.status === "Draft"
-                                  ? "badge-secondary"
-                                  : order.status === "To Bill"
-                                    ? "badge-warning"
-                                    : order.status === "Completed"
-                                      ? "badge-success"
-                                      : "badge-info"
+                                ? "badge-secondary"
+                                : order.status === "To Bill"
+                                  ? "badge-warning"
+                                  : order.status === "Completed"
+                                    ? "badge-success"
+                                    : "badge-info"
                                 }`}
                             >
                               {order.status}

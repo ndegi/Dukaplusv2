@@ -538,6 +538,7 @@ export function PaymentForm({
         quantity: item.quantity,
         product_name: item.name,
         product_price: item.price,
+        unit_of_measure: item.unit_of_measure,
       }));
 
       const response = await fetch("/api/sales/draft", {
@@ -707,6 +708,7 @@ export function PaymentForm({
           quantity: item.quantity,
           product_name: item.name,
           product_price: item.price,
+          unit_of_measure: item.unit_of_measure,
         })),
         warehouse_id: warehouse,
         customer_name: customerNameState,
