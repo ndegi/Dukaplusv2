@@ -13,10 +13,9 @@ import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { DateRangeFilter } from "@/components/reports/date-range-filter"
 import { Plus, ChevronLeft, ChevronRight, ChevronFirst, ChevronLast, Search } from "lucide-react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faExclamationCircle, IconLookup } from "@fortawesome/free-solid-svg-icons"
+import { faExclamationCircle, IconDefinition } from "@fortawesome/free-solid-svg-icons"
 import { useCurrency } from "@/hooks/use-currency"
 import { IconProp } from "@fortawesome/fontawesome-svg-core"
-import { toast, Toaster } from "sonner"
 
 interface Expense {
   expense_name: string
@@ -32,9 +31,14 @@ interface ExpenseCategory {
   expense_category: string
 }
 
+interface PaymentMode {
+  mode_of_payment: string
+}
+
 export function ExpensesOverview() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [categories, setCategories] = useState<ExpenseCategory[]>([])
+  const [paymentModes, setPaymentModes] = useState<PaymentMode[]>([])
   const [showDialog, setShowDialog] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -72,6 +76,7 @@ export function ExpensesOverview() {
   useEffect(() => {
     fetchExpenses()
     fetchCategories()
+    fetchPaymentModes()
   }, [])
 
   const fetchExpenses = async () => {
@@ -116,6 +121,26 @@ export function ExpensesOverview() {
       }
     } catch (error) {
       console.error("Failed to fetch categories:", error)
+    }
+  }
+
+  const fetchPaymentModes = async () => {
+    try {
+      const response = await fetch("/api/payments/modes")
+      if (response.ok) {
+        const data = await response.json()
+        const modes = data.modes || []
+        setPaymentModes(Array.isArray(modes) ? modes : [])
+      }
+    } catch (error) {
+      console.error("Failed to fetch payment modes:", error)
+      // Fallback to default modes if API fails
+      setPaymentModes([
+        { mode_of_payment: "Cash" },
+        { mode_of_payment: "Mpesa" },
+        { mode_of_payment: "Card" },
+        { mode_of_payment: "Paid to Till" },
+      ])
     }
   }
 
@@ -183,22 +208,23 @@ export function ExpensesOverview() {
     if (!submittingExpense) return
 
     try {
-      const warehouse = sessionStorage.getItem("selected_warehouse") || ""
       const response = await fetch(`/api/expenses/submit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ expense_name: submittingExpense.expense_name, warehouse_id: warehouse }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          expense_name: submittingExpense.expense_name,
+        }),
       })
-      const data = await response.json()
 
       if (response.ok) {
         await fetchExpenses()
         setShowSubmitDialog(false)
         setSubmittingExpense(null)
-        toast.success(data.message || "Expense submitted successfully")
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to submit expense")
+      console.error("Failed to submit expense:", error)
     }
   }
 
@@ -575,10 +601,20 @@ export function ExpensesOverview() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="dialog-content">
-                  <SelectItem value="Cash">Cash</SelectItem>
-                  <SelectItem value="Mpesa">M-Pesa</SelectItem>
-                  <SelectItem value="Paid to Pochi">Paid to Pochi</SelectItem>
-                  <SelectItem value="Paid to Till">Paid to Till</SelectItem>
+                  {paymentModes.length > 0 ? (
+                    paymentModes.map((mode) => (
+                      <SelectItem key={mode.mode_of_payment} value={mode.mode_of_payment}>
+                        {mode.mode_of_payment}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Mpesa">M-Pesa</SelectItem>
+                      <SelectItem value="Paid to Pochi">Paid to Pochi</SelectItem>
+                      <SelectItem value="Paid to Till">Paid to Till</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
