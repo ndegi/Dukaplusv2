@@ -11,11 +11,6 @@ export async function POST(request: NextRequest) {
     }
 
     const credentials = JSON.parse(credentialsString)
-    const { baseUrl, apiKey, apiSecret } = credentials
-
-    if (!baseUrl || !apiKey || !apiSecret) {
-      return NextResponse.json({ message: { message: "Missing credentials" } }, { status: 401 })
-    }
 
     const body = await request.json()
     const { sales_invoice_id } = body
@@ -24,13 +19,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: { message: "Sales invoice ID is required" } }, { status: 400 })
     }
 
-    const token = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64")
-    const apiUrl = `${baseUrl}/api/method/dukaplus.services.rest.cancel_sales_invoice`
+    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
 
-    const response = await fetch(apiUrl, {
+    const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.rest.cancel_sales_invoice`, {
       method: "POST",
       headers: {
-        Authorization: `token ${token}`,
+        Authorization: authHeader,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ sales_invoice_id }),

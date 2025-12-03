@@ -13,8 +13,10 @@ import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { DateRangeFilter } from "@/components/reports/date-range-filter"
 import { Plus, ChevronLeft, ChevronRight, ChevronFirst, ChevronLast, Search } from "lucide-react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
+import { faExclamationCircle, IconLookup } from "@fortawesome/free-solid-svg-icons"
 import { useCurrency } from "@/hooks/use-currency"
+import { IconProp } from "@fortawesome/fontawesome-svg-core"
+import { toast, Toaster } from "sonner"
 
 interface Expense {
   expense_name: string
@@ -181,23 +183,22 @@ export function ExpensesOverview() {
     if (!submittingExpense) return
 
     try {
+      const warehouse = sessionStorage.getItem("selected_warehouse") || ""
       const response = await fetch(`/api/expenses/submit`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          expense_name: submittingExpense.expense_name,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expense_name: submittingExpense.expense_name, warehouse_id: warehouse }),
       })
+      const data = await response.json()
 
       if (response.ok) {
         await fetchExpenses()
         setShowSubmitDialog(false)
         setSubmittingExpense(null)
+        toast.success(data.message || "Expense submitted successfully")
       }
     } catch (error) {
-      console.error("Failed to submit expense:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to submit expense")
     }
   }
 
@@ -352,7 +353,7 @@ export function ExpensesOverview() {
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-start gap-3">
           <FontAwesomeIcon
-            icon={faExclamationCircle}
+            icon={faExclamationCircle as IconProp}
             className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
           />
           <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
@@ -402,10 +403,10 @@ export function ExpensesOverview() {
         {(searchTerm ||
           statusFilter !== "all" ||
           dateRange.from.getTime() !== new Date(new Date().setDate(new Date().getDate() - 30)).getTime()) && (
-          <Button onClick={clearFilters} variant="outline" size="sm">
-            Clear Filters
-          </Button>
-        )}
+            <Button onClick={clearFilters} variant="outline" size="sm">
+              Clear Filters
+            </Button>
+          )}
       </div>
 
       <Card className="card-base">

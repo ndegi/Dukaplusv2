@@ -10,6 +10,8 @@ interface Product {
   sku: string
   category: string
   quantity: number
+  qty_in_store?: number
+  track_inventory?: number
   price: number
   status?: "in_stock" | "low_stock" | "out_of_stock"
   all_selling_prices?: Array<{ unit_of_measure: string; unit_selling_price: number }>
@@ -92,7 +94,13 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
   }
 
   const handleAddProduct = (product: Product) => {
-    if (product.quantity > 0) {
+    // Allow adding products if:
+    // 1. It's a service (track_inventory !== 1) - always available
+    // 2. It has quantity > 0
+    const trackInventory = product.track_inventory ?? 1
+    const qtyInStore = product.qty_in_store ?? product.quantity ?? 0
+    
+    if (trackInventory === 0 || qtyInStore > 0) {
       onAddToCart(product)
     }
   }
@@ -143,20 +151,53 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
           <div className="col-span-full text-center py-8 text-secondary text-sm sm:text-base">No products found</div>
         ) : (
           filteredProducts.map((product) => {
+            const trackInventory = product.track_inventory ?? 1
+            const qtyInStore = product.qty_in_store ?? product.quantity ?? 0
             const stockStatus = product.status || "in_stock"
+
             const statusConfig = {
               in_stock: {
-                color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+                badge: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+                dot: "bg-green-500",
               },
               low_stock: {
-                color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+                badge: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+                dot: "bg-yellow-500",
               },
               out_of_stock: {
-                color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+                badge: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+                dot: "bg-red-500",
+              },
+              service: {
+                badge: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200",
+                dot: "bg-blue-500",
               },
             }
-            const currentStatus = statusConfig[stockStatus]
-            const isOutOfStock = stockStatus === "out_of_stock"
+
+            const isService = trackInventory === 0
+            const statusKey = isService ? "service" : stockStatus
+            const currentStatus = statusConfig[statusKey as keyof typeof statusConfig]
+
+            let stockText = ""
+            if (isService) {
+              stockText = "Available"
+            } else if (stockStatus === "out_of_stock") {
+              stockText = "Out of stock"
+            } else if (stockStatus === "low_stock") {
+              stockText = `${qtyInStore} left`
+            } else {
+              stockText = `${qtyInStore} available`
+            }
+
+            const statusLabel = isService
+              ? "Service"
+              : stockStatus === "out_of_stock"
+                ? "Out of stock"
+                : stockStatus === "low_stock"
+                  ? "Low stock"
+                  : "In stock"
+
+            const isOutOfStock = trackInventory === 1 && qtyInStore === 0
 
             return (
               <div
@@ -179,8 +220,8 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
                     <Package className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
                   )}
                   <div className="absolute top-1 right-1">
-                    <span className={`text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full ${currentStatus.color}`}>
-                      {product.quantity} available
+                    <span className={`text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full ${currentStatus.badge}`}>
+                      {stockText}
                     </span>
                   </div>
                 </div>
@@ -211,6 +252,10 @@ export function ProductBrowser({ onAddToCart, searchTerm = "" }: ProductBrowserP
                         </div>
                       )}
                     </div>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
+                    <span className={`w-2 h-2 rounded-full ${currentStatus.dot}`} />
+                    <span>{statusLabel}</span>
                   </div>
                 </div>
               </div>

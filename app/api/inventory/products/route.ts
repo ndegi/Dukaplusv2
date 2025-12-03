@@ -43,28 +43,37 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json()
 
-    const products = (data.message?.products || []).map((item: any) => ({
-      id: item.product_id,
-      name: item.product_name,
-      sku: item.sku || item.product_name,
-      category: item.product_category || "Uncategorized",
-      quantity: Number.parseFloat(item.qty_in_store) || 0,
-      reorderLevel: 10,
-      price: Number.parseFloat(item.price) || 0,
-      cost: Number.parseFloat(item.cost) || 0,
-      barcode: item.barcode,
-      colorCode: item.color_code,
-      description: item.description,
-      img: item.img || null,
-      all_selling_prices: item.all_selling_prices || [],
-      lastUpdated: new Date().toISOString(),
-      status:
-        Number.parseFloat(item.qty_in_store) === 0
-          ? "out_of_stock"
-          : Number.parseFloat(item.qty_in_store) <= 10
-            ? "low_stock"
-            : "in_stock",
-    }))
+    const products = (data.message?.products || []).map((item: any) => {
+      const trackInventory = item.track_inventory === 1 || item.track_inventory === "1" ? 1 : 0
+      const qtyInStore = Number.parseFloat(item.qty_in_store) || 0
+
+      return {
+        id: item.product_id,
+        name: item.product_name,
+        sku: item.sku || item.product_name,
+        category: item.product_category || "Uncategorized",
+        quantity: qtyInStore,
+        qty_in_store: qtyInStore,
+        track_inventory: trackInventory,
+        reorderLevel: 10,
+        price: Number.parseFloat(item.price) || 0,
+        cost: Number.parseFloat(item.cost) || 0,
+        barcode: item.barcode,
+        colorCode: item.color_code,
+        description: item.description,
+        img: item.img || null,
+        all_selling_prices: item.all_selling_prices || [],
+        lastUpdated: new Date().toISOString(),
+        status:
+          trackInventory === 0
+            ? "in_stock" // Services are always available
+            : Number.parseFloat(item.qty_in_store) === 0
+              ? "out_of_stock"
+              : Number.parseFloat(item.qty_in_store) <= 10
+                ? "low_stock"
+                : "in_stock",
+      }
+    })
 
     return NextResponse.json({ products })
   } catch (error) {

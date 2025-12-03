@@ -55,7 +55,6 @@ interface SalesInvoice {
 export default function SalesPage() {
   const router = useRouter()
   const { user, isLoading } = useAuth()
-
   const [queueCustomer, setQueueCustomer] = useState<string>("walk-in")
   const [customerItems, setCustomerItems] = useState<{ label: string; value: string }[]>([])
   const [walkInCustomer, setWalkInCustomer] = useState<string>("")
@@ -80,7 +79,7 @@ export default function SalesPage() {
     open: false,
     title: "",
     description: "",
-    action: () => {},
+    action: () => { },
   })
   const [isCancelling, setIsCancelling] = useState(false)
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
@@ -276,10 +275,10 @@ export default function SalesPage() {
       action: async () => {
         try {
           setIsCancelling(true)
-          const response = await fetch("/api/sales/receipt/cancel", {
+          const response = await fetch("/api/sales/invoice/cancel", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sales_receipt_id: salesId }),
+            body: JSON.stringify({ sales_invoice_id: salesId }),
           })
 
           if (response.ok) {
@@ -470,11 +469,10 @@ export default function SalesPage() {
                 setActiveTab("receipts")
                 setCurrentPage(1)
               }}
-              className={`pb-3 px-2 font-semibold transition-colors ${
-                activeTab === "receipts"
-                  ? "border-b-2 border-green-500 text-green-600 dark:text-green-400"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
+              className={`pb-3 px-2 font-semibold transition-colors ${activeTab === "receipts"
+                ? "border-b-2 border-green-500 text-green-600 dark:text-green-400"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
             >
               Sales Receipts ({receipts.length})
             </button>
@@ -483,11 +481,10 @@ export default function SalesPage() {
                 setActiveTab("invoices")
                 setCurrentPage(1)
               }}
-              className={`pb-3 px-2 font-semibold transition-colors ${
-                activeTab === "invoices"
-                  ? "border-b-2 border-orange-500 text-orange-600 dark:text-orange-400"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
+              className={`pb-3 px-2 font-semibold transition-colors ${activeTab === "invoices"
+                ? "border-b-2 border-orange-500 text-orange-600 dark:text-orange-400"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
             >
               Sales Invoices ({invoices.length})
             </button>
@@ -609,10 +606,10 @@ export default function SalesPage() {
 
               {(searchTerm ||
                 dateRange.from.getTime() !== new Date(new Date().setDate(new Date().getDate() - 30)).getTime()) && (
-                <Button onClick={clearFilters} variant="outline" size="sm">
-                  Clear Filters
-                </Button>
-              )}
+                  <Button onClick={clearFilters} variant="outline" size="sm">
+                    Clear Filters
+                  </Button>
+                )}
             </div>
           </div>
 

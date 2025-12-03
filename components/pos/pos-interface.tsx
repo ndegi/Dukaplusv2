@@ -300,8 +300,12 @@ export function POSInterface({
   }, [])
 
   const addToCart = (product: any) => {
+    const trackInventory = product.track_inventory ?? 1
+    const qtyInStore = product.qty_in_store ?? product.quantity ?? 0
     const availableQty = product.quantity || 0
-    if (availableQty <= 0) {
+    
+    // Allow adding if it's a service (track_inventory === 0) or has available quantity
+    if (trackInventory === 1 && qtyInStore <= 0) {
       return
     }
 
@@ -316,7 +320,8 @@ export function POSInterface({
 
       if (existingItem) {
         const newQuantity = existingItem.quantity + 1
-        if (newQuantity > availableQty) {
+        // Only check quantity limits for products that track inventory
+        if (trackInventory === 1 && newQuantity > availableQty) {
           console.warn(
             `[DukaPlus] Cannot add more of ${product.name}. Only ${availableQty} available, requested ${newQuantity}`,
           )
@@ -326,10 +331,10 @@ export function POSInterface({
         return prevCart.map((item) =>
           item.id === product.id
             ? {
-              ...item,
-              quantity: newQuantity,
-              subtotal: newQuantity * item.price,
-            }
+                ...item,
+                quantity: newQuantity,
+                subtotal: newQuantity * item.price,
+              }
             : item,
         )
       }
@@ -348,7 +353,7 @@ export function POSInterface({
         unit_of_measure: defaultUom,
         sellingPrices: prices,
         all_selling_prices: prices,
-        available_quantity: availableQty,
+        available_quantity: trackInventory === 0 ? Infinity : availableQty, // Services have unlimited quantity
       }
 
       return [...prevCart, newItem]
@@ -357,6 +362,7 @@ export function POSInterface({
 
   const updateCartItem = (id: string, quantity: number, price?: number, unit?: string) => {
     const product = productMap[id]
+    const trackInventory = product?.track_inventory ?? 1
     const maxQty = product?.quantity || 0
 
     if (quantity < 0.01) {
@@ -364,7 +370,8 @@ export function POSInterface({
       return
     }
 
-    if (quantity > maxQty) {
+    // Only check quantity limits for products that track inventory
+    if (trackInventory === 1 && quantity > maxQty) {
       console.warn(`[DukaPlus] Quantity ${quantity} exceeds available stock of ${maxQty}`)
       return
     }
