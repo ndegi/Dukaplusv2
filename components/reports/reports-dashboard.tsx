@@ -28,11 +28,8 @@ interface SalesReportItem {
   grand_total: number
   outstanding_amount: number
   cost_of_goods_sold: number
-  mpesa: number
-  cash: number
-  paid_to_pochi: number
-  paid_to_till: number
   total_amount_paid: number
+  [key: string]: any // Allow dynamic payment mode fields
 }
 
 interface CustomerStatement {
@@ -94,10 +91,25 @@ export function ReportsDashboard({ user }: { user: User }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("sales")
+  const [paymentModes, setPaymentModes] = useState<Array<{ mode_of_payment: string }>>([])
 
   useEffect(() => {
     fetchAllReports()
+    fetchPaymentModes()
   }, [])
+
+  const fetchPaymentModes = async () => {
+    try {
+      const response = await fetch("/api/payments/modes")
+      if (response.ok) {
+        const data = await response.json()
+        const modes = data.modes || data.message?.mode_of_payments || []
+        setPaymentModes(Array.isArray(modes) ? modes : [])
+      }
+    } catch (error) {
+      console.error("[DukaPlus] Failed to fetch payment modes:", error)
+    }
+  }
 
   const fetchAllReports = async () => {
     try {
@@ -221,6 +233,7 @@ export function ReportsDashboard({ user }: { user: User }) {
             isLoading={isLoading}
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
+            paymentModes={paymentModes}
           />
         </TabsContent>
 
@@ -260,16 +273,80 @@ function SalesReportTable({
   isLoading,
   dateRange,
   onDateRangeChange,
+  paymentModes,
 }: {
   data: SalesReportItem[]
   isLoading: boolean
   dateRange: { from: Date; to: Date }
   onDateRangeChange: (range: { from: Date; to: Date }) => void
+  paymentModes: Array<{ mode_of_payment: string }>
 }) {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
   const itemsPerPage = 10
   const { formatCurrency } = useCurrency()
+
+  // Helper function to convert payment mode name to snake_case key
+  const getPaymentModeKey = (modeName: string): string => {
+    return modeName.toLowerCase().replace(/\s+/g, "_").replace(/-/g, "_")
+  }
+
+  // Get all unique payment mode fields that exist in the data
+  const getAvailablePaymentModes = (): Array<{ mode: string; key: string }> => {
+    const availableModes: Array<{ mode: string; key: string }> = []
+    const seenKeys = new Set<string>()
+
+    // First, try to use payment modes from API
+    if (paymentModes.length > 0) {
+      paymentModes.forEach((pm) => {
+        const key = getPaymentModeKey(pm.mode_of_payment)
+        // Check if this key exists in any data item
+        const existsInData = data.some((item) => item[key] !== undefined && item[key] !== null)
+        if (existsInData && !seenKeys.has(key)) {
+          availableModes.push({ mode: pm.mode_of_payment, key })
+          seenKeys.add(key)
+        }
+      })
+    }
+
+    // Also check for any other payment-related fields in the data that might not be in payment modes
+    if (data.length > 0) {
+      const sampleItem = data[0]
+      Object.keys(sampleItem).forEach((key) => {
+        // Skip known non-payment fields
+        const nonPaymentFields = [
+          "sales_invoice",
+          "warehouse",
+          "posting_date",
+          "posting_time",
+          "status",
+          "customer",
+          "location",
+          "grand_total",
+          "outstanding_amount",
+          "cost_of_goods_sold",
+          "total_amount_paid",
+        ]
+        if (
+          !nonPaymentFields.includes(key) &&
+          typeof sampleItem[key] === "number" &&
+          !seenKeys.has(key)
+        ) {
+          // Convert key back to readable format
+          const readableMode = key
+            .split("_")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ")
+          availableModes.push({ mode: readableMode, key })
+          seenKeys.add(key)
+        }
+      })
+    }
+
+    return availableModes
+  }
+
+  const availablePaymentModes = getAvailablePaymentModes()
 
   const clearFilters = () => {
     setSearchTerm("")
@@ -360,8 +437,11 @@ function SalesReportTable({
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Customer</th>
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Warehouse</th>
               <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Amount</th>
-              <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Cash</th>
-              <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">M-Pesa</th>
+              {availablePaymentModes.map((pm) => (
+                <th key={pm.key} className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">
+                  {pm.mode}
+                </th>
+              ))}
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Status</th>
             </tr>
           </thead>
@@ -378,8 +458,11 @@ function SalesReportTable({
                 <td className="p-3 text-right text-orange-600 dark:text-orange-400 font-semibold">
                   {formatCurrency(row.grand_total)}
                 </td>
-                <td className="p-3 text-right text-gray-600 dark:text-gray-400">{formatCurrency(row.cash)}</td>
-                <td className="p-3 text-right text-gray-600 dark:text-gray-400">{formatCurrency(row.mpesa)}</td>
+                {availablePaymentModes.map((pm) => (
+                  <td key={pm.key} className="p-3 text-right text-gray-600 dark:text-gray-400">
+                    {formatCurrency(row[pm.key] || 0)}
+                  </td>
+                ))}
                 <td className="p-3">
                   <span
                     className={`px-2 py-1 rounded text-xs font-semibold ${

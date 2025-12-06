@@ -16,11 +16,8 @@ interface SalesReportItem {
   grand_total: number
   outstanding_amount: number
   cost_of_goods_sold: number
-  mpesa: number
-  cash: number
-  paid_to_pochi: number
-  paid_to_till: number
   total_amount_paid: number
+  [key: string]: any // Allow dynamic payment mode fields
 }
 
 interface CustomerStatement {
@@ -137,37 +134,71 @@ export function ExportButton({
 }
 
 function generateSalesExport(data: SalesReportItem[], dateRange: { from: Date; to: Date }, currency: any): string {
+  // Get all unique payment mode fields from data
+  const nonPaymentFields = [
+    "sales_invoice",
+    "warehouse",
+    "posting_date",
+    "posting_time",
+    "status",
+    "customer",
+    "location",
+    "grand_total",
+    "outstanding_amount",
+    "cost_of_goods_sold",
+    "total_amount_paid",
+  ]
+
+  const paymentModeKeys = new Set<string>()
+  if (data.length > 0) {
+    Object.keys(data[0]).forEach((key) => {
+      if (!nonPaymentFields.includes(key) && typeof data[0][key] === "number") {
+        paymentModeKeys.add(key)
+      }
+    })
+  }
+
+  // Convert keys to readable format
+  const paymentModeHeaders = Array.from(paymentModeKeys).map((key) =>
+    key
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
+  )
+
+  const headerRow = [
+    "Invoice",
+    "Date",
+    "Time",
+    "Customer",
+    "Warehouse",
+    "Location",
+    "Amount",
+    ...paymentModeHeaders,
+    "Outstanding",
+    "Status",
+  ]
+
+  const dataRows = data.map((item) => [
+    item.sales_invoice,
+    item.posting_date,
+    item.posting_time,
+    item.customer,
+    item.warehouse,
+    item.location,
+    item.grand_total.toFixed(2),
+    ...Array.from(paymentModeKeys).map((key) => ((item[key] as number) || 0).toFixed(2)),
+    item.outstanding_amount.toFixed(2),
+    item.status,
+  ])
+
   const rows = [
     ["DukaPlus Sales Report"],
     [`Generated: ${new Date().toLocaleString()}`],
     [`Period: ${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}`],
     [],
-    [
-      "Invoice",
-      "Date",
-      "Time",
-      "Customer",
-      "Warehouse",
-      "Location",
-      "Amount",
-      "Cash",
-      "M-Pesa",
-      "Outstanding",
-      "Status",
-    ],
-    ...data.map((item) => [
-      item.sales_invoice,
-      item.posting_date,
-      item.posting_time,
-      item.customer,
-      item.warehouse,
-      item.location,
-      item.grand_total.toFixed(2),
-      item.cash.toFixed(2),
-      item.mpesa.toFixed(2),
-      item.outstanding_amount.toFixed(2),
-      item.status,
-    ]),
+    headerRow,
+    ...dataRows,
   ]
 
   return rows.map((row) => row.map((cell) => `"${cell}"`).join(",")).join("\n")

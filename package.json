@@ -61,6 +61,7 @@
     "@reduxjs/toolkit": "2.11.0",
     "@vercel/analytics": "latest",
     "autoprefixer": "^10.4.20",
+    "axios": "^1.7.9",
     "buffer": "6.0.3",
     "child_process": "latest",
     "class-variance-authority": "^0.7.1",

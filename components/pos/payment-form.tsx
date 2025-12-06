@@ -18,6 +18,7 @@ import {
   Send,
 } from "lucide-react";
 import { useCurrency } from "@/lib/contexts/currency-context";
+import { Toast } from "../ui/toast";
 
 interface PaymentMode {
   mode_of_payment: string;
@@ -378,10 +379,10 @@ export function PaymentForm({
       const updatedSplits = prev.map((p) =>
         p.id === id
           ? {
-            ...p,
-            [field]: field === "amount" ? Number(value) : value,
-            isPaid: false,
-          }
+              ...p,
+              [field]: field === "amount" ? Number(value) : value,
+              isPaid: false,
+            }
           : p
       );
 
@@ -445,11 +446,11 @@ export function PaymentForm({
           splitPayments.map((p) =>
             p.id === paymentId
               ? {
-                ...p,
-                isPaid: true,
-                reference:
-                  data.checkoutRequestId || data.message?.transaction_id,
-              }
+                  ...p,
+                  isPaid: true,
+                  reference:
+                    data.checkoutRequestId || data.message?.transaction_id,
+                }
               : p
           )
         );
@@ -492,7 +493,9 @@ export function PaymentForm({
           </html>
         `);
       }
-    } catch (error) { }
+    } catch (error) {
+      Toast;
+    }
   };
 
   const sendReceipt = async (salesId: string, mobile: string) => {
@@ -519,7 +522,7 @@ export function PaymentForm({
           text: data.message?.message || "Failed to send receipt",
         });
       }
-    } catch (error) { }
+    } catch (error) {}
   };
 
   const saveDraft = async () => {
@@ -1007,12 +1010,13 @@ export function PaymentForm({
                                     type="button"
                                     onClick={() => handleSTKPush(payment.id)}
                                     disabled={isProcessingSTK}
-                                    className={`h-9 px-2.5 text-xs whitespace-nowrap ${stkState === "processing"
-                                      ? "bg-yellow-600 hover:bg-yellow-700"
-                                      : stkState === "failure"
+                                    className={`h-9 px-2.5 text-xs whitespace-nowrap ${
+                                      stkState === "processing"
+                                        ? "bg-yellow-600 hover:bg-yellow-700"
+                                        : stkState === "failure"
                                         ? "bg-red-600 hover:bg-red-700"
                                         : "bg-orange-600 hover:bg-orange-700"
-                                      } text-white`}
+                                    } text-white`}
                                   >
                                     {stkState === "processing" ? (
                                       <>
@@ -1234,10 +1238,10 @@ export function PaymentForm({
               {isProcessing
                 ? "Processing..."
                 : !hasActiveShift && !isInvoicePayment
-                  ? "No Shift"
-                  : canComplete
-                    ? "Complete"
-                    : `${currency} ${Math.abs(remaining).toFixed(2)}`}
+                ? "No Shift"
+                : canComplete
+                ? "Complete"
+                : `${currency} ${Math.abs(remaining).toFixed(2)}`}
             </Button>
           </div>
         </div>
