@@ -134,25 +134,21 @@ export function ReportsDashboard({ user }: { user: User }) {
 
       if (salesRes.ok) {
         const data = await salesRes.json()
-        console.log("[DukaPlus] Sales data received:", data.sales?.length || 0, "records")
         setSalesReports(data.sales || [])
       }
 
       if (customerRes.ok) {
         const data = await customerRes.json()
-        console.log("[DukaPlus] Customer data received:", data.customers?.length || 0, "records")
         setCustomerStatements(data.customers || [])
       }
 
       if (stockRes.ok) {
         const data = await stockRes.json()
-        console.log("[DukaPlus] Stock balance response:", data)
         setStockBalance(data.message?.data || data.stock || [])
       }
 
       if (ledgerRes.ok) {
         const data = await ledgerRes.json()
-        console.log("[DukaPlus] Stock ledger response:", data)
         setStockLedger(data.message?.data || data.stock || [])
       }
 
@@ -286,7 +282,6 @@ function SalesReportTable({
   const itemsPerPage = 10
   const { formatCurrency } = useCurrency()
 
-  // Helper function to convert payment mode name to snake_case key
   const getPaymentModeKey = (modeName: string): string => {
     return modeName.toLowerCase().replace(/\s+/g, "_").replace(/-/g, "_")
   }
@@ -465,11 +460,10 @@ function SalesReportTable({
                 ))}
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      row.status === "Paid"
-                        ? "bg-green-500/20 text-green-600 dark:text-green-400"
-                        : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                    }`}
+                    className={`px-2 py-1 rounded text-xs font-semibold ${row.status === "Paid"
+                      ? "bg-green-500/20 text-green-600 dark:text-green-400"
+                      : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                      }`}
                   >
                     {row.status}
                   </span>
@@ -622,11 +616,10 @@ function CustomerStatementTable({
                 </td>
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      row.outstanding_amount === 0
-                        ? "bg-green-500/20 text-green-600 dark:text-green-400"
-                        : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                    }`}
+                    className={`px-2 py-1 rounded text-xs font-semibold ${row.outstanding_amount === 0
+                      ? "bg-green-500/20 text-green-600 dark:text-green-400"
+                      : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                      }`}
                   >
                     {row.outstanding_amount === 0 ? "Paid" : "Pending"}
                   </span>
@@ -790,8 +783,6 @@ function StockBalanceTable({
 function StockLedgerTable({
   data,
   isLoading,
-  dateRange,
-  onDateRangeChange,
 }: {
   data: StockLedgerItem[]
   isLoading: boolean
@@ -840,7 +831,6 @@ function StockLedgerTable({
 
       if (response.ok) {
         const result = await response.json()
-        console.log("[DukaPlus] Stock ledger API response:", result)
         setApiData(result.message?.data || result.data || [])
       } else {
         console.error("[DukaPlus] Failed to fetch stock ledger:", response.status)

@@ -42,8 +42,6 @@ interface DashboardLayoutProps {
 export function DashboardLayout({
   children,
   searchTerm,
-  quantity,
-  selectedCustomer,
   onSearchChange,
   onQuantityChange,
   onCustomerChange,
@@ -85,7 +83,6 @@ export function DashboardLayout({
       const customEvent = event as CustomEvent
       const newWarehouseId = customEvent.detail
       setWarehouseId(newWarehouseId)
-      console.log("[DukaPlus] Warehouse changed event received, updating warehouseId to:", newWarehouseId)
     }
 
     window.addEventListener("warehouseChanged", handleWarehouseChange)
@@ -98,19 +95,15 @@ export function DashboardLayout({
     }
   }, [isPOS])
 
-  // Listen for POS asking to reset the active customer back to the API walk-in
   useEffect(() => {
     if (!isPOS) return
 
     const handleResetToWalkIn = async () => {
-      // Fetch walk-in customer from API to ensure we have the latest data
       try {
         const walkInResponse = await fetch("/api/sales/walk-in-customer")
         if (walkInResponse.ok) {
           const walkInData = await walkInResponse.json()
           const walkInName = walkInData.walk_in_customer || ""
-
-          // Find the walk-in customer in the customers list to get its actual ID
           const walkIn = customers.find(
             (c) => c.name === walkInName || c.id === walkInName || c.name.toLowerCase().includes("walk")
           )
@@ -118,8 +111,6 @@ export function DashboardLayout({
           if (walkIn) {
             // Update the header input text
             setCustomerSearch(walkIn.name || "")
-
-            // Notify parent (POS page) so POSInterface also receives the walk-in selection
             onCustomerChange?.(
               JSON.stringify({
                 id: walkIn.id, // Use the actual customer_id from API
@@ -140,41 +131,27 @@ export function DashboardLayout({
 
   const fetchWalkInCustomerFirst = async () => {
     try {
-      console.log("[DukaPlus] Starting customer fetch...")
-
-      // First fetch walk-in customer
       const walkInResponse = await fetch("/api/sales/walk-in-customer")
       let walkInName = ""
 
       if (walkInResponse.ok) {
         const walkInData = await walkInResponse.json()
         walkInName = walkInData.walk_in_customer || ""
-        console.log("[DukaPlus] Fetched walk-in customer:", walkInName)
       } else {
         console.warn("[DukaPlus] Failed to fetch walk-in customer:", walkInResponse.status)
       }
-
-      // Then fetch regular customers
-      console.log("[DukaPlus] Fetching customers list...")
       const customersResponse = await fetch("/api/customers/list")
 
       if (!customersResponse.ok) {
-        console.error("[DukaPlus] Customers list API returned error:", customersResponse.status)
         throw new Error(`Failed to fetch customers: ${customersResponse.status}`)
       }
 
       const customersData = await customersResponse.json()
-      console.log("[DukaPlus] Customers response:", customersData)
 
       const customerList = customersData.customers || customersData.message?.customers || []
-      console.log("[DukaPlus] Extracted customer list:", customerList.length, "customers")
-
-      // Find the walk-in customer in the list to get its actual customer_id from the API
       const walkInCustomer = customerList.find(
         (c: any) => (c.customer_id || c.customer_name) === walkInName || (c.customer_name || c.name) === walkInName
       )
-
-      // Use the actual customer_id from the API if found, otherwise use the name
       const walkInCustomerId = walkInCustomer
         ? walkInCustomer.customer_id || walkInCustomer.id || walkInName
         : walkInName
@@ -183,7 +160,6 @@ export function DashboardLayout({
         { id: walkInCustomerId, name: walkInName, mobile_number: "" },
         ...customerList
           .filter((c: any) => {
-            // Exclude walk-in from the regular list since we're adding it separately
             const cId = c.customer_id || c.id || c.customer_name
             const cName = c.customer_name || c.name
             return cId !== walkInCustomerId && cName !== walkInName
@@ -194,9 +170,6 @@ export function DashboardLayout({
             mobile_number: c.mobile_number || "",
           })),
       ]
-
-      console.log("[DukaPlus] Setting customers state with", allCustomers.length, "total customers")
-      console.log("[DukaPlus] Walk-in customer ID from API:", walkInCustomerId)
       setCustomers(allCustomers)
     } catch (error) {
       console.error("[DukaPlus] Error in fetchWalkInCustomerFirst:", error)
@@ -430,7 +403,6 @@ export function DashboardLayout({
                           key={customer.id}
                           onClick={() => {
                             setCustomerSearch(customer.name)
-                            // Pass full customer payload (id, name, mobile_number) as JSON string
                             onCustomerChange?.(
                               JSON.stringify({
                                 id: customer.id,
@@ -487,7 +459,6 @@ export function DashboardLayout({
         />
       )}
 
-      {/* Sales Person Switcher Modal - only for POS */}
       {isPOS && showSalesPersonModal && (
         <SalesPeopleSwitcher
           onSuccess={(salesPerson) => {
