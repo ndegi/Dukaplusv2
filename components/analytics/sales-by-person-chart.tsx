@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { Card } from "@/components/ui/card"
-
+import { useCurrency } from "@/lib/contexts/currency-context"
 interface SalesByPersonChartProps {
   dateRange: { from: Date; to: Date }
   warehouse: string
@@ -13,7 +13,7 @@ interface SalesByPersonChartProps {
 export function SalesByPersonChart({ dateRange, warehouse, isLoading = false }: SalesByPersonChartProps) {
   const [data, setData] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
-
+  const { currency } = useCurrency()
   useEffect(() => {
     const fetchPersonData = async () => {
       try {
@@ -62,7 +62,7 @@ export function SalesByPersonChart({ dateRange, warehouse, isLoading = false }: 
               contentStyle={{ backgroundColor: "var(--background)", border: "1px solid var(--border)" }}
               labelStyle={{ color: "var(--foreground)" }}
             />
-            <Bar dataKey="total_sales" fill="#10b981" name="Total Sales" />
+            <Bar dataKey="total_sales" fill="#10b981" name={`Total Sales (${currency})`} />
           </BarChart>
         </ResponsiveContainer>
       )}

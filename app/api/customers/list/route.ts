@@ -21,8 +21,6 @@ export async function GET(req: NextRequest) {
 
     const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
 
-    console.log("[DukaPlus] Fetching customers from:", credentials.baseUrl)
-
     const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.rest.get_all_customers`, {
       method: "GET",
       headers: {
@@ -33,15 +31,12 @@ export async function GET(req: NextRequest) {
 
     const data = await response.json()
 
-    console.log("[DukaPlus] Customers API response status:", response.status, "data:", data)
-
     if (!response.ok) {
       console.error("[DukaPlus] Get customers error:", { status: response.status, data })
       return NextResponse.json({ error: "Failed to fetch customers" }, { status: response.status })
     }
 
     const customerList = data.message?.customers || data.customers || []
-    console.log("[DukaPlus] Extracted customer list length:", customerList.length)
 
     const customers = customerList.map((customer: any) => ({
       customer_id: customer.customer_id || customer.id,

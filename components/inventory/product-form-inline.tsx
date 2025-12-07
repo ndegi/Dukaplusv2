@@ -4,10 +4,13 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import { AlertCircle, CheckCircle, Upload, X, Check, ChevronsUpDown } from "lucide-react"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { useCurrency } from "@/lib/contexts/currency-context"
+import { Label } from "@/components/ui/label"
 
 interface Product {
   id: string
@@ -23,16 +26,22 @@ interface Product {
   description?: string
   img?: string
   lastUpdated: string
+  product_status: any
   status: "in_stock" | "low_stock" | "out_of_stock"
+  purpose: string
+  track_inventory: number
+  is_purchase_item: any
+  
 }
 
 interface ProductFormProps {
-  product: Product | null
+  product: Product
   onClose: () => void
   onSave: () => void
 }
 
 export function ProductFormInline({ product, onClose, onSave }: ProductFormProps) {
+  const { currency } = useCurrency()
   const [formData, setFormData] = useState({
     product_id: "",
     sku: "",
@@ -51,16 +60,21 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
     barcode: "",
     purpose: "Stock Reconciliation",
     img: "",
+    product_status: 1,
   })
 
   const [imagePreview, setImagePreview] = useState<string>("")
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-
+  const [productStatus, setProductStatus] = useState(1)
   const [categories, setCategories] = useState<string[]>([])
   const [categoryOpen, setCategoryOpen] = useState(false)
   const [categorySearch, setCategorySearch] = useState("")
   const [isCreatingCategory, setIsCreatingCategory] = useState(false)
+  const [trackInventory, setTrackInventory] = useState(true)
+  const [isPurchaseItem, setIsPurchaseItem] = useState(true)
+  const [originalStockQuantity, setOriginalStockQuantity] = useState("")
+  const [showPurposeSelector, setShowPurposeSelector] = useState(false)
 
   useEffect(() => {
     const selectedWarehouse = sessionStorage.getItem("selected_warehouse") || "Emidan Farm - DP"
@@ -86,6 +100,7 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
         barcode: product.barcode || "",
         purpose: "Stock Reconciliation",
         img: product.img || "",
+        product_status: product.product_status === 1 ? 1 : 0,
       })
       setImagePreview(product.img || "")
     } else {
@@ -95,6 +110,16 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
       }))
     }
   }, [product])
+
+  useEffect(() => {
+    if (product && trackInventory) {
+      const hasQuantityChanged = formData.stock_quantity.toString() !== originalStockQuantity
+      setShowPurposeSelector(hasQuantityChanged)
+      if (!hasQuantityChanged) {
+        setFormData((prev) => ({ ...prev, purpose: "Stock Reconciliation" }))
+      }
+    }
+  }, [formData.stock_quantity, originalStockQuantity, trackInventory, product])
 
   const fetchCategories = async (warehouseId: string) => {
     try {
@@ -143,8 +168,17 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
     setFormData((prev) => ({ ...prev, img: "" }))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
+    if (isPurchaseItem && !formData.product_cost) {
+      setMessage({ type: "error", text: "Cost is required for purchase items" })
+      return
+    }
+
+    if (showPurposeSelector && !formData.purpose) {
+      setMessage({ type: "error", text: "Please select a purpose for the quantity change" })
+      return
+    }
+
     setIsLoading(true)
     setMessage(null)
 
@@ -215,7 +249,7 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-4">
         <div>
           <label className="form-label">Product Image</label>
           <div className="space-y-3">
@@ -274,6 +308,21 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
           </div>
 
           <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="product-status" className="form-label">
+                Product Active
+              </Label>
+              <Switch
+                id="product-status"
+                checked={productStatus === 1}
+                onCheckedChange={(checked) => setProductStatus(checked ? 1 : 0)}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
             <label className="form-label">SKU</label>
             <Input
               type="text"
@@ -283,6 +332,18 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
               placeholder="Enter SKU"
               className="input-base"
               required
+            />
+          </div>
+
+          <div>
+            <label className="form-label">Barcode</label>
+            <Input
+              type="text"
+              name="barcode"
+              value={formData.barcode}
+              onChange={handleChange}
+              placeholder="Enter barcode"
+              className="input-base"
             />
           </div>
         </div>
@@ -324,7 +385,7 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
                   />
                   <CommandList>
                     <CommandEmpty>
-                      <div className="p-2">
+                      <div >
                         <p className="text-sm text-muted-foreground mb-2">No category found.</p>
                         {categorySearch && (
                           <Button
@@ -389,23 +450,30 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="form-label">Cost (KES)</label>
-            <Input
-              type="number"
-              name="product_cost"
-              value={formData.product_cost}
-              onChange={handleChange}
-              placeholder="Enter cost"
-              step="0.01"
-              className="input-base"
-              required
-            />
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="purchase-item" className="form-label">
+                Is Purchase Item
+              </Label>
+              <Switch id="purchase-item" checked={isPurchaseItem} onCheckedChange={setIsPurchaseItem} />
+            </div>
+            {isPurchaseItem && (
+              <Input
+                type="number"
+                name="product_cost"
+                value={formData.product_cost}
+                onChange={handleChange}
+                placeholder={`Cost (${currency})`}
+                step="0.01"
+                className="input-base"
+                required
+              />
+            )}
           </div>
 
           <div>
-            <label className="form-label">Selling Price </label>
+            <label className="form-label">Selling Price ({currency})</label>
             <Input
               type="number"
               name="price"
@@ -417,32 +485,27 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
               required
             />
           </div>
-
-          <div>
-            <label className="form-label">Stock Quantity</label>
-            <Input
-              type="number"
-              name="stock_quantity"
-              value={formData.stock_quantity}
-              onChange={handleChange}
-              placeholder="Enter stock quantity"
-              className="input-base"
-              required
-            />
-          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="form-label">Barcode</label>
-            <Input
-              type="text"
-              name="barcode"
-              value={formData.barcode}
-              onChange={handleChange}
-              placeholder="Enter barcode"
-              className="input-base"
-            />
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="track-inventory" className="form-label">
+                Track Inventory
+              </Label>
+              <Switch id="track-inventory" checked={trackInventory} onCheckedChange={setTrackInventory} />
+            </div>
+            {trackInventory && (
+              <Input
+                type="number"
+                name="stock_quantity"
+                value={formData.stock_quantity}
+                onChange={handleChange}
+                placeholder="Stock quantity"
+                className="input-base"
+                required
+              />
+            )}
           </div>
 
           <div>
@@ -454,7 +517,7 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
           </div>
         </div>
 
-        {product && (
+        {showPurposeSelector && (
           <div>
             <label className="form-label">Purpose</label>
             <select
@@ -470,14 +533,15 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
         )}
 
         <div className="flex gap-3 pt-4">
-          <Button type="submit" disabled={isLoading} className="btn-create flex-1">
-            {isLoading ? "Saving..." : "Save Product"}
-          </Button>
           <Button type="button" onClick={onClose} className="btn-cancel flex-1">
             Cancel
           </Button>
+          <Button onClick={handleSubmit} disabled={isLoading} className="btn-create flex-1">
+            {isLoading ? "Saving..." : "Save Product"}
+          </Button>
+
         </div>
-      </form>
+      </div>
     </div>
   )
 }

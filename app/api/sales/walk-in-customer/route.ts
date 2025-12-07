@@ -28,12 +28,6 @@ export async function GET(request: NextRequest) {
       walkInUrl.searchParams.set("warehouse_id", warehouseId)
     }
 
-    console.log("[DukaPlus] Fetching walk-in customer with:", {
-      url: walkInUrl.toString(),
-      hasAuth: !!authHeader,
-      warehouseId,
-    })
-
     const response = await fetch(walkInUrl.toString(), {
       headers: {
         Authorization: authHeader,
@@ -42,7 +36,6 @@ export async function GET(request: NextRequest) {
     })
 
     const responseText = await response.text()
-    console.log("[DukaPlus] Walk-in API raw response:", { status: response.status, body: responseText })
 
     if (!response.ok) {
       console.error("[DukaPlus] Walk-in API error:", { status: response.status, body: responseText })
@@ -53,7 +46,6 @@ export async function GET(request: NextRequest) {
 
     try {
       const data = JSON.parse(responseText)
-      console.log("[DukaPlus] Walk-in API parsed response:", data)
 
       const walkInCustomer = data.message?.walk_in_customer || "Walk In"
 

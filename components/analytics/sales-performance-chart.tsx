@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { Card } from "@/components/ui/card"
-import { formatCurrency } from "@/lib/utils/format"
+import { useCurrency } from "@/lib/contexts/currency-context"
 
 interface SalesPerformanceChartProps {
   dateRange: { from: Date; to: Date }
@@ -14,7 +14,7 @@ interface SalesPerformanceChartProps {
 export function SalesPerformanceChart({ dateRange, warehouse, isLoading = false }: SalesPerformanceChartProps) {
   const [data, setData] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
-
+  const { currency } = useCurrency()
   useEffect(() => {
     const fetchPerformanceData = async () => {
       try {
@@ -71,7 +71,7 @@ export function SalesPerformanceChart({ dateRange, warehouse, isLoading = false 
                 borderRadius: "0.5rem",
               }}
               labelStyle={{ color: "var(--tooltip-text)" }}
-              formatter={(value: number) => [formatCurrency(value), "Total Sales"]}
+              formatter={(value: number) => [`${currency} ${value}`, "Total Sales"]}
             />
             <Area
               type="monotone"

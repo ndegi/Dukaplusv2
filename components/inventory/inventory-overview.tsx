@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Plus, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Plus } from "lucide-react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
 import { ProductFormInline } from "./product-form-inline"
@@ -26,6 +26,11 @@ interface Product {
   img?: string
   lastUpdated: string
   status: "in_stock" | "low_stock" | "out_of_stock"
+  product_status: any
+  track_inventory: number
+  is_purchase_item: number
+  purpose: string
+  
 }
 
 export function InventoryOverview() {
@@ -49,7 +54,8 @@ export function InventoryOverview() {
       (product) =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchTerm.toLowerCase()),
+        product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.barcode?.toLowerCase().includes(searchTerm.toLowerCase())
     )
     setFilteredProducts(filtered)
     setCurrentPage(1)
@@ -58,18 +64,10 @@ export function InventoryOverview() {
   const fetchProducts = async () => {
     try {
       setIsLoading(true)
-      const credentialsStr = sessionStorage.getItem("tenant_credentials")
-      const credentials = credentialsStr ? JSON.parse(credentialsStr) : null
       const warehouse = sessionStorage.getItem("selected_warehouse") || "Emidan Farm - DP"
 
       const response = await fetch(`/api/inventory/products?warehouse_id=${encodeURIComponent(warehouse)}`, {
-        headers: credentials
-          ? {
-            "X-API-Key": credentials.api_key,
-            "X-API-Secret": credentials.api_secret,
-            "X-Base-URL": credentials.base_url,
-          }
-          : {},
+        headers: { "Content-Type": "application/json" },
       })
 
       if (response.ok) {
@@ -186,6 +184,7 @@ export function InventoryOverview() {
                     <th className="table-header-cell text-center uppercase">Cost</th>
                     <th className="table-header-cell text-center uppercase">Price</th>
                     <th className="table-header-cell text-center uppercase">Status</th>
+                    <th className="table-header-cell text-center uppercase">Stock Status</th>
                     <th className="table-header-cell text-center uppercase">Actions</th>
                   </tr>
                 </thead>
@@ -202,6 +201,17 @@ export function InventoryOverview() {
                       </td>
                       <td className="table-cell-secondary text-center">
                         {currency} {product.price.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-center">
+                        <span
+                          className={
+                            product.product_status === 1
+                              ? "badge-success"
+                              : "badge-danger"
+                          }
+                        >
+                          {product.product_status === 1 ? "Enabled" : "Enabled"}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-center">
                         <span
@@ -240,8 +250,6 @@ export function InventoryOverview() {
                 totalRecords={filteredProducts.length}
               />
             )}
-
-
           </>
         )}
       </div>

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Trash2, AlertCircle } from "lucide-react"
-import { formatCurrency, formatNumber } from "@/lib/utils/format"
 import { useCurrency } from "@/lib/contexts/currency-context"
 
 interface CartItem {
@@ -361,7 +360,7 @@ export function CartSummary({
                             value={sp.unit_of_measure}
                             className="text-foreground text-xs"
                           >
-                            {sp.unit_of_measure} ({formatNumber(sp.unit_selling_price)})
+                            {sp.unit_of_measure} ({`${currency} ${sp.unit_selling_price}`})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -381,7 +380,7 @@ export function CartSummary({
                   />
                 </div>
                 <div className="text-right text-foreground font-semibold text-xs">
-                  {formatNumber(item.quantity * item.price)}
+                  {`${currency} ${item.quantity * item.price}`}
                 </div>
               </div>
             )
@@ -392,7 +391,7 @@ export function CartSummary({
       <div className="border-t border-border px-2 sm:px-4 py-1.5 sm:py-2 space-y-1.5 bg-card">
         <div className="flex justify-between items-center">
           <span className="text-xs sm:text-sm font-semibold text-foreground">Total: ({cart.length} items)</span>
-          <span className="text-base sm:text-lg font-bold text-success">{formatCurrency(totalAmount, currency)}</span>
+          <span className="text-base sm:text-lg font-bold text-success">{`${currency} ${totalAmount}`}</span>
         </div>
 
         <Button
@@ -400,7 +399,7 @@ export function CartSummary({
           disabled={cart.length === 0 || isProcessing}
           className="w-full btn-success h-8 sm:h-9 text-xs sm:text-sm font-bold uppercase rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          CHECKOUT ({formatCurrency(totalAmount, currency)})
+          CHECKOUT ({`${currency} ${totalAmount}`})
         </Button>
 
         {queuedCount > 0 ? (
@@ -416,7 +415,7 @@ export function CartSummary({
               onClick={() => setShowQueueModal(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white h-8 sm:h-9 text-xs sm:text-sm font-bold uppercase rounded-lg"
             >
-              QUEUED ({queuedCount})
+              QUEUED ({`${queuedCount} receipts`})
             </Button>
           </div>
         ) : (

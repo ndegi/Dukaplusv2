@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
-import { formatCurrency, formatNumber } from "@/lib/utils/format"
+import { useCurrency } from "@/lib/contexts/currency-context"
 
 interface ProductProductivityTableProps {
   dateRange: { from: Date; to: Date }
@@ -21,7 +21,7 @@ export function ProductProductivityTable({ dateRange, warehouse, isLoading = fal
   const [data, setData] = useState<ProductData[]>([])
   const [error, setError] = useState<string | null>(null)
   const [internalLoading, setInternalLoading] = useState<boolean>(true)
-
+  const { currency } = useCurrency()
   useEffect(() => {
     const fetchProductData = async () => {
       try {
@@ -84,10 +84,10 @@ export function ProductProductivityTable({ dateRange, warehouse, isLoading = fal
                   <td className="p-3 text-slate-900 dark:text-slate-200 font-medium">{product.item_code}</td>
                   <td className="p-3 text-slate-600 dark:text-slate-400">{product.item_name}</td>
                   <td className="p-3 text-right text-blue-600 dark:text-blue-400 font-semibold">
-                    {formatNumber(product.total_qty)}
+                    {product.total_qty}
                   </td>
                   <td className="p-3 text-right text-green-600 dark:text-green-400 font-semibold">
-                    {formatCurrency(product.total_sales)}
+                    {`${currency} ${product.total_sales}`}
                   </td>
                 </tr>
               ))}

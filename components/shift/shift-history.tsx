@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { formatDate } from "@/lib/utils/format"
-import { useCurrency } from "@/hooks/use-currency"
+import { useCurrency } from "@/lib/contexts/currency-context"
 import { AlertCircle, Search, Filter, Calendar } from 'lucide-react'
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -40,7 +39,7 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
     to: new Date()
   })
   const [showDatePicker, setShowDatePicker] = useState(false)
-  const { formatCurrency } = useCurrency()
+  const { currency } = useCurrency()
 
   useEffect(() => {
     fetchShifts()
@@ -218,7 +217,7 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
                     <td className="table-cell px-3 sm:px-4">
                       <span className="font-mono text-warning font-semibold text-xs sm:text-sm">{shift.shift_name}</span>
                     </td>
-                    <td className="table-cell-secondary px-3 sm:px-4 text-xs sm:text-sm">{formatDate(shift.shift_date)}</td>
+                    <td className="table-cell-secondary px-3 sm:px-4 text-xs sm:text-sm">{new Date(shift.shift_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
                     <td className="table-cell text-center px-3 sm:px-4">
                       <span
                         className={shift.status === 0 ? "badge-success text-xs" : "badge-disabled text-xs"}
@@ -244,14 +243,14 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
                               {shift.details.map((detail, index) => (
                                 <tr key={index} className="hover:bg-muted/20">
                                   <td className="px-2 py-1.5 font-medium text-foreground">{detail.mode_of_payment}</td>
-                                  <td className="px-2 py-1.5 text-right text-muted-foreground">{formatCurrency(detail.opening_amount ?? 0)}</td>
-                                  <td className="px-2 py-1.5 text-right text-success">{formatCurrency(detail.total_sales ?? 0)}</td>
-                                  <td className="px-2 py-1.5 text-right text-warning">{formatCurrency(detail.expected_closing_balance ?? 0)}</td>
-                                  <td className={`px-2 py-1.5 text-right font-semibold ${(detail.difference ?? 0) === 0 ? 'text-muted-foreground' :
-                                    (detail.difference ?? 0) > 0 ? 'text-success' : 'text-danger'
+                                  <td className="px-2 py-1.5 text-right text-muted-foreground">{`${currency} ${detail.opening_amount ?? 0}`}</td>
+                                  <td className="px-2 py-1.5 text-right text-success">{`${currency} ${detail.total_sales ?? 0}`}</td>
+                                  <td className="px-2 py-1.5 text-right text-warning">{`${currency} ${detail.expected_closing_balance ?? 0}`}</td>
+                                  <td className={`px-2 py-1.5 text-right font-semibold ${(Number(detail.difference.toFixed(2)) ?? 0).toFixed(2) === '0.00' ? 'text-muted-foreground' :
+                                    (Number(detail.difference.toFixed(2))) > 0 ? 'text-success' : 'text-danger'
                                     }`}>
-                                    {(detail.difference ?? 0) === 0 ? '-' :
-                                      `${formatCurrency(Math.abs(detail.difference ?? 0))} ${(detail.difference ?? 0) > 0 ? '↑' : '↓'}`
+                                    {(Number(detail.difference.toFixed(2))) === 0 ? '-' :
+                                      `${`${currency} ${Math.abs(Number(detail.difference.toFixed(2)))}`} ${(Number(detail.difference.toFixed(2))) > 0 ? '↑' : '↓'}`
                                     }
                                   </td>
                                 </tr>

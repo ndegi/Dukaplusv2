@@ -9,12 +9,12 @@ interface CurrencyContextType {
 }
 
 const CurrencyContext = createContext<CurrencyContextType>({
-  currency: "KES",
+  currency: "",
   isLoading: true,
 })
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrency] = useState("KES")
+  const [currency, setCurrency] = useState("")
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
