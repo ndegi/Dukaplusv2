@@ -15,6 +15,8 @@ interface PurchaseInvoice {
   status: string
   posting_date: string
   docstatus: number
+  outstanding_amount:number,
+  total_amount:any,
   items: {
     item_code: string
     item_name: string
@@ -137,7 +139,6 @@ export function PurchaseInvoicesManager() {
         const modes = data.message?.modes_of_payments || data.modes || data.message?.mode_of_payments || []
         const modesList = Array.isArray(modes) ? modes : []
         setPaymentModes(modesList)
-
         // Set default payment mode to first in list
         if (modesList.length > 0) {
           setPayments([{ id: 1, mode: modesList[0].mode_of_payment, amount: "" }])
@@ -346,6 +347,19 @@ export function PurchaseInvoicesManager() {
       default:
         return <span className="badge-secondary">{status}</span>
     }
+  }
+
+  const renderOutstandingAmount = (amount: number | string) => {
+    const parsed = typeof amount === "string" ? Number.parseFloat(amount) : amount
+    const value = Number.isFinite(parsed) ? parsed : 0
+    const isCleared = value <= 0
+    const badgeClass = isCleared ? "badge-success" : "badge-warning"
+
+    return (
+      <span className={badgeClass}>
+        {currency} {value.toFixed(2)}
+      </span>
+    )
   }
 
   const filteredInvoices = invoices.filter((invoice) => {
@@ -895,6 +909,8 @@ export function PurchaseInvoicesManager() {
                   <th className="table-header-cell text-left">Invoice ID</th>
                   <th className="table-header-cell text-left">Supplier</th>
                   <th className="table-header-cell text-left">Date</th>
+                  <th className="table-header-cell text-left">Total</th>
+                  <th className="table-header-cell text-left">Outstanding</th>
                   <th className="table-header-cell text-left">Status</th>
                   <th className="table-header-cell text-center">Actions</th>
                 </tr>
@@ -925,6 +941,8 @@ export function PurchaseInvoicesManager() {
                         <td className="table-cell font-mono text-warning text-sm">{invoice.name}</td>
                         <td className="table-cell">{invoice.supplier}</td>
                         <td className="table-cell">{invoice.posting_date}</td>
+                        <td className="table-cell">{invoice.total_amount}</td>
+                        <td className="table-cell">{renderOutstandingAmount(invoice.outstanding_amount)}</td>
                         <td className="table-cell">{getStatusBadge(invoice.status)}</td>
                         <td className="table-cell text-center">
                           <TableActionButtons
