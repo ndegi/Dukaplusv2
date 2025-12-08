@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
 import { useCurrency } from "@/hooks/use-currency"
+import { EnhancedPagination } from "@/components/reports/enhanced-pagination"
 
 interface Customer {
   customer_id: string
@@ -360,49 +361,17 @@ export default function CustomersPage() {
                     ))}
                   </tbody>
                 </table>
+                {totalPages > 1 && (
+                  <EnhancedPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    startIndex={startIndex}
+                    endIndex={endIndex}
+                    totalRecords={filteredAndSorted.length}
+                  />
+                )}
               </div>
-
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-                  <div className="text-sm text-secondary">
-                    Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSorted.length)} of{" "}
-                    {filteredAndSorted.length} customers
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      variant="outline"
-                      size="sm"
-                      className="border-border"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                        <Button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          variant={currentPage === page ? "default" : "outline"}
-                          size="sm"
-                          className={currentPage === page ? "btn-warning" : "border-border"}
-                        >
-                          {page}
-                        </Button>
-                      ))}
-                    </div>
-                    <Button
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      variant="outline"
-                      size="sm"
-                      className="border-border"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
             </>
           )}
         </Card>
