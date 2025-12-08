@@ -30,7 +30,7 @@ interface Product {
   track_inventory: number
   is_purchase_item: number
   purpose: string
-  
+
 }
 
 export function InventoryOverview() {
@@ -64,7 +64,7 @@ export function InventoryOverview() {
   const fetchProducts = async () => {
     try {
       setIsLoading(true)
-      const warehouse = sessionStorage.getItem("selected_warehouse") || "Emidan Farm - DP"
+      const warehouse: any = sessionStorage.getItem("selected_warehouse")
 
       const response = await fetch(`/api/inventory/products?warehouse_id=${encodeURIComponent(warehouse)}`, {
         headers: { "Content-Type": "application/json" },

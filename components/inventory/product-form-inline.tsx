@@ -35,7 +35,7 @@ interface Product {
 }
 
 interface ProductFormProps {
-  product: Product
+  product: any
   onClose: () => void
   onSave: () => void
 }
