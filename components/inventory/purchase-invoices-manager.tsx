@@ -15,8 +15,8 @@ interface PurchaseInvoice {
   status: string
   posting_date: string
   docstatus: number
-  outstanding_amount:number,
-  total_amount:any,
+  outstanding_amount: number,
+  total_amount: any,
   items: {
     item_code: string
     item_name: string
@@ -950,7 +950,7 @@ export function PurchaseInvoicesManager() {
                             onEdit={() => handleEditInvoice(invoice)}
                             showSubmit={invoice.docstatus === 0}
                             onSubmit={() => handleSubmitInvoice(invoice.name)}
-                            showPay={invoice.docstatus === 1}
+                            showPay={invoice.status !== "Paid"}
                             onPay={() => {
                               setSelectedInvoice(invoice.name)
                               setShowPaymentView(true)
