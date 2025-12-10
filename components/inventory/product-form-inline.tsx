@@ -1,47 +1,68 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
-import { AlertCircle, CheckCircle, Upload, X, Check, ChevronsUpDown } from "lucide-react"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import { useCurrency } from "@/lib/contexts/currency-context"
-import { Label } from "@/components/ui/label"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import {
+  AlertCircle,
+  CheckCircle,
+  Upload,
+  X,
+  Check,
+  ChevronsUpDown,
+} from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { useCurrency } from "@/lib/contexts/currency-context";
+import { Label } from "@/components/ui/label";
 
 interface Product {
-  id: string
-  name: string
-  sku: string
-  category: string
-  quantity: number
-  reorderLevel: number
-  price: number
-  cost?: number
-  barcode?: string
-  colorCode?: string
-  description?: string
-  img?: string
-  lastUpdated: string
-  product_status: any
-  status: "in_stock" | "low_stock" | "out_of_stock"
-  purpose: string
-  track_inventory: number
-  is_purchase_item: any
-  
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  reorderLevel: number;
+  price: number;
+  cost?: number;
+  barcode?: string;
+  colorCode?: string;
+  description?: string;
+  img?: string;
+  lastUpdated: string;
+  product_status: any;
+  status: "in_stock" | "low_stock" | "out_of_stock";
+  purpose: string;
+  track_inventory: number;
+  is_purchase_item: any;
 }
 
 interface ProductFormProps {
-  product: any
-  onClose: () => void
-  onSave: () => void
+  product: any;
+  onClose: () => void;
+  onSave: () => void;
 }
 
-export function ProductFormInline({ product, onClose, onSave }: ProductFormProps) {
-  const { currency } = useCurrency()
+export function ProductFormInline({
+  product,
+  onClose,
+  onSave,
+}: ProductFormProps) {
+  const { currency } = useCurrency();
   const [formData, setFormData] = useState({
     product_id: "",
     sku: "",
@@ -55,31 +76,35 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
     track_inventory: 1,
     stock_quantity: 0,
     sold_by: "Each",
-    warehouse_id: "Emidan Farm - DP",
+    warehouse_id: "",
     is_purchase_item: 1,
     barcode: "",
     purpose: "Stock Reconciliation",
     img: "",
-    product_status: 1,
-  })
+    product_status: ""
+  });
 
-  const [imagePreview, setImagePreview] = useState<string>("")
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [productStatus, setProductStatus] = useState(1)
-  const [categories, setCategories] = useState<string[]>([])
-  const [categoryOpen, setCategoryOpen] = useState(false)
-  const [categorySearch, setCategorySearch] = useState("")
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false)
-  const [trackInventory, setTrackInventory] = useState(true)
-  const [isPurchaseItem, setIsPurchaseItem] = useState(true)
-  const [originalStockQuantity, setOriginalStockQuantity] = useState("")
-  const [showPurposeSelector, setShowPurposeSelector] = useState(false)
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [productStatus, setProductStatus] = useState(1);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState("");
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [trackInventory, setTrackInventory] = useState(true);
+  const [isPurchaseItem, setIsPurchaseItem] = useState(true);
+  const [originalStockQuantity, setOriginalStockQuantity] = useState("");
+  const [showPurposeSelector, setShowPurposeSelector] = useState(false);
 
   useEffect(() => {
-    const selectedWarehouse = sessionStorage.getItem("selected_warehouse") || "Emidan Farm - DP"
+    const selectedWarehouse =
+      sessionStorage.getItem("selected_warehouse") || "Emidan Farm - DP";
 
-    fetchCategories(selectedWarehouse)
+    fetchCategories(selectedWarehouse);
 
     if (product) {
       setFormData({
@@ -100,152 +125,199 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
         barcode: product.barcode || "",
         purpose: "Stock Reconciliation",
         img: product.img || "",
-        product_status: product.product_status === 1 ? 1 : 0,
-      })
-      setImagePreview(product.img || "")
+        product_status: product.product_status
+      });
+      setImagePreview(product.img || "");
     } else {
       setFormData((prev) => ({
         ...prev,
         warehouse_id: selectedWarehouse,
-      }))
+      }));
     }
-  }, [product])
+  }, [product]);
 
   useEffect(() => {
     if (product && trackInventory) {
-      const hasQuantityChanged = formData.stock_quantity.toString() !== originalStockQuantity
-      setShowPurposeSelector(hasQuantityChanged)
+      const hasQuantityChanged =
+        formData.stock_quantity.toString() !== originalStockQuantity;
+      setShowPurposeSelector(hasQuantityChanged);
       if (!hasQuantityChanged) {
-        setFormData((prev) => ({ ...prev, purpose: "Stock Reconciliation" }))
+        setFormData((prev) => ({ ...prev, purpose: "Stock Reconciliation" }));
       }
     }
-  }, [formData.stock_quantity, originalStockQuantity, trackInventory, product])
+  }, [formData.stock_quantity, originalStockQuantity, trackInventory, product]);
 
   const fetchCategories = async (warehouseId: string) => {
     try {
-      const response = await fetch(`/api/inventory/categories?warehouse_id=${encodeURIComponent(warehouseId)}`)
+      const response = await fetch(
+        `/api/inventory/categories?warehouse_id=${encodeURIComponent(
+          warehouseId
+        )}`
+      );
       if (response.ok) {
-        const data = await response.json()
-        if (data.message?.product_categories && Array.isArray(data.message.product_categories)) {
-          const categoryNames = data.message.product_categories.map((cat: any) => cat.category_name)
-          setCategories(categoryNames)
+        const data = await response.json();
+        if (
+          data.message?.product_categories &&
+          Array.isArray(data.message.product_categories)
+        ) {
+          const categoryNames = data.message.product_categories.map(
+            (cat: any) => cat.category_name
+          );
+          setCategories(categoryNames);
         }
       }
     } catch (error) {
-      console.error("Error fetching categories:", error)
+      console.error("Error fetching categories:", error);
     }
-  }
+  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "stock_quantity" || name === "price" || name === "product_cost" || name === "track_inventory"
+        name === "stock_quantity" ||
+        name === "price" ||
+        name === "product_cost" ||
+        name === "track_inventory"
           ? Number(value)
           : value,
-    }))
+    }));
 
     if (name === "img") {
-      setImagePreview(value)
+      setImagePreview(value);
     }
-  }
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-        setFormData((prev) => ({ ...prev, img: reader.result as string }))
-      }
-      reader.readAsDataURL(file)
+        setImagePreview(reader.result as string);
+        setFormData((prev) => ({ ...prev, img: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   const handleClearImage = () => {
-    setImagePreview("")
-    setFormData((prev) => ({ ...prev, img: "" }))
-  }
+    setImagePreview("");
+    setFormData((prev) => ({ ...prev, img: "" }));
+  };
 
   const handleSubmit = async () => {
     if (isPurchaseItem && !formData.product_cost) {
-      setMessage({ type: "error", text: "Cost is required for purchase items" })
-      return
+      setMessage({
+        type: "error",
+        text: "Cost is required for purchase items",
+      });
+      return;
     }
 
     if (showPurposeSelector && !formData.purpose) {
-      setMessage({ type: "error", text: "Please select a purpose for the quantity change" })
-      return
+      setMessage({
+        type: "error",
+        text: "Please select a purpose for the quantity change",
+      });
+      return;
     }
 
-    setIsLoading(true)
-    setMessage(null)
+    setIsLoading(true);
+    setMessage(null);
 
     try {
-      const url = product ? "/api/inventory/products/update" : "/api/inventory/products"
-      const method = "POST"
+      const url = product
+        ? "/api/inventory/products/update"
+        : "/api/inventory/products";
+      const method = "POST";
 
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-      })
+      });
 
       if (response.ok) {
-        setMessage({ type: "success", text: `Product ${product ? "updated" : "added"} successfully` })
+        setMessage({
+          type: "success",
+          text: `Product ${product ? "updated" : "added"} successfully`,
+        });
         setTimeout(() => {
-          onSave()
-        }, 1000)
+          onSave();
+        }, 1000);
       } else {
-        const data = await response.json()
-        setMessage({ type: "error", text: data.message || "Failed to save product" })
+        const data = await response.json();
+        setMessage({
+          type: "error",
+          text: data.message || "Failed to save product",
+        });
       }
     } catch (error) {
-      setMessage({ type: "error", text: "An error occurred while saving product" })
+      setMessage({
+        type: "error",
+        text: "An error occurred while saving product",
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const createCategory = async (categoryName: string) => {
-    setIsCreatingCategory(true)
+    setIsCreatingCategory(true);
     try {
       const response = await fetch("/api/inventory/categories/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ product_category: categoryName }),
-      })
+      });
 
       if (response.ok) {
-        setCategories((prev) => [...prev, categoryName])
-        setFormData((prev) => ({ ...prev, product_category: categoryName }))
-        setCategoryOpen(false)
-        setCategorySearch("")
-        return true
+        setCategories((prev) => [...prev, categoryName]);
+        setFormData((prev) => ({ ...prev, product_category: categoryName }));
+        setCategoryOpen(false);
+        setCategorySearch("");
+        return true;
       } else {
-        const data = await response.json()
-        setMessage({ type: "error", text: data.error || "Failed to create category" })
-        return false
+        const data = await response.json();
+        setMessage({
+          type: "error",
+          text: data.error || "Failed to create category",
+        });
+        return false;
       }
     } catch (error) {
-      setMessage({ type: "error", text: "Failed to create category" })
-      return false
+      setMessage({ type: "error", text: "Failed to create category" });
+      return false;
     } finally {
-      setIsCreatingCategory(false)
+      setIsCreatingCategory(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
       {message && (
-        <div className={message.type === "success" ? "alert-success" : "alert-error"}>
+        <div
+          className={
+            message.type === "success" ? "alert-success" : "alert-error"
+          }
+        >
           {message.type === "success" ? (
             <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
           ) : (
             <AlertCircle className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
           )}
-          <p className={message.type === "success" ? "text-success text-sm" : "text-danger text-sm"}>{message.text}</p>
+          <p
+            className={
+              message.type === "success"
+                ? "text-success text-sm"
+                : "text-danger text-sm"
+            }
+          >
+            {message.text}
+          </p>
         </div>
       )}
 
@@ -275,7 +347,12 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
                 <label className="btn-secondary cursor-pointer flex items-center justify-center gap-2 w-full">
                   <Upload className="w-4 h-4" />
                   Upload Image
-                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
                 </label>
               </div>
               <div className="flex-1">
@@ -293,7 +370,7 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
+          {/* <div>
             <label className="form-label">Product ID</label>
             <Input
               type="text"
@@ -305,7 +382,7 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
               required
               disabled={!!product}
             />
-          </div>
+          </div> */}
 
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -385,8 +462,10 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
                   />
                   <CommandList>
                     <CommandEmpty>
-                      <div >
-                        <p className="text-sm text-muted-foreground mb-2">No category found.</p>
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          No category found.
+                        </p>
                         {categorySearch && (
                           <Button
                             size="sm"
@@ -394,7 +473,9 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
                             onClick={() => createCategory(categorySearch)}
                             disabled={isCreatingCategory}
                           >
-                            {isCreatingCategory ? "Creating..." : `Create "${categorySearch}"`}
+                            {isCreatingCategory
+                              ? "Creating..."
+                              : `Create "${categorySearch}"`}
                           </Button>
                         )}
                       </div>
@@ -405,14 +486,19 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
                           key={category}
                           value={category}
                           onSelect={() => {
-                            setFormData((prev) => ({ ...prev, product_category: category }))
-                            setCategoryOpen(false)
+                            setFormData((prev) => ({
+                              ...prev,
+                              product_category: category,
+                            }));
+                            setCategoryOpen(false);
                           }}
                         >
                           <Check
                             className={cn(
                               "mr-2 h-4 w-4",
-                              formData.product_category === category ? "opacity-100" : "opacity-0",
+                              formData.product_category === category
+                                ? "opacity-100"
+                                : "opacity-0"
                             )}
                           />
                           {category}
@@ -456,8 +542,15 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
               <Label htmlFor="purchase-item" className="form-label">
                 Is Purchase Item
               </Label>
-              <Switch id="purchase-item" checked={isPurchaseItem} onCheckedChange={setIsPurchaseItem} />
+              <Switch
+                id="purchase-item"
+                checked={isPurchaseItem}
+                onCheckedChange={setIsPurchaseItem}
+              />
             </div>
+            {isPurchaseItem && (
+              <label className="form-label">Cost ({currency})</label>
+            )}
             {isPurchaseItem && (
               <Input
                 type="number"
@@ -493,8 +586,15 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
               <Label htmlFor="track-inventory" className="form-label">
                 Track Inventory
               </Label>
-              <Switch id="track-inventory" checked={trackInventory} onCheckedChange={setTrackInventory} />
+              <Switch
+                id="track-inventory"
+                checked={trackInventory}
+                onCheckedChange={setTrackInventory}
+              />
             </div>
+            {trackInventory && (
+              <label className="form-label">Stock Quantity</label>
+            )}
             {trackInventory && (
               <Input
                 type="number"
@@ -510,7 +610,13 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
 
           <div>
             <label className="form-label">Sold By</label>
-            <select name="sold_by" value={formData.sold_by} onChange={handleChange} className="input-base" required>
+            <select
+              name="sold_by"
+              value={formData.sold_by}
+              onChange={handleChange}
+              className="input-base"
+              required
+            >
               <option value="Each">Each</option>
               <option value="Weight">Weight</option>
             </select>
@@ -536,12 +642,15 @@ export function ProductFormInline({ product, onClose, onSave }: ProductFormProps
           <Button type="button" onClick={onClose} className="btn-cancel flex-1">
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading} className="btn-create flex-1">
+          <Button
+            onClick={handleSubmit}
+            disabled={isLoading}
+            className="btn-create flex-1"
+          >
             {isLoading ? "Saving..." : "Save Product"}
           </Button>
-
         </div>
       </div>
     </div>
-  )
+  );
 }

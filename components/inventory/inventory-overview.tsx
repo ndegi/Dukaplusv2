@@ -1,53 +1,52 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Search, Plus } from "lucide-react"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons"
-import { ProductFormInline } from "./product-form-inline"
-import { TableActionButtons } from "@/components/ui/table-action-buttons"
-import { useCurrency } from "@/lib/contexts/currency-context"
-import { EnhancedPagination } from "../reports/enhanced-pagination"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, Plus } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons";
+import { ProductFormInline } from "./product-form-inline";
+import { TableActionButtons } from "@/components/ui/table-action-buttons";
+import { useCurrency } from "@/lib/contexts/currency-context";
+import { EnhancedPagination } from "../reports/enhanced-pagination";
 
 interface Product {
-  id: string
-  name: string
-  sku: string
-  category: string
-  quantity: number
-  reorderLevel: number
-  price: number
-  cost: number
-  barcode: string | null
-  colorCode: string
-  description: string
-  img?: string
-  lastUpdated: string
-  status: "in_stock" | "low_stock" | "out_of_stock"
-  product_status: any
-  track_inventory: number
-  is_purchase_item: number
-  purpose: string
-
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  reorderLevel: number;
+  price: number;
+  cost: number;
+  barcode: string | null;
+  colorCode: string;
+  description: string;
+  img?: string;
+  lastUpdated: string;
+  status: "in_stock" | "low_stock" | "out_of_stock";
+  product_status: any;
+  track_inventory: number;
+  is_purchase_item: number;
+  purpose: string;
 }
 
 export function InventoryOverview() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [showForm, setShowForm] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
-  const { currency } = useCurrency()
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const { currency } = useCurrency();
 
   useEffect(() => {
-    fetchProducts()
-  }, [])
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     const filtered = products.filter(
@@ -56,50 +55,56 @@ export function InventoryOverview() {
         product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.barcode?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    setFilteredProducts(filtered)
-    setCurrentPage(1)
-  }, [searchTerm, products])
+    );
+    setFilteredProducts(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, products]);
 
   const fetchProducts = async () => {
     try {
-      setIsLoading(true)
-      const warehouse: any = sessionStorage.getItem("selected_warehouse")
+      setIsLoading(true);
+      const warehouse: any = sessionStorage.getItem("selected_warehouse");
 
-      const response = await fetch(`/api/inventory/products?warehouse_id=${encodeURIComponent(warehouse)}`, {
-        headers: { "Content-Type": "application/json" },
-      })
+      const response = await fetch(
+        `/api/inventory/products?warehouse_id=${encodeURIComponent(warehouse)}`,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
       if (response.ok) {
-        const data = await response.json()
-        setProducts(data.products || [])
-        setError(null)
+        const data = await response.json();
+        setProducts(data.products || []);
+        setError(null);
       } else {
-        setError("Failed to fetch inventory")
+        setError("Failed to fetch inventory");
       }
     } catch (err) {
-      setError("An error occurred while fetching inventory")
-      console.error(err)
+      setError("An error occurred while fetching inventory");
+      console.error(err);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const clearFilters = () => {
-    setSearchTerm("")
-    setCurrentPage(1)
-  }
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
 
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedProducts = filteredProducts.slice(startIndex, endIndex)
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
 
   return (
     <div className="space-y-4">
       {error && (
         <div className="alert-error">
-          <FontAwesomeIcon icon={faExclamationCircle} className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" />
+          <FontAwesomeIcon
+            icon={faExclamationCircle}
+            className="w-4 h-4 text-danger flex-shrink-0 mt-0.5"
+          />
           <p className="text-danger text-sm">{error}</p>
         </div>
       )}
@@ -122,8 +127,8 @@ export function InventoryOverview() {
         )}
         <Button
           onClick={() => {
-            setSelectedProduct(null)
-            setShowForm(true)
+            setSelectedProduct(null);
+            setShowForm(true);
           }}
           className="btn-create h-9 text-sm"
         >
@@ -136,11 +141,13 @@ export function InventoryOverview() {
       {showForm && (
         <div className="card-base p-6 mb-6 border-2 border-orange-300">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold">{selectedProduct ? "Edit Product" : "Add New Product"}</h3>
+            <h3 className="text-lg font-bold">
+              {selectedProduct ? "Edit Product" : "Add New Product"}
+            </h3>
             <Button
               onClick={() => {
-                setShowForm(false)
-                setSelectedProduct(null)
+                setShowForm(false);
+                setSelectedProduct(null);
               }}
               variant="ghost"
               size="sm"
@@ -152,13 +159,13 @@ export function InventoryOverview() {
           <ProductFormInline
             product={selectedProduct}
             onClose={() => {
-              setShowForm(false)
-              setSelectedProduct(null)
+              setShowForm(false);
+              setSelectedProduct(null);
             }}
             onSave={() => {
-              fetchProducts()
-              setShowForm(false)
-              setSelectedProduct(null)
+              fetchProducts();
+              setShowForm(false);
+              setSelectedProduct(null);
             }}
           />
         </div>
@@ -167,35 +174,67 @@ export function InventoryOverview() {
       {/* Products Table */}
       <div className="card-base overflow-hidden">
         {isLoading ? (
-          <div className="p-6 text-center text-secondary text-sm">Loading products...</div>
+          <div className="p-6 text-center text-secondary text-sm">
+            Loading products...
+          </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="p-6 text-center text-secondary text-sm">No products found</div>
+          <div className="p-6 text-center text-secondary text-sm">
+            No products found
+          </div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="table-header">
                   <tr>
-                    <th className="table-header-cell text-left uppercase">Product Name</th>
-                    <th className="table-header-cell text-left uppercase">SKU</th>
-                    <th className="table-header-cell text-left uppercase">Barcode</th>
-                    <th className="table-header-cell text-left uppercase">Category</th>
-                    <th className="table-header-cell text-center uppercase">Stock</th>
-                    <th className="table-header-cell text-center uppercase">Cost</th>
-                    <th className="table-header-cell text-center uppercase">Price</th>
-                    <th className="table-header-cell text-center uppercase">Status</th>
-                    <th className="table-header-cell text-center uppercase">Stock Status</th>
-                    <th className="table-header-cell text-center uppercase">Actions</th>
+                    <th className="table-header-cell text-left uppercase">
+                      Product Name
+                    </th>
+                    <th className="table-header-cell text-left uppercase">
+                      SKU
+                    </th>
+                    <th className="table-header-cell text-left uppercase">
+                      Barcode
+                    </th>
+                    <th className="table-header-cell text-left uppercase">
+                      Category
+                    </th>
+                    <th className="table-header-cell text-center uppercase">
+                      Stock
+                    </th>
+                    <th className="table-header-cell text-center uppercase">
+                      Cost
+                    </th>
+                    <th className="table-header-cell text-center uppercase">
+                      Price
+                    </th>
+                    <th className="table-header-cell text-center uppercase">
+                      Status
+                    </th>
+                    <th className="table-header-cell text-center uppercase">
+                      Stock Status
+                    </th>
+                    <th className="table-header-cell text-center uppercase">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {paginatedProducts.map((product) => (
                     <tr key={product.id} className="table-row">
                       <td className="table-cell font-medium">{product.name}</td>
-                      <td className="table-cell-secondary font-mono">{product.sku}</td>
-                      <td className="table-cell-secondary font-mono">{product.barcode || "-"}</td>
-                      <td className="table-cell-secondary">{product.category}</td>
-                      <td className="table-cell text-center font-semibold">{product.quantity.toFixed(1)}</td>
+                      <td className="table-cell-secondary font-mono">
+                        {product.sku}
+                      </td>
+                      <td className="table-cell-secondary font-mono">
+                        {product.barcode || "-"}
+                      </td>
+                      <td className="table-cell-secondary">
+                        {product.category}
+                      </td>
+                      <td className="table-cell text-center font-semibold">
+                        {product.quantity.toFixed(1)}
+                      </td>
                       <td className="table-cell-secondary text-center">
                         {currency} {product.cost.toFixed(2)}
                       </td>
@@ -205,12 +244,14 @@ export function InventoryOverview() {
                       <td className="px-4 py-3 text-sm text-center">
                         <span
                           className={
-                            product.product_status === 1
+                            product.product_status === 0
                               ? "badge-success"
                               : "badge-danger"
                           }
                         >
-                          {product.product_status === 1 ? "Enabled" : "Enabled"}
+                          {product.product_status === 0
+                            ? "Enabled"
+                            : "Disabled"}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-center">
@@ -219,8 +260,8 @@ export function InventoryOverview() {
                             product.status === "in_stock"
                               ? "badge-success"
                               : product.status === "low_stock"
-                                ? "badge-warning"
-                                : "badge-danger"
+                              ? "badge-warning"
+                              : "badge-danger"
                           }
                         >
                           {product.status.replace("_", " ")}
@@ -230,8 +271,8 @@ export function InventoryOverview() {
                         <TableActionButtons
                           showEdit={true}
                           onEdit={() => {
-                            setSelectedProduct(product)
-                            setShowForm(true)
+                            setSelectedProduct(product);
+                            setShowForm(true);
                           }}
                         />
                       </td>
@@ -254,5 +295,5 @@ export function InventoryOverview() {
         )}
       </div>
     </div>
-  )
+  );
 }

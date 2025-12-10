@@ -64,9 +64,10 @@ export async function GET(request: NextRequest) {
         img: item.img || null,
         all_selling_prices: item.all_selling_prices || [],
         lastUpdated: new Date().toISOString(),
+        product_status: item.product_status,
         status:
           trackInventory === 0
-            ? "in_stock" // Services are always available
+            ? "in_stock"
             : Number.parseFloat(item.qty_in_store) === 0
               ? "out_of_stock"
               : Number.parseFloat(item.qty_in_store) <= 10
