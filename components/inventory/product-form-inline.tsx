@@ -29,6 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/contexts/currency-context";
 import { Label } from "@/components/ui/label";
+import { Toast } from "@radix-ui/react-toast";
 
 interface Product {
   id: string;
@@ -44,7 +45,7 @@ interface Product {
   description?: string;
   img?: string;
   lastUpdated: string;
-  product_status: any;
+  product_status: number;
   status: "in_stock" | "low_stock" | "out_of_stock";
   purpose: string;
   track_inventory: number;
@@ -81,7 +82,7 @@ export function ProductFormInline({
     barcode: "",
     purpose: "Stock Reconciliation",
     img: "",
-    product_status: ""
+    product_status: 0,
   });
 
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -90,7 +91,7 @@ export function ProductFormInline({
     text: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [productStatus, setProductStatus] = useState(1);
+  const [productStatus, setProductStatus] = useState(0);
   const [categories, setCategories] = useState<string[]>([]);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
@@ -102,7 +103,7 @@ export function ProductFormInline({
 
   useEffect(() => {
     const selectedWarehouse =
-      sessionStorage.getItem("selected_warehouse") || "Emidan Farm - DP";
+      sessionStorage.getItem("selected_warehouse") || "";
 
     fetchCategories(selectedWarehouse);
 
@@ -125,7 +126,7 @@ export function ProductFormInline({
         barcode: product.barcode || "",
         purpose: "Stock Reconciliation",
         img: product.img || "",
-        product_status: product.product_status
+        product_status: product.product_status,
       });
       setImagePreview(product.img || "");
     } else {
@@ -369,7 +370,7 @@ export function ProductFormInline({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-0">
           {/* <div>
             <label className="form-label">Product ID</label>
             <Input
@@ -391,8 +392,8 @@ export function ProductFormInline({
               </Label>
               <Switch
                 id="product-status"
-                checked={productStatus === 1}
-                onCheckedChange={(checked) => setProductStatus(checked ? 1 : 0)}
+                checked={productStatus === 0}
+                onCheckedChange={(checked) => setProductStatus(checked ? 0 : 1)}
               />
             </div>
           </div>

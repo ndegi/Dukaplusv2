@@ -102,7 +102,7 @@ export function InventoryOverview() {
       {error && (
         <div className="alert-error">
           <FontAwesomeIcon
-            icon={faExclamationCircle}
+            icon={faExclamationCircle as any}
             className="w-4 h-4 text-danger flex-shrink-0 mt-0.5"
           />
           <p className="text-danger text-sm">{error}</p>

@@ -105,16 +105,11 @@ export function PaymentForm({
   const [useCredit, setUseCredit] = useState(0);
   const [redeemPoints, setRedeemPoints] = useState(0);
   const { currency } = useCurrency();
-  const pointsValue = 1; // Currency per point (now dynamic)
-  const [autoPrint, setAutoPrint] = useState(true); // Set print to checked by default
+  const pointsValue = 1;
+  const [autoPrint, setAutoPrint] = useState(false);
   const [autoSend, setAutoSend] = useState(false);
-
-  // Use the customerId provided by POS (which already knows the walk-in customer),
-  // and avoid any hard-coded walk-in fallbacks here.
   const resolvedCustomerId = customerId || "";
-
   const pointsToEarn = Math.floor(totalAmount * 0.1);
-
   useEffect(() => {
     if (initialCustomerName) {
       setCustomerName(initialCustomerName);
@@ -274,14 +269,10 @@ export function PaymentForm({
     const isSTKSuccess = stkStatus[payment.id] === "success";
     const isProcessingSTK = stkStatus[payment.id] === "processing";
 
-    // Block if:
-    // 1. It's Mpesa/Till AND
-    // 2. User initiated STK push AND
-    // 3. It's still processing (not success or failure)
     return isMpesaOrTill && hasTriedSTK && isProcessingSTK;
   });
 
-  const canComplete = isPaymentComplete && !hasUnconfirmedSTKPayments;
+  const canComplete = !hasUnconfirmedSTKPayments;
 
   useEffect(() => {
     setSplitPayments((prev) => autoPopulateLastSplit(prev));
@@ -593,14 +584,20 @@ export function PaymentForm({
       return;
     }
 
-    if (!canComplete) {
+    if (hasUnconfirmedSTKPayments) {
       setMessage({
         type: "error",
-        text: `Payment incomplete. Remaining: ${currency} ${remaining.toFixed(
-          2
-        )}`,
+        text: "Please confirm pending M-Pesa/Till payments before finishing",
       });
       return;
+    }
+    if (!isPaymentComplete) {
+      const proceed = window.confirm(
+        `Payment incomplete. Remaining: ${currency} ${remaining.toFixed(
+          2
+        )}.\n\nDo you want to complete the sale as a partial payment?`
+      );
+      if (!proceed) return;
     }
 
     if (isInvoicePayment && invoiceId) {
@@ -1229,7 +1226,7 @@ export function PaymentForm({
               onClick={handlePayment}
               disabled={
                 isProcessing ||
-                !canComplete ||
+                hasUnconfirmedSTKPayments ||
                 (!hasActiveShift && !isInvoicePayment)
               }
               className="h-11 text-sm font-semibold bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1239,9 +1236,11 @@ export function PaymentForm({
                 ? "Processing..."
                 : !hasActiveShift && !isInvoicePayment
                 ? "No Shift"
-                : canComplete
+                : isPaymentComplete
                 ? "Complete"
-                : `${currency} ${Math.abs(remaining).toFixed(2)}`}
+                : `Complete (Remaining ${currency} ${Math.abs(
+                    remaining
+                  ).toFixed(2)})`}
             </Button>
           </div>
         </div>
