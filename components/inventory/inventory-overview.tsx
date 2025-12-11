@@ -172,7 +172,7 @@ export function InventoryOverview() {
       )}
 
       {/* Products Table */}
-      <div className="card-base overflow-hidden">
+      <div className="card-base table-card overflow-hidden">
         {isLoading ? (
           <div className="p-6 text-center text-secondary text-sm">
             Loading products...
@@ -184,7 +184,7 @@ export function InventoryOverview() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="reports-table">
                 <thead className="table-header">
                   <tr>
                     <th className="table-header-cell text-left uppercase">

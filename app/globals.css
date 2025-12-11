@@ -397,25 +397,49 @@
     @apply bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-start gap-3;
   }
 
-  /* Consistent table styling */
+  /* Consistent table styling (aligned with reports/sales) */
+  .table-card {
+    @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm overflow-hidden;
+  }
+
   .table-header {
-    @apply bg-muted border-b border-border;
+    @apply bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700;
   }
 
   .table-header-cell {
-    @apply px-4 py-3 text-left font-semibold text-foreground text-sm;
+    @apply px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-100 text-xs sm:text-sm uppercase tracking-wide;
   }
 
   .table-row {
-    @apply border-b border-border hover:bg-muted/50 transition-colors;
+    @apply border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors;
   }
 
   .table-cell {
-    @apply px-4 py-3 text-foreground;
+    @apply px-4 py-3 text-slate-800 dark:text-slate-100;
   }
 
   .table-cell-secondary {
-    @apply px-4 py-3 text-muted-foreground;
+    @apply px-4 py-3 text-slate-600 dark:text-slate-400;
+  }
+
+  .reports-table {
+    @apply w-full text-sm;
+  }
+
+  .reports-table thead {
+    @apply bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700;
+  }
+
+  .reports-table th {
+    @apply text-left px-4 py-3 font-semibold text-slate-700 dark:text-slate-100 text-xs sm:text-sm uppercase tracking-wide;
+  }
+
+  .reports-table tbody tr {
+    @apply border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors;
+  }
+
+  .reports-table td {
+    @apply px-4 py-3 text-slate-700 dark:text-slate-300;
   }
 
   /* Table action buttons with improved visibility */

@@ -162,7 +162,7 @@ export default function CustomersPage() {
     .sort((a, b) => {
       const aVal = a[sortField]
       const bVal = b[sortField]
-      const comparison = typeof aVal === "string" ? aVal.localeCompare(bVal) : (aVal as number) - (bVal as number)
+      const comparison = typeof aVal === "string" ? aVal.localeCompare(String(bVal)) : (aVal as number) - (bVal as number)
       return sortOrder === "asc" ? comparison : -comparison
     })
 
@@ -293,7 +293,7 @@ export default function CustomersPage() {
           )}
         </div>
 
-        <Card className="card-base overflow-hidden">
+        <Card className="card-base table-card overflow-hidden">
           {pageLoading ? (
             <div className="p-6 text-foreground text-center">Loading customers...</div>
           ) : filteredAndSorted.length === 0 ? (
@@ -301,7 +301,7 @@ export default function CustomersPage() {
           ) : (
             <>
               <div className="overflow-x-auto text-xs sm:text-sm">
-                <table className="w-full">
+                <table className="reports-table">
                   <thead className="table-header">
                     <tr>
                       <th className="table-header-cell">
@@ -345,13 +345,13 @@ export default function CustomersPage() {
                         <td className="table-cell font-medium">{customer.customer_name}</td>
                         <td className="table-cell-secondary">{customer.mobile_number}</td>
                         <td className="table-cell-secondary">{customer.customer_group || "-"}</td>
-                        <td className="px-4 py-3 text-right text-warning font-semibold">
+                        <td className="px-4 py-3 text-right text-orange-600 dark:text-orange-400 font-semibold">
                           {formatCurrency(customer.total_sales)}
                         </td>
-                        <td className="table-cell-secondary text-right">
+                        <td className="table-cell-secondary text-right text-green-600 dark:text-green-400 font-semibold">
                           {formatCurrency(customer.paid_invoices?.total || 0)}
                         </td>
-                        <td className="table-cell-secondary text-right">
+                        <td className="table-cell-secondary text-right text-red-600 dark:text-red-400 font-semibold">
                           {formatCurrency(customer.unpaid_invoices?.total || 0)}
                         </td>
                         <td className="px-4 py-3">

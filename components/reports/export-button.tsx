@@ -34,6 +34,17 @@ interface CustomerStatement {
   outstanding_amount: number
 }
 
+interface ItemWiseCustomerStatement {
+  customer: string
+  date: string
+  warehouse: string
+  item_code: string
+  item_name: string
+  quantity: number
+  selling_price: number
+  amount: number
+}
+
 interface StockBalanceItem {
   item_code: string
   item_name: string
@@ -70,6 +81,7 @@ interface ExportButtonProps {
   activeTab: string
   salesData: SalesReportItem[]
   customerData: CustomerStatement[]
+  itemWiseData: ItemWiseCustomerStatement[]
   stockData: StockBalanceItem[]
   ledgerData: StockLedgerItem[]
   dateRange: { from: Date; to: Date }
@@ -79,6 +91,7 @@ export function ExportButton({
   activeTab,
   salesData,
   customerData,
+  itemWiseData,
   stockData,
   ledgerData,
   dateRange,
@@ -98,6 +111,9 @@ export function ExportButton({
       } else if (activeTab === "customers") {
         csv = generateCustomerExport(customerData, dateRange, currency)
         filename = `customer-statement-${new Date().getTime()}.csv`
+      } else if (activeTab === "item-wise") {
+        csv = generateItemWiseStatementExport(itemWiseData, dateRange, currency)
+        filename = `item-wise-customer-statement-${new Date().getTime()}.csv`
       } else if (activeTab === "stock") {
         csv = generateStockBalanceExport(stockData, dateRange, currency)
         filename = `stock-balance-${new Date().getTime()}.csv`
@@ -235,6 +251,41 @@ function generateCustomerExport(data: CustomerStatement[], dateRange: { from: Da
       item.paid_amount.toFixed(2),
       item.outstanding_amount.toFixed(2),
       item.status,
+    ]),
+  ]
+
+  return rows.map((row) => row.map((cell) => `"${cell}"`).join(",")).join("\n")
+}
+
+function generateItemWiseStatementExport(
+  data: ItemWiseCustomerStatement[],
+  dateRange: { from: Date; to: Date },
+  currency: any,
+): string {
+  const rows = [
+    ["DukaPlus Item-wise Customer Statement"],
+    [`Generated: ${new Date().toLocaleString()}`],
+    [`Period: ${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}`],
+    [],
+    [
+      "Date",
+      "Customer",
+      "Warehouse",
+      "Item",
+      "Item Code",
+      "Quantity",
+      "Selling Price",
+      "Amount",
+    ],
+    ...data.map((item) => [
+      item.date,
+      item.customer,
+      item.warehouse,
+      item.item_name,
+      item.item_code,
+      (item.quantity ?? 0).toFixed(2),
+      (item.selling_price ?? 0).toFixed(2),
+      (item.amount ?? 0).toFixed(2),
     ]),
   ]
 

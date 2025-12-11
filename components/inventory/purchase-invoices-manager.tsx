@@ -72,7 +72,7 @@ export function PurchaseInvoicesManager() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "draft" | "submitted" | "paid" | "unpaid"
+    "all" | "draft" | "submitted" | "paid" | "unpaid" | "Overdue"
   >("all");
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
@@ -443,6 +443,9 @@ export function PurchaseInvoicesManager() {
         return <span className="badge-danger">Unpaid</span>;
       case "paid":
         return <span className="badge-success">Paid</span>;
+      case "overdue":
+        <span className="badge-danger">Overdue</span>;
+        return <span className="badge-danger">Overdue</span>;
       case "partially paid":
         return <span className="badge-warning">Partially Paid</span>;
       default:
@@ -691,7 +694,7 @@ export function PurchaseInvoicesManager() {
         </div>
       )}
 
-      <div className="card-base p-6">
+      <div className="card-base table-card p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <FileText className="w-6 h-6" />
@@ -1125,7 +1128,7 @@ export function PurchaseInvoicesManager() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="reports-table">
               <thead className="table-header">
                 <tr>
                   <th className="table-header-cell w-10"></th>
@@ -1172,7 +1175,6 @@ export function PurchaseInvoicesManager() {
                           {currency} {invoice.total_amount}
                         </td>
                         <td className="table-cell">
-                          {currency}{" "}
                           {renderOutstandingAmount(invoice.outstanding_amount)}
                         </td>
                         <td className="table-cell">
@@ -1199,56 +1201,55 @@ export function PurchaseInvoicesManager() {
                         invoice.items &&
                         invoice.items.length > 0 && (
                           <tr>
-                            <td colSpan={6} className="px-4 py-2 bg-muted/30">
+                            <td colSpan={8} className="px-4 py-2 bg-muted/30">
                               <div className="p-4">
-                                <h4 className="font-semibold text-sm mb-2 text-foreground">
-                                  Items:
-                                </h4>
-                                <table className="w-full text-xs">
-                                  <thead className="bg-muted">
-                                    <tr>
-                                      <th className="table-header-cell text-left">
-                                        Item Code
-                                      </th>
-                                      <th className="table-header-cell text-left">
-                                        Item Name
-                                      </th>
-                                      <th className="table-header-cell text-right">
-                                        Quantity
-                                      </th>
-                                      <th className="table-header-cell text-right">
-                                        Rate
-                                      </th>
-                                      <th className="table-header-cell text-right">
-                                        Amount
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {invoice.items.map((item, idx) => (
-                                      <tr
-                                        key={idx}
-                                        className="border-b border-border"
-                                      >
-                                        <td className="p-2 font-mono text-foreground">
-                                          {item.item_code}
-                                        </td>
-                                        <td className="p-2 text-foreground">
-                                          {item.item_name}
-                                        </td>
-                                        <td className="p-2 text-right text-foreground">
-                                          {item.qty}
-                                        </td>
-                                        <td className="p-2 text-right text-foreground">
-                                          {currency} {item.rate.toFixed(2)}
-                                        </td>
-                                        <td className="p-2 text-right font-semibold text-foreground">
-                                          {currency} {item.amount.toFixed(2)}
-                                        </td>
+                                <div className="overflow-x-auto">
+                                <table className="reports-table text-xs min-w-[640px]">
+                                    <thead className="bg-muted">
+                                      <tr>
+                                        <th className="table-header-cell text-left">
+                                          Item Code
+                                        </th>
+                                        <th className="table-header-cell text-left">
+                                          Item Name
+                                        </th>
+                                        <th className="table-header-cell text-right">
+                                          Quantity
+                                        </th>
+                                        <th className="table-header-cell text-right">
+                                          Rate
+                                        </th>
+                                        <th className="table-header-cell text-right">
+                                          Amount
+                                        </th>
                                       </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
+                                    </thead>
+                                    <tbody>
+                                      {invoice.items.map((item, idx) => (
+                                        <tr
+                                          key={idx}
+                                          className="border-b border-border"
+                                        >
+                                          <td className="p-2 font-mono text-foreground">
+                                            {item.item_code}
+                                          </td>
+                                          <td className="p-2 text-foreground">
+                                            {item.item_name}
+                                          </td>
+                                          <td className="p-2 text-right text-foreground">
+                                            {item.qty}
+                                          </td>
+                                          <td className="p-2 text-right text-foreground">
+                                            {currency} {item.rate.toFixed(2)}
+                                          </td>
+                                          <td className="p-2 text-right font-semibold text-foreground">
+                                            {currency} {item.amount.toFixed(2)}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
                               </div>
                             </td>
                           </tr>

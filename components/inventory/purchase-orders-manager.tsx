@@ -368,7 +368,7 @@ export function PurchaseOrdersManager() {
         </div>
       )}
 
-      <div className="card-base overflow-hidden">
+      <div className="card-base table-card overflow-hidden">
         {isLoadingOrders ? (
           <p className="p-6 text-center text-foreground text-sm">Loading purchase orders...</p>
         ) : filteredOrders.length === 0 ? (
@@ -376,7 +376,7 @@ export function PurchaseOrdersManager() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="reports-table">
                 <thead className="table-header">
                   <tr>
                     <th className="table-header-cell w-10"></th>
@@ -449,7 +449,7 @@ export function PurchaseOrdersManager() {
                             <td colSpan={7} className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50">
                               <div className="p-4">
                                 <h4 className="font-semibold text-sm mb-2">Items:</h4>
-                                <table className="w-full text-xs">
+                                <table className="reports-table text-xs">
                                   <thead className="bg-slate-100 dark:bg-slate-800 text-foreground">
                                     <tr>
                                       <th className="text-left p-2 font-semibold text-foreground">Item Code</th>

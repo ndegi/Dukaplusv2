@@ -258,60 +258,60 @@ export function SalesHistory() {
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
+      <div className="card-base table-card overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-slate-400">Loading transactions...</div>
         ) : filteredTransactions.length === 0 ? (
           <div className="p-8 text-center text-slate-400">No transactions found</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-700 border-b border-slate-600">
+            <table className="reports-table">
+              <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                  <th className="table-header-cell">
                     Transaction ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                  <th className="table-header-cell">
                     Date & Time
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                  <th className="table-header-cell">
                     Items
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                  <th className="table-header-cell">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                  <th className="table-header-cell">
                     Method
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                  <th className="table-header-cell">
                     User
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700">
+              <tbody>
                 {filteredTransactions.map((transaction) => (
-                  <tr key={transaction.id} className="hover:bg-slate-700/50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-medium text-white font-mono">{transaction.id}</td>
-                    <td className="px-6 py-4 text-sm text-slate-400">
+                  <tr key={transaction.id} className="table-row">
+                    <td className="table-cell font-medium font-mono">{transaction.id}</td>
+                    <td className="table-cell-secondary">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
                         {new Date(transaction.date).toLocaleString()}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-400">{transaction.items}</td>
-                    <td className="px-6 py-4 text-sm font-semibold text-orange-400">
+                    <td className="table-cell-secondary">{transaction.items}</td>
+                    <td className="table-cell text-warning font-semibold">
                       {currency}{" "}
                       {transaction.amount.toLocaleString("en-US", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}
                     </td>
-                    <td className="px-6 py-4 text-sm">
+                    <td className="table-cell">
                       <span className="px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/50 text-blue-300 text-xs font-medium">
                         {transaction.paymentMethod}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-400">{transaction.user}</td>
+                    <td className="table-cell-secondary">{transaction.user}</td>
                   </tr>
                 ))}
               </tbody>

@@ -39,61 +39,55 @@ export default function InventoryPage() {
         <div className="flex gap-2 border-b border-border overflow-x-auto">
           <button
             onClick={() => setActiveTab("products")}
-            className={`px-4 py-2 font-semibold transition-colors whitespace-nowrap ${
-              activeTab === "products"
+            className={`px-4 py-2 font-semibold transition-colors whitespace-nowrap ${activeTab === "products"
                 ? "text-warning border-b-2 border-warning"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             Products
           </button>
           <button
             onClick={() => setActiveTab("purchase-order")}
-            className={`px-4 py-2 font-semibold transition-colors whitespace-nowrap ${
-              activeTab === "purchase-order"
+            className={`px-4 py-2 font-semibold transition-colors whitespace-nowrap ${activeTab === "purchase-order"
                 ? "text-warning border-b-2 border-warning"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             Purchase Orders
           </button>
           <button
             onClick={() => setActiveTab("purchase-receipt")}
-            className={`px-4 py-2 font-semibold transition-colors whitespace-nowrap ${
-              activeTab === "purchase-receipt"
+            className={`px-4 py-2 font-semibold transition-colors whitespace-nowrap ${activeTab === "purchase-receipt"
                 ? "text-warning border-b-2 border-warning"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             Purchase Receipts
           </button>
           <button
             onClick={() => setActiveTab("purchase-invoices")}
-            className={`px-4 py-2 font-semibold transition-colors whitespace-nowrap ${
-              activeTab === "purchase-invoices"
+            className={`px-4 py-2 font-semibold transition-colors whitespace-nowrap ${activeTab === "purchase-invoices"
                 ? "text-warning border-b-2 border-warning"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             Purchase Invoices
           </button>
           <button
             onClick={() => setActiveTab("stock-transfer")}
-            className={`px-4 py-2 font-semibold transition-colors whitespace-nowrap ${
-              activeTab === "stock-transfer"
+            className={`px-4 py-2 font-semibold transition-colors whitespace-nowrap ${activeTab === "stock-transfer"
                 ? "text-warning border-b-2 border-warning"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             Stock Transfer
           </button>
           <button
             onClick={() => setActiveTab("suppliers")}
-            className={`px-4 py-2 font-semibold transition-colors whitespace-nowrap ${
-              activeTab === "suppliers"
+            className={`px-4 py-2 font-semibold transition-colors whitespace-nowrap ${activeTab === "suppliers"
                 ? "text-warning border-b-2 border-warning"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             Suppliers
           </button>

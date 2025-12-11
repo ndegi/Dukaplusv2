@@ -435,13 +435,13 @@ export function ExpensesOverview() {
           )}
       </div>
 
-      <Card className="card-base">
+      <Card className="card-base table-card">
         {isLoading ? (
           <div className="p-6 text-center text-foreground text-sm">Loading expenses...</div>
         ) : (
           <>
             <div className="overflow-x-auto text-xs sm:text-sm">
-              <table className="w-full">
+              <table className="reports-table">
                 <thead className="table-header">
                   <tr>
                     <th className="table-header-cell">Expense ID</th>

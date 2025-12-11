@@ -137,7 +137,7 @@ export function SuppliersManager() {
         </div>
       )}
 
-      <div className="card-base overflow-hidden">
+      <div className="card-base table-card overflow-hidden">
         {isLoading ? (
           <p className="p-6 text-center text-foreground text-sm">Loading suppliers...</p>
         ) : filteredSuppliers.length === 0 ? (
@@ -147,7 +147,7 @@ export function SuppliersManager() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="reports-table">
                 <thead className="table-header">
                   <tr>
                     <th className="table-header-cell text-left uppercase">Supplier Name</th>

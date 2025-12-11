@@ -687,42 +687,30 @@ export default function SalesPage() {
             </p>
           ) : (
             <>
-              <div className="overflow-x-auto text-xs sm:text-sm">
-                <table className="w-full">
-                  <thead className="table-header">
+              <div className="overflow-x-auto text-xs sm:text-sm card-base table-card">
+                <table className="reports-table">
+                  <thead>
                     <tr>
-                      <th className="px-2 sm:px-4 py-3 text-left font-semibold w-10"></th>
-                      <th className="px-2 sm:px-4 py-3 text-left font-semibold">
+                      <th className="table-header-cell w-10"></th>
+                      <th className="table-header-cell">
                         {activeTab === "receipts" ? "Receipt ID" : "Invoice ID"}
                       </th>
-                      <th className="px-2 sm:px-4 py-3 text-left font-semibold">
-                        Date & Time
-                      </th>
-                      <th className="px-2 sm:px-4 py-3 text-left font-semibold">
-                        Customer
-                      </th>
-                      <th className="px-2 sm:px-4 py-3 text-right font-semibold">
-                        Amount
-                      </th>
+                      <th className="table-header-cell">Date & Time</th>
+                      <th className="table-header-cell">Customer</th>
+                      <th className="table-header-cell text-right">Amount</th>
                       {activeTab === "invoices" && (
-                        <th className="px-2 sm:px-4 py-3 text-right font-semibold">
+                        <th className="table-header-cell text-right">
                           Outstanding
                         </th>
                       )}
-                      <th className="px-2 sm:px-4 py-3 text-right font-semibold">
-                        Discount
-                      </th>
+                      <th className="table-header-cell text-right">Discount</th>
                       {activeTab === "invoices" && (
-                        <th className="px-2 sm:px-4 py-3 text-center font-semibold">
-                          Status
-                        </th>
+                        <th className="table-header-cell text-center">Status</th>
                       )}
-                      <th className="px-2 sm:px-4 py-3 text-center font-semibold">
-                        Actions
-                      </th>
+                      <th className="table-header-cell text-center">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody>
                     {paginatedData.map((item) => {
                       if (activeTab === "receipts") {
                         const receipt = item as SalesReceipt;
@@ -732,12 +720,12 @@ export default function SalesPage() {
                             <tr key={receipt.sales_id} className="table-row">
                               {receipt.receipt_items &&
                                 receipt.receipt_items.length > 0 && (
-                                  <td className="px-2 sm:px-4 py-3">
+                                  <td className="table-cell">
                                     <button
                                       onClick={() =>
                                         toggleRowExpansion(receipt.sales_id)
                                       }
-                                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                                      className="p-1 hover:bg-muted rounded"
                                     >
                                       {isExpanded ? (
                                         <ChevronUp className="w-4 h-4" />
@@ -747,23 +735,21 @@ export default function SalesPage() {
                                     </button>
                                   </td>
                                 )}
-                              <td className="px-2 sm:px-4 py-3 font-mono text-warning">
+                              <td className="table-cell font-mono text-warning">
                                 {receipt.sales_id}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-foreground text-xs sm:text-sm">
+                              <td className="table-cell-secondary text-xs sm:text-sm">
                                 {receipt.date} {receipt.time}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-foreground">
-                                {receipt.customer}
-                              </td>
-                              <td className="px-2 sm:px-4 py-3 text-right text-foreground font-semibold">
+                              <td className="table-cell">{receipt.customer}</td>
+                              <td className="table-cell text-right font-semibold">
                                 {currency}{" "}
                                 {receipt.total_amount.toLocaleString("en-KE", {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                                 })}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-right text-muted-foreground">
+                              <td className="table-cell text-right text-muted-foreground">
                                 {currency}{" "}
                                 {receipt.discount_amount.toLocaleString(
                                   "en-KE",
@@ -773,7 +759,7 @@ export default function SalesPage() {
                                   }
                                 )}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-center">
+                              <td className="table-cell text-center">
                                 <TableActionButtons
                                   showView={true}
                                   showDownload={true}
@@ -807,28 +793,28 @@ export default function SalesPage() {
                                 <tr>
                                   <td
                                     colSpan={7}
-                                    className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50"
+                                    className="p-0 bg-slate-50 dark:bg-slate-900/50"
                                   >
                                     <div className="p-4">
                                       <h4 className="font-semibold text-sm mb-2 text-foreground">
                                         Items:
                                       </h4>
-                                      <table className="w-full text-xs">
-                                        <thead className="bg-slate-100 dark:bg-slate-800">
+                                      <table className="reports-table text-xs">
+                                        <thead>
                                           <tr>
-                                            <th className="text-left p-2 font-semibold">
+                                            <th className="table-header-cell">
                                               Item Code
                                             </th>
-                                            <th className="text-left p-2 font-semibold">
+                                            <th className="table-header-cell">
                                               Item Name
                                             </th>
-                                            <th className="text-right p-2 font-semibold">
+                                            <th className="table-header-cell text-right">
                                               Quantity
                                             </th>
-                                            <th className="text-right p-2 font-semibold">
+                                            <th className="table-header-cell text-right">
                                               Rate
                                             </th>
-                                            <th className="text-right p-2 font-semibold">
+                                            <th className="table-header-cell text-right">
                                               Amount
                                             </th>
                                           </tr>
@@ -836,24 +822,21 @@ export default function SalesPage() {
                                         <tbody>
                                           {receipt.receipt_items.map(
                                             (lineItem, idx) => (
-                                              <tr
-                                                key={idx}
-                                                className="border-b border-slate-200 dark:border-slate-700"
-                                              >
-                                                <td className="p-2 font-mono text-muted-foreground">
+                                              <tr key={idx} className="table-row">
+                                                <td className="table-cell font-mono text-muted-foreground">
                                                   {lineItem.item_code}
                                                 </td>
-                                                <td className="p-2 text-foreground">
+                                                <td className="table-cell">
                                                   {lineItem.item_name}
                                                 </td>
-                                                <td className="p-2 text-right text-foreground">
+                                                <td className="table-cell text-right">
                                                   {lineItem.quantity}
                                                 </td>
-                                                <td className="p-2 text-right text-muted-foreground">
+                                                <td className="table-cell text-right text-muted-foreground">
                                                   {currency}{" "}
                                                   {lineItem.rate.toFixed(2)}
                                                 </td>
-                                                <td className="p-2 text-right font-semibold text-foreground">
+                                                <td className="table-cell text-right font-semibold">
                                                   {currency}{" "}
                                                   {lineItem.amount.toFixed(2)}
                                                 </td>
@@ -876,12 +859,12 @@ export default function SalesPage() {
                             <tr key={invoice.sales_id} className="table-row">
                               {invoice.invoice_items &&
                                 invoice.invoice_items.length > 0 && (
-                                  <td className="px-2 sm:px-4 py-3">
+                                  <td className="table-cell">
                                     <button
                                       onClick={() =>
                                         toggleRowExpansion(invoice.sales_id)
                                       }
-                                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
+                                      className="p-1 hover:bg-muted rounded"
                                     >
                                       {isExpanded ? (
                                         <ChevronUp className="w-4 h-4" />
@@ -891,23 +874,23 @@ export default function SalesPage() {
                                     </button>
                                   </td>
                                 )}
-                              <td className="px-2 sm:px-4 py-3 font-mono text-warning">
+                              <td className="table-cell font-mono text-warning">
                                 {invoice.sales_id}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-foreground text-xs sm:text-sm">
+                              <td className="table-cell-secondary text-xs sm:text-sm">
                                 {invoice.date} {invoice.time}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-foreground">
+                              <td className="table-cell">
                                 {invoice.customer_name}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-right text-foreground font-semibold">
+                              <td className="table-cell text-right font-semibold">
                                 {currency}{" "}
                                 {invoice.total_amount.toLocaleString("en-KE", {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                                 })}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-right text-red-600 dark:text-red-400 font-semibold">
+                              <td className="table-cell text-right text-red-600 dark:text-red-400 font-semibold">
                                 {currency}{" "}
                                 {invoice.outstanding_amount.toLocaleString(
                                   "en-KE",
@@ -917,7 +900,7 @@ export default function SalesPage() {
                                   }
                                 )}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-right text-muted-foreground">
+                              <td className="table-cell text-right text-muted-foreground">
                                 {currency}{" "}
                                 {invoice.discount_amount.toLocaleString(
                                   "en-KE",
@@ -927,7 +910,7 @@ export default function SalesPage() {
                                   }
                                 )}
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-center">
+                              <td className="table-cell text-center">
                                 <span
                                   className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadgeColor(
                                     invoice.status
@@ -936,7 +919,7 @@ export default function SalesPage() {
                                   {invoice.status}
                                 </span>
                               </td>
-                              <td className="px-2 sm:px-4 py-3 text-center">
+                              <td className="table-cell text-center">
                                 <TableActionButtons
                                   showView={true}
                                   showDownload={true}
@@ -973,28 +956,28 @@ export default function SalesPage() {
                                 <tr>
                                   <td
                                     colSpan={9}
-                                    className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50"
+                                    className="p-0 bg-slate-50 dark:bg-slate-900/50"
                                   >
                                     <div className="p-4">
                                       <h4 className="font-semibold text-sm mb-2 text-foreground">
                                         Items:
                                       </h4>
-                                      <table className="w-full text-xs">
-                                        <thead className="bg-slate-100 dark:bg-slate-800">
+                                      <table className="reports-table text-xs">
+                                        <thead>
                                           <tr>
-                                            <th className="text-left p-2 font-semibold">
+                                            <th className="table-header-cell">
                                               Item Code
                                             </th>
-                                            <th className="text-left p-2 font-semibold">
+                                            <th className="table-header-cell">
                                               Item Name
                                             </th>
-                                            <th className="text-right p-2 font-semibold">
+                                            <th className="table-header-cell text-right">
                                               Quantity
                                             </th>
-                                            <th className="text-right p-2 font-semibold">
+                                            <th className="table-header-cell text-right">
                                               Rate
                                             </th>
-                                            <th className="text-right p-2 font-semibold">
+                                            <th className="table-header-cell text-right">
                                               Amount
                                             </th>
                                           </tr>
@@ -1002,24 +985,21 @@ export default function SalesPage() {
                                         <tbody>
                                           {invoice.invoice_items.map(
                                             (lineItem, idx) => (
-                                              <tr
-                                                key={idx}
-                                                className="border-b border-slate-200 dark:border-slate-700"
-                                              >
-                                                <td className="p-2 font-mono text-muted-foreground">
+                                              <tr key={idx} className="table-row">
+                                                <td className="table-cell font-mono text-muted-foreground">
                                                   {lineItem.item_code}
                                                 </td>
-                                                <td className="p-2 text-foreground">
+                                                <td className="table-cell">
                                                   {lineItem.item_name}
                                                 </td>
-                                                <td className="p-2 text-right text-foreground">
+                                                <td className="table-cell text-right">
                                                   {lineItem.quantity}
                                                 </td>
-                                                <td className="p-2 text-right text-muted-foreground">
+                                                <td className="table-cell text-right text-muted-foreground">
                                                   {currency}{" "}
                                                   {lineItem.rate.toFixed(2)}
                                                 </td>
-                                                <td className="p-2 text-right font-semibold text-foreground">
+                                                <td className="table-cell text-right font-semibold">
                                                   {currency}{" "}
                                                   {lineItem.amount.toFixed(2)}
                                                 </td>

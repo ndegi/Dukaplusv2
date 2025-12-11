@@ -40,6 +40,8 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
   })
   const [showDatePicker, setShowDatePicker] = useState(false)
   const { currency } = useCurrency()
+  const formatMoney = (value: number | undefined | null) =>
+    `${currency} ${Number(value ?? 0).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
   useEffect(() => {
     fetchShifts()
@@ -199,7 +201,7 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
         </div>
       ) : (
         <div className="overflow-x-auto -mx-4 sm:mx-0">
-          <table className="w-full min-w-[800px]">
+          <table className="reports-table min-w-[800px]">
             <thead className="table-header">
               <tr>
                 <th className="table-header-cell text-left px-3 sm:px-4">Shift ID</th>
@@ -220,7 +222,10 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
                     <td className="table-cell-secondary px-3 sm:px-4 text-xs sm:text-sm">{new Date(shift.shift_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
                     <td className="table-cell text-center px-3 sm:px-4">
                       <span
-                        className={shift.status === 0 ? "badge-success text-xs" : "badge-disabled text-xs"}
+                        className={`px-2 py-1 rounded-full text-xs font-semibold ${shift.status === 0
+                            ? "bg-green-500/20 text-green-700 dark:text-green-400"
+                            : "bg-slate-500/20 text-slate-700 dark:text-slate-300"
+                          }`}
                       >
                         {shift.status === 0 ? "Open" : "Closed"}
                       </span>
@@ -229,29 +234,41 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
                     <td className="table-cell px-3 sm:px-4">
                       {hasDetails ? (
                         <div className="space-y-1">
-                          <table className="w-full text-xs border border-border/50 rounded overflow-hidden">
-                            <thead className="bg-muted/50">
+                          <table className="reports-table text-xs border border-border/60 rounded-lg overflow-hidden bg-background">
+                            <thead className="bg-slate-100 dark:bg-slate-700 border-b border-border/60">
                               <tr>
-                                <th className="text-left px-2 py-1 font-semibold text-foreground">Mode</th>
-                                <th className="text-right px-2 py-1 font-semibold text-foreground">Opening</th>
-                                <th className="text-right px-2 py-1 font-semibold text-foreground">Sales</th>
-                                <th className="text-right px-2 py-1 font-semibold text-foreground">Expected</th>
-                                <th className="text-right px-2 py-1 font-semibold text-foreground">Diff</th>
+                                <th className="text-left px-3 py-2 font-semibold text-foreground">Mode</th>
+                                <th className="text-right px-3 py-2 font-semibold text-blue-600 dark:text-blue-400">Opening</th>
+                                <th className="text-right px-3 py-2 font-semibold text-green-600 dark:text-green-400">Sales</th>
+                                <th className="text-right px-3 py-2 font-semibold text-orange-600 dark:text-orange-400">Expected</th>
+                                <th className="text-right px-3 py-2 font-semibold text-foreground">Diff</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-border/30">
                               {shift.details.map((detail, index) => (
                                 <tr key={index} className="hover:bg-muted/20">
-                                  <td className="px-2 py-1.5 font-medium text-foreground">{detail.mode_of_payment}</td>
-                                  <td className="px-2 py-1.5 text-right text-muted-foreground">{`${currency} ${detail.opening_amount ?? 0}`}</td>
-                                  <td className="px-2 py-1.5 text-right text-success">{`${currency} ${detail.total_sales ?? 0}`}</td>
-                                  <td className="px-2 py-1.5 text-right text-warning">{`${currency} ${detail.expected_closing_balance ?? 0}`}</td>
-                                  <td className={`px-2 py-1.5 text-right font-semibold ${(Number(detail.difference.toFixed(2)) ?? 0).toFixed(2) === '0.00' ? 'text-muted-foreground' :
-                                    (Number(detail.difference.toFixed(2))) > 0 ? 'text-success' : 'text-danger'
-                                    }`}>
-                                    {(Number(detail.difference.toFixed(2))) === 0 ? '-' :
-                                      `${`${currency} ${Math.abs(Number(detail.difference.toFixed(2)))}`} ${(Number(detail.difference.toFixed(2))) > 0 ? '↑' : '↓'}`
-                                    }
+                                  <td className="px-3 py-2 font-medium text-foreground">{detail.mode_of_payment}</td>
+                                  <td className="px-3 py-2 text-right text-blue-600 dark:text-blue-400 font-semibold">
+                                    {formatMoney(detail.opening_amount)}
+                                  </td>
+                                  <td className="px-3 py-2 text-right text-green-600 dark:text-green-400 font-semibold">
+                                    {formatMoney(detail.total_sales)}
+                                  </td>
+                                  <td className="px-3 py-2 text-right text-orange-600 dark:text-orange-400 font-semibold">
+                                    {formatMoney(detail.expected_closing_balance)}
+                                  </td>
+                                  <td
+                                    className={`px-3 py-2 text-right font-semibold rounded ${Number(detail.difference ?? 0).toFixed(2) === "0.00"
+                                        ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                                        : Number(detail.difference ?? 0) > 0
+                                          ? "bg-green-500/15 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                                          : "bg-red-500/15 text-red-700 dark:bg-red-500/10 dark:text-red-400"
+                                      }`}
+                                  >
+                                    {Number(detail.difference ?? 0).toFixed(2) === "0.00"
+                                      ? "—"
+                                      : `${formatMoney(Math.abs(Number(detail.difference ?? 0)))} ${Number(detail.difference ?? 0) > 0 ? "↑" : "↓"
+                                      }`}
                                   </td>
                                 </tr>
                               ))}

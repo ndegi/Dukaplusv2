@@ -46,6 +46,17 @@ interface CustomerStatement {
   outstanding_amount: number
 }
 
+interface ItemWiseCustomerStatement {
+  customer: string
+  date: string
+  warehouse: string
+  item_code: string
+  item_name: string
+  quantity: number
+  selling_price: number
+  amount: number
+}
+
 interface StockBalanceItem {
   item_code: string
   item_name: string
@@ -86,6 +97,7 @@ export function ReportsDashboard({ user }: { user: User }) {
 
   const [salesReports, setSalesReports] = useState<SalesReportItem[]>([])
   const [customerStatements, setCustomerStatements] = useState<CustomerStatement[]>([])
+  const [itemWiseStatements, setItemWiseStatements] = useState<ItemWiseCustomerStatement[]>([])
   const [stockBalance, setStockBalance] = useState<StockBalanceItem[]>([])
   const [stockLedger, setStockLedger] = useState<StockLedgerItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -125,9 +137,10 @@ export function ReportsDashboard({ user }: { user: User }) {
 
       console.log("[DukaPlus] Fetching all reports data with warehouse:", warehouseId)
 
-      const [salesRes, customerRes, stockRes, ledgerRes] = await Promise.all([
+      const [salesRes, customerRes, itemWiseRes, stockRes, ledgerRes] = await Promise.all([
         fetch(`/api/reports/sales?warehouse_id=${encodeURIComponent(warehouseId)}`),
         fetch(`/api/reports/customer-statement?warehouse_id=${encodeURIComponent(warehouseId)}`),
+        fetch(`/api/reports/item-wise-customer-statement?warehouse_id=${encodeURIComponent(warehouseId)}`),
         fetch(`/api/reports/stock-balance?warehouse_id=${encodeURIComponent(warehouseId)}`),
         fetch(`/api/reports/stock-ledger?warehouse_id=${encodeURIComponent(warehouseId)}`),
       ])
@@ -140,6 +153,11 @@ export function ReportsDashboard({ user }: { user: User }) {
       if (customerRes.ok) {
         const data = await customerRes.json()
         setCustomerStatements(data.customers || [])
+      }
+
+      if (itemWiseRes.ok) {
+        const data = await itemWiseRes.json()
+        setItemWiseStatements(data.statement || [])
       }
 
       if (stockRes.ok) {
@@ -188,6 +206,7 @@ export function ReportsDashboard({ user }: { user: User }) {
             activeTab={activeTab}
             salesData={salesReports}
             customerData={customerStatements}
+            itemWiseData={itemWiseStatements}
             stockData={stockBalance}
             ledgerData={stockLedger}
             dateRange={dateRange}
@@ -196,7 +215,7 @@ export function ReportsDashboard({ user }: { user: User }) {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600">
+        <TabsList className="grid w-full grid-cols-5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600">
           <TabsTrigger
             value="sales"
             className="text-slate-700 dark:text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
@@ -208,6 +227,12 @@ export function ReportsDashboard({ user }: { user: User }) {
             className="text-slate-700 dark:text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
           >
             Customers
+          </TabsTrigger>
+          <TabsTrigger
+            value="item-wise"
+            className="text-slate-700 dark:text-slate-200 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm"
+          >
+            Item Wise
           </TabsTrigger>
           <TabsTrigger
             value="stock"
@@ -236,6 +261,15 @@ export function ReportsDashboard({ user }: { user: User }) {
         <TabsContent value="customers">
           <CustomerStatementTable
             data={customerStatements}
+            isLoading={isLoading}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
+        </TabsContent>
+
+        <TabsContent value="item-wise">
+          <ItemWiseCustomerStatementTable
+            data={itemWiseStatements}
             isLoading={isLoading}
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
@@ -623,6 +657,158 @@ function CustomerStatementTable({
                   >
                     {row.outstanding_amount === 0 ? "Paid" : "Pending"}
                   </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPages > 1 && (
+        <EnhancedPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalRecords={filteredData.length}
+        />
+      )}
+    </Card>
+  )
+}
+
+function ItemWiseCustomerStatementTable({
+  data,
+  isLoading,
+  dateRange,
+  onDateRangeChange,
+}: {
+  data: ItemWiseCustomerStatement[]
+  isLoading: boolean
+  dateRange: { from: Date; to: Date }
+  onDateRangeChange: (range: { from: Date; to: Date }) => void
+}) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const [searchTerm, setSearchTerm] = useState("")
+  const itemsPerPage = 10
+  const { formatCurrency } = useCurrency()
+
+  const clearFilters = () => {
+    setSearchTerm("")
+    onDateRangeChange({
+      from: new Date(new Date().setDate(new Date().getDate() - 30)),
+      to: new Date(),
+    })
+    setCurrentPage(1)
+  }
+
+  if (isLoading) {
+    return <div className="text-foreground p-6 text-center">Loading item-wise statements...</div>
+  }
+
+  const filteredData = data.filter((item) => {
+    const itemDate = new Date(item.date)
+    const fromDate = new Date(dateRange.from)
+    const toDate = new Date(dateRange.to)
+    fromDate.setHours(0, 0, 0, 0)
+    toDate.setHours(23, 59, 59, 999)
+
+    const dateMatch = itemDate >= fromDate && itemDate <= toDate
+
+    const searchMatch =
+      searchTerm === "" ||
+      (item.customer?.toLowerCase() ?? "").includes(searchTerm.toLowerCase()) ||
+      (item.item_name?.toLowerCase() ?? "").includes(searchTerm.toLowerCase()) ||
+      (item.item_code?.toLowerCase() ?? "").includes(searchTerm.toLowerCase()) ||
+      (item.warehouse?.toLowerCase() ?? "").includes(searchTerm.toLowerCase())
+
+    return dateMatch && searchMatch
+  })
+
+  const totalAmount = filteredData.reduce((sum, row) => sum + (row.amount || 0), 0)
+  const totalQuantity = filteredData.reduce((sum, row) => sum + (row.quantity || 0), 0)
+  const uniqueItems = new Set(filteredData.map((row) => row.item_code)).size
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedData = filteredData.slice(startIndex, endIndex)
+
+  return (
+    <Card className="bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border-b border-gray-200 dark:border-slate-700">
+        <div className="bg-orange-500/10 dark:bg-orange-500/10 border border-orange-500/20 dark:border-orange-500/20 rounded-lg p-3">
+          <p className="text-gray-600 dark:text-gray-400 text-sm">Total Amount</p>
+          <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(totalAmount)}</p>
+        </div>
+        <div className="bg-blue-500/10 dark:bg-blue-500/10 border border-blue-500/20 dark:border-blue-500/20 rounded-lg p-3">
+          <p className="text-gray-600 dark:text-gray-400 text-sm">Total Quantity</p>
+          <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+            {totalQuantity.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        </div>
+        <div className="bg-green-500/10 dark:bg-green-500/10 border border-green-500/20 dark:border-green-500/20 rounded-lg p-3">
+          <p className="text-gray-600 dark:text-gray-400 text-sm">Unique Items</p>
+          <p className="text-xl font-bold text-green-600 dark:text-green-400">{uniqueItems}</p>
+        </div>
+      </div>
+
+      <div className="px-4 flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Search by customer, item, code, or warehouse..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value)
+              setCurrentPage(1)
+            }}
+            className="pl-10 bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700"
+          />
+        </div>
+        <DateRangeFilter dateRange={dateRange} onDateRangeChange={onDateRangeChange} />
+        {searchTerm && (
+          <Button onClick={clearFilters} variant="outline" size="sm">
+            Clear Filters
+          </Button>
+        )}
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-100 dark:bg-slate-700 border-b border-gray-200 dark:border-slate-700">
+            <tr>
+              <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Date</th>
+              <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Customer</th>
+              <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Warehouse</th>
+              <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Item</th>
+              <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Item Code</th>
+              <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Quantity</th>
+              <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Selling Price</th>
+              <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedData.map((row, idx) => (
+              <tr
+                key={`${row.customer}-${row.item_code}-${idx}`}
+                className="border-b border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50"
+              >
+                <td className="p-3 text-gray-600 dark:text-gray-400">{row.date}</td>
+                <td className="p-3 text-gray-900 dark:text-gray-200 font-medium">{row.customer}</td>
+                <td className="p-3 text-gray-600 dark:text-gray-400">{row.warehouse}</td>
+                <td className="p-3 text-gray-600 dark:text-gray-400">{row.item_name}</td>
+                <td className="p-3 text-gray-600 dark:text-gray-400 font-mono text-xs">{row.item_code}</td>
+                <td className="p-3 text-right text-blue-600 dark:text-blue-400 font-semibold">
+                  {Number(row.quantity ?? 0).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+                <td className="p-3 text-right text-green-600 dark:text-green-400 font-semibold">
+                  {formatCurrency(row.selling_price)}
+                </td>
+                <td className="p-3 text-right text-orange-600 dark:text-orange-400 font-semibold">
+                  {formatCurrency(row.amount)}
                 </td>
               </tr>
             ))}

@@ -320,7 +320,7 @@ export function StockTransferManager() {
     return (
       <div className="p-4">
         <h4 className="font-semibold text-sm mb-2 text-foreground">Items:</h4>
-        <table className="w-full text-xs">
+        <table className="reports-table text-xs">
           <thead className="bg-muted">
             <tr>
               <th className="table-header-cell text-left">Item Code</th>
@@ -388,7 +388,7 @@ export function StockTransferManager() {
         </div>
       )}
 
-      <div className="card-base p-6">
+      <div className="card-base table-card p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <ArrowRightLeft className="w-6 h-6" />
@@ -549,7 +549,7 @@ export function StockTransferManager() {
             ) : (
               <>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="reports-table">
                     <thead className="table-header">
                       <tr>
                         <th className="table-header-cell w-10"></th>

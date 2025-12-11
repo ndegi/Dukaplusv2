@@ -55,7 +55,7 @@ export function ProductProductivityTable({ dateRange, warehouse, isLoading = fal
   }, [dateRange, warehouse])
 
   return (
-    <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+    <Card className="card-base table-card p-4 sm:p-6">
       <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mb-4">
         Productivity per Product
       </h3>
@@ -66,27 +66,24 @@ export function ProductProductivityTable({ dateRange, warehouse, isLoading = fal
         <div className="text-slate-500 dark:text-slate-400 text-sm">Loading products...</div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-700">
+          <table className="reports-table">
+            <thead>
               <tr>
-                <th className="text-left p-3 text-slate-700 dark:text-slate-300 font-semibold">Product Code</th>
-                <th className="text-left p-3 text-slate-700 dark:text-slate-300 font-semibold">Product Name</th>
-                <th className="text-right p-3 text-slate-700 dark:text-slate-300 font-semibold">Qty Sold</th>
-                <th className="text-right p-3 text-slate-700 dark:text-slate-300 font-semibold">Total Sales</th>
+                <th className="table-header-cell">Product Code</th>
+                <th className="table-header-cell">Product Name</th>
+                <th className="table-header-cell text-right">Qty Sold</th>
+                <th className="table-header-cell text-right">Total Sales</th>
               </tr>
             </thead>
             <tbody>
               {data.map((product) => (
-                <tr
-                  key={product.item_code}
-                  className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                >
-                  <td className="p-3 text-slate-900 dark:text-slate-200 font-medium">{product.item_code}</td>
-                  <td className="p-3 text-slate-600 dark:text-slate-400">{product.item_name}</td>
-                  <td className="p-3 text-right text-blue-600 dark:text-blue-400 font-semibold">
+                <tr key={product.item_code} className="table-row">
+                  <td className="table-cell font-medium">{product.item_code}</td>
+                  <td className="table-cell-secondary">{product.item_name}</td>
+                  <td className="table-cell text-info font-semibold text-right">
                     {product.total_qty}
                   </td>
-                  <td className="p-3 text-right text-green-600 dark:text-green-400 font-semibold">
+                  <td className="table-cell text-success font-semibold text-right">
                     {`${currency} ${product.total_sales}`}
                   </td>
                 </tr>
