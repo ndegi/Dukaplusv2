@@ -80,7 +80,7 @@ export function ProductFormInline({
     warehouse_id: "",
     is_purchase_item: 1,
     barcode: "",
-    purpose: "Stock Reconciliation",
+    purpose: "Purchase",
     img: "",
     product_status: 0,
   });
@@ -180,9 +180,9 @@ export function ProductFormInline({
       ...prev,
       [name]:
         name === "stock_quantity" ||
-        name === "price" ||
-        name === "product_cost" ||
-        name === "track_inventory"
+          name === "price" ||
+          name === "product_cost" ||
+          name === "track_inventory"
           ? Number(value)
           : value,
     }));
@@ -230,39 +230,71 @@ export function ProductFormInline({
     setMessage(null);
 
     try {
-      const url = product
-        ? "/api/inventory/products/update"
-        : "/api/inventory/products";
-      const method = "POST";
+      const url = product ? "/api/inventory/products/update" : "/api/inventory/products"
+      const method = "POST"
+
+      const generatedProductId =
+        product?.id ||
+        formData.product_id ||
+        formData.sku ||
+        `PRD-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+
+      const preparedPayload = {
+        ...formData,
+        product_id: generatedProductId,
+        track_inventory: trackInventory ? 1 : 0,
+        is_purchase_item: isPurchaseItem ? 1 : 0,
+        stock_quantity: trackInventory ? Number(formData.stock_quantity) || 0 : 0,
+        product_cost: isPurchaseItem ? Number(formData.product_cost) || 0 : 0,
+        sold_by: formData.sold_by || "Each",
+        purpose: product
+          ? showPurposeSelector
+            ? formData.purpose || "Stock Reconciliation"
+            : "Stock Reconciliation"
+          : formData.purpose || "Purchase",
+        product_status: productStatus,
+      }
+
+      console.log("[DukaPlus] Product save request:", { url, payload: preparedPayload })
 
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+        body: JSON.stringify(preparedPayload),
+      })
+
+      const responseText = await response.text()
+      let data: any = {}
+      try {
+        data = responseText ? JSON.parse(responseText) : {}
+      } catch {
+        data = { message: responseText }
+      }
+
+      console.log("[DukaPlus] Product save response:", { status: response.status, body: data })
 
       if (response.ok) {
         setMessage({
           type: "success",
-          text: `Product ${product ? "updated" : "added"} successfully`,
-        });
+          text: data?.message || `Product ${product ? "updated" : "added"} successfully`,
+        })
         setTimeout(() => {
-          onSave();
-        }, 1000);
+          onSave()
+        }, 800)
       } else {
-        const data = await response.json();
         setMessage({
           type: "error",
-          text: data.message || "Failed to save product",
-        });
+          text: data?.message || "Failed to save product",
+        })
       }
     } catch (error) {
+      console.error("[DukaPlus] Product save error:", error)
       setMessage({
         type: "error",
-        text: "An error occurred while saving product",
-      });
+        text: "An error occurred while saving product. Please try again.",
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   };
 
@@ -546,7 +578,14 @@ export function ProductFormInline({
               <Switch
                 id="purchase-item"
                 checked={isPurchaseItem}
-                onCheckedChange={setIsPurchaseItem}
+                onCheckedChange={(checked) => {
+                  setIsPurchaseItem(checked);
+                  setFormData((prev) => ({
+                    ...prev,
+                    is_purchase_item: checked ? 1 : 0,
+                    product_cost: checked ? prev.product_cost : 0,
+                  }));
+                }}
               />
             </div>
             {isPurchaseItem && (
@@ -590,7 +629,18 @@ export function ProductFormInline({
               <Switch
                 id="track-inventory"
                 checked={trackInventory}
-                onCheckedChange={setTrackInventory}
+                onCheckedChange={(checked) => {
+                  setTrackInventory(checked);
+                  setFormData((prev) => ({
+                    ...prev,
+                    track_inventory: checked ? 1 : 0,
+                    stock_quantity: checked ? prev.stock_quantity : 0,
+                  }));
+                  if (!checked) {
+                    setShowPurposeSelector(false);
+                    setFormData((prev) => ({ ...prev, purpose: "Stock Reconciliation" }));
+                  }
+                }}
               />
             </div>
             {trackInventory && (

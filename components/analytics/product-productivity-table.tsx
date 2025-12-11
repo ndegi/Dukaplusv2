@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { useCurrency } from "@/lib/contexts/currency-context"
+import { EnhancedPagination } from "@/components/reports/enhanced-pagination"
 
 interface ProductProductivityTableProps {
   dateRange: { from: Date; to: Date }
@@ -90,6 +91,16 @@ export function ProductProductivityTable({ dateRange, warehouse, isLoading = fal
               ))}
             </tbody>
           </table>
+          {data.length > 10 && (
+            <EnhancedPagination
+              currentPage={1}
+              totalPages={Math.ceil(data.length / 10)}
+              onPageChange={() => { }}
+              startIndex={0}
+              endIndex={9}
+              totalRecords={data.length}
+            />
+          )}
         </div>
       )}
     </Card>

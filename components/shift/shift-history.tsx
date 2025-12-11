@@ -234,13 +234,16 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
                     <td className="table-cell px-3 sm:px-4">
                       {hasDetails ? (
                         <div className="space-y-1">
-                          <table className="reports-table text-xs border border-border/60 rounded-lg overflow-hidden bg-background">
+                          <table className="reports-table text-xs border border-border/60 rounded-lg overflow-hidden bg-background min-w-[720px]">
                             <thead className="bg-slate-100 dark:bg-slate-700 border-b border-border/60">
                               <tr>
                                 <th className="text-left px-3 py-2 font-semibold text-foreground">Mode</th>
                                 <th className="text-right px-3 py-2 font-semibold text-blue-600 dark:text-blue-400">Opening</th>
                                 <th className="text-right px-3 py-2 font-semibold text-green-600 dark:text-green-400">Sales</th>
+                                <th className="text-right px-3 py-2 font-semibold text-teal-600 dark:text-teal-400">Credit Paid</th>
+                                <th className="text-right px-3 py-2 font-semibold text-amber-600 dark:text-amber-400">Expense</th>
                                 <th className="text-right px-3 py-2 font-semibold text-orange-600 dark:text-orange-400">Expected</th>
+                                <th className="text-right px-3 py-2 font-semibold text-indigo-600 dark:text-indigo-400">Closing</th>
                                 <th className="text-right px-3 py-2 font-semibold text-foreground">Diff</th>
                               </tr>
                             </thead>
@@ -254,8 +257,17 @@ export function ShiftHistory({ warehouseId }: { warehouseId: string }) {
                                   <td className="px-3 py-2 text-right text-green-600 dark:text-green-400 font-semibold">
                                     {formatMoney(detail.total_sales)}
                                   </td>
+                                  <td className="px-3 py-2 text-right text-teal-600 dark:text-teal-400 font-semibold">
+                                    {formatMoney(detail.total_credit_paid)}
+                                  </td>
+                                  <td className="px-3 py-2 text-right text-amber-600 dark:text-amber-400 font-semibold">
+                                    {formatMoney(detail.total_expense)}
+                                  </td>
                                   <td className="px-3 py-2 text-right text-orange-600 dark:text-orange-400 font-semibold">
                                     {formatMoney(detail.expected_closing_balance)}
+                                  </td>
+                                  <td className="px-3 py-2 text-right text-indigo-600 dark:text-indigo-400 font-semibold">
+                                    {formatMoney(detail.actual_closing_amount)}
                                   </td>
                                   <td
                                     className={`px-3 py-2 text-right font-semibold rounded ${Number(detail.difference ?? 0).toFixed(2) === "0.00"
