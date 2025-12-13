@@ -210,10 +210,51 @@ export function ProductFormInline({
   };
 
   const handleSubmit = async () => {
-    if (isPurchaseItem && !formData.product_cost) {
+    // Validate required fields
+    if (!formData.sku || formData.sku.trim() === "") {
       setMessage({
         type: "error",
-        text: "Cost is required for purchase items",
+        text: "SKU is required",
+      });
+      return;
+    }
+
+    if (!formData.product_name || formData.product_name.trim() === "") {
+      setMessage({
+        type: "error",
+        text: "Product name is required",
+      });
+      return;
+    }
+
+    if (!formData.product_category || formData.product_category.trim() === "") {
+      setMessage({
+        type: "error",
+        text: "Category is required",
+      });
+      return;
+    }
+
+    if (!formData.price || formData.price <= 0) {
+      setMessage({
+        type: "error",
+        text: "Selling price is required and must be greater than 0",
+      });
+      return;
+    }
+
+    if (isPurchaseItem && (!formData.product_cost || formData.product_cost <= 0)) {
+      setMessage({
+        type: "error",
+        text: "Cost is required for purchase items and must be greater than 0",
+      });
+      return;
+    }
+
+    if (trackInventory && (formData.stock_quantity === undefined || formData.stock_quantity === null || formData.stock_quantity < 0)) {
+      setMessage({
+        type: "error",
+        text: "Stock quantity is required when tracking inventory",
       });
       return;
     }
