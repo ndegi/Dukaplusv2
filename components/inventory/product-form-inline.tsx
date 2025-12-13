@@ -176,6 +176,13 @@ export function ProductFormInline({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+    
+    // Automatically remove spaces from SKU
+    let processedValue = value;
+    if (name === "sku") {
+      processedValue = value.replace(/\s/g, "");
+    }
+    
     setFormData((prev) => ({
       ...prev,
       [name]:
@@ -183,12 +190,12 @@ export function ProductFormInline({
           name === "price" ||
           name === "product_cost" ||
           name === "track_inventory"
-          ? Number(value)
-          : value,
+          ? Number(processedValue)
+          : processedValue,
     }));
 
     if (name === "img") {
-      setImagePreview(value);
+      setImagePreview(processedValue);
     }
   };
 
@@ -215,6 +222,15 @@ export function ProductFormInline({
       setMessage({
         type: "error",
         text: "SKU is required",
+      });
+      return;
+    }
+
+    // Validate SKU has no spaces
+    if (formData.sku.includes(" ")) {
+      setMessage({
+        type: "error",
+        text: "SKU cannot contain spaces",
       });
       return;
     }
