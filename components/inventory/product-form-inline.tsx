@@ -233,15 +233,8 @@ export function ProductFormInline({
       const url = product ? "/api/inventory/products/update" : "/api/inventory/products"
       const method = "POST"
 
-      const generatedProductId =
-        product?.id ||
-        formData.product_id ||
-        formData.sku ||
-        `PRD-${Date.now()}-${Math.floor(Math.random() * 1000)}`
-
       const preparedPayload = {
         ...formData,
-        product_id: generatedProductId,
         track_inventory: trackInventory ? 1 : 0,
         is_purchase_item: isPurchaseItem ? 1 : 0,
         stock_quantity: trackInventory ? Number(formData.stock_quantity) || 0 : 0,
@@ -254,9 +247,6 @@ export function ProductFormInline({
           : formData.purpose || "Purchase",
         product_status: productStatus,
       }
-
-      console.log("[DukaPlus] Product save request:", { url, payload: preparedPayload })
-
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -270,8 +260,6 @@ export function ProductFormInline({
       } catch {
         data = { message: responseText }
       }
-
-      console.log("[DukaPlus] Product save response:", { status: response.status, body: data })
 
       if (response.ok) {
         setMessage({

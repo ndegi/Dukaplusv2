@@ -8,7 +8,7 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Search, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, Search, ArrowUpDown, ChevronLeft, ChevronRight, DollarSign, FileText, CreditCard } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
@@ -25,6 +25,10 @@ interface Customer {
     total: number
   }
   unpaid_invoices: {
+    count: number
+    total: number
+  }
+  advance_payments: {
     count: number
     total: number
   }
@@ -53,6 +57,14 @@ export default function CustomersPage() {
   })
   const [currentPage, setCurrentPage] = useState(1)
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
+  const [showAdvancePayment, setShowAdvancePayment] = useState(false)
+  const [selectedCustomerForPayment, setSelectedCustomerForPayment] = useState<Customer | null>(null)
+  const [advancePaymentData, setAdvancePaymentData] = useState({
+    mode_of_payment: "Cash",
+    amount_paid: "",
+  })
+  const [paymentModes, setPaymentModes] = useState<Array<{ mode_of_payment: string }>>([])
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false)
   const itemsPerPage = 10
 
   useEffect(() => {
@@ -64,7 +76,22 @@ export default function CustomersPage() {
   useEffect(() => {
     fetchCustomers()
     fetchGroups()
+    fetchPaymentModes()
   }, [])
+
+  const fetchPaymentModes = async () => {
+    try {
+      const res = await fetch("/api/payments/modes")
+      const data = await res.json()
+      setPaymentModes(data.modes || [])
+      if (data.modes && data.modes.length > 0) {
+        setAdvancePaymentData({ ...advancePaymentData, mode_of_payment: data.modes[0].mode_of_payment || "Cash" })
+      }
+    } catch (error) {
+      console.error("[DukaPlus] Error fetching payment modes:", error)
+      setPaymentModes([{ mode_of_payment: "Cash" }, { mode_of_payment: "Mpesa" }])
+    }
+  }
 
   const fetchCustomers = async () => {
     try {
@@ -151,6 +178,173 @@ export default function CustomersPage() {
     setSortField("customer_name")
     setSortOrder("asc")
     setCurrentPage(1)
+  }
+
+  const handleAdvancePayment = (customer: Customer) => {
+    setSelectedCustomerForPayment(customer)
+    setAdvancePaymentData({
+      mode_of_payment: paymentModes[0]?.mode_of_payment || "Cash",
+      amount_paid: "",
+    })
+    setShowAdvancePayment(true)
+  }
+
+  const handleSubmitAdvancePayment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedCustomerForPayment) return
+
+    setIsSubmittingPayment(true)
+    try {
+      const res = await fetch("/api/customers/advance-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_id: selectedCustomerForPayment.customer_id,
+          mode_of_payment: advancePaymentData.mode_of_payment,
+          amount_paid: parseFloat(advancePaymentData.amount_paid),
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setShowAdvancePayment(false)
+        setSelectedCustomerForPayment(null)
+        setAdvancePaymentData({ mode_of_payment: "Cash", amount_paid: "" })
+        fetchCustomers() // Refresh the customer list
+        alert(data.message?.message || "Advance payment posted successfully")
+      } else {
+        alert(data.error || "Failed to post advance payment")
+      }
+    } catch (error) {
+      console.error("[DukaPlus] Error posting advance payment:", error)
+      alert("Failed to post advance payment")
+    } finally {
+      setIsSubmittingPayment(false)
+    }
+  }
+
+  const handleGeneratePDF = async (customer: Customer) => {
+    try {
+      const res = await fetch(`/api/reports/unpaid-customer-statement?customer_id=${encodeURIComponent(customer.customer_id)}`)
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(data.error || "Failed to fetch customer statement")
+        return
+      }
+
+      const statementData = data.message?.data || []
+      const logo = data.message?.logo || ""
+
+      // Generate PDF
+      generateCustomerStatementPDF(customer, statementData, logo)
+    } catch (error) {
+      console.error("[DukaPlus] Error generating PDF:", error)
+      alert("Failed to generate PDF")
+    }
+  }
+
+  const generateCustomerStatementPDF = (customer: Customer, statementData: any[], logo: string) => {
+    // Create HTML content for PDF
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Customer Statement - ${customer.customer_name}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .logo { max-width: 150px; margin-bottom: 10px; }
+            .customer-info { margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .total-row { font-weight: bold; }
+            .text-right { text-align: right; }
+            .items-table { margin-top: 10px; }
+            .items-table th { background-color: #e8e8e8; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            ${logo ? `<img src="${logo}" alt="Logo" class="logo" />` : ""}
+            <h1>Customer Statement</h1>
+          </div>
+          <div class="customer-info">
+            <p><strong>Customer:</strong> ${customer.customer_name}</p>
+            <p><strong>Customer ID:</strong> ${customer.customer_id}</p>
+            <p><strong>Mobile:</strong> ${customer.mobile_number || "N/A"}</p>
+            <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Invoice ID</th>
+                <th>Date</th>
+                <th>Due Date</th>
+                <th>Grand Total</th>
+                <th>Outstanding</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${statementData.map((item) => `
+                <tr>
+                  <td>${item.invoice_id || ""}</td>
+                  <td>${item.date || ""}</td>
+                  <td>${item.due_date || ""}</td>
+                  <td class="text-right">${formatCurrency(item.grand_total || 0)}</td>
+                  <td class="text-right">${formatCurrency(item.outstanding_amount || 0)}</td>
+                  <td>${item.status || ""}</td>
+                </tr>
+                ${item.items && item.items.length > 0 ? `
+                  <tr>
+                    <td colspan="6">
+                      <table class="items-table">
+                        <thead>
+                          <tr>
+                            <th>Item Code</th>
+                            <th>Item Name</th>
+                            <th class="text-right">Qty</th>
+                            <th class="text-right">Rate</th>
+                            <th class="text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${item.items.map((itemRow: any) => `
+                            <tr>
+                              <td>${itemRow.item_code || ""}</td>
+                              <td>${itemRow.item_name || ""}</td>
+                              <td class="text-right">${itemRow.qty || 0}</td>
+                              <td class="text-right">${formatCurrency(itemRow.rate || 0)}</td>
+                              <td class="text-right">${formatCurrency(itemRow.amount || 0)}</td>
+                            </tr>
+                          `).join("")}
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                ` : ""}
+              `).join("")}
+            </tbody>
+          </table>
+          <div style="margin-top: 20px;">
+            <p><strong>Total Outstanding:</strong> ${formatCurrency(statementData.reduce((sum, item) => sum + (item.outstanding_amount || 0), 0))}</p>
+          </div>
+        </body>
+      </html>
+    `
+
+    // Open in new tab and print
+    const printWindow = window.open("", "_blank")
+    if (printWindow) {
+      printWindow.document.write(htmlContent)
+      printWindow.document.close()
+      printWindow.onload = () => {
+        printWindow.print()
+      }
+    }
   }
 
   const filteredAndSorted = customers
@@ -276,6 +470,78 @@ export default function CustomersPage() {
           </DialogContent>
         </Dialog>
 
+        <Dialog open={showAdvancePayment} onOpenChange={setShowAdvancePayment}>
+          <DialogContent className="dialog-content sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="dialog-title">Post Advance Payment</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmitAdvancePayment} className="space-y-4">
+              <div className="space-y-3">
+                <div>
+                  <label className="form-label">Customer</label>
+                  <Input
+                    value={selectedCustomerForPayment?.customer_name || ""}
+                    disabled
+                    className="input-base bg-gray-50 dark:bg-gray-900"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Mode of Payment *</label>
+                  <select
+                    value={advancePaymentData.mode_of_payment}
+                    onChange={(e) => setAdvancePaymentData({ ...advancePaymentData, mode_of_payment: e.target.value })}
+                    className="w-full input-base"
+                    required
+                  >
+                    {paymentModes.length > 0 ? (
+                      paymentModes.map((mode) => (
+                        <option key={mode.mode_of_payment} value={mode.mode_of_payment}>
+                          {mode.mode_of_payment}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Cash">Cash</option>
+                        <option value="Mpesa">M-Pesa</option>
+                        <option value="Card">Card</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">Amount Paid *</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Enter amount"
+                    value={advancePaymentData.amount_paid}
+                    onChange={(e) => setAdvancePaymentData({ ...advancePaymentData, amount_paid: e.target.value })}
+                    className="input-base"
+                    required
+                  />
+                </div>
+              </div>
+              <DialogFooter className="gap-2 flex-col sm:flex-row">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowAdvancePayment(false)
+                    setSelectedCustomerForPayment(null)
+                  }}
+                  className="btn-cancel w-full sm:w-auto"
+                  disabled={isSubmittingPayment}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="btn-success w-full sm:w-auto" disabled={isSubmittingPayment}>
+                  {isSubmittingPayment ? "Submitting..." : "Post Payment"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         <div className="flex gap-2">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-3 w-4 h-4 text-secondary" />
@@ -336,6 +602,7 @@ export default function CustomersPage() {
                       </th>
                       <th className="table-header-cell text-right">Paid Total</th>
                       <th className="table-header-cell text-right">Unpaid Total</th>
+                      <th className="table-header-cell text-right">Advance Payments</th>
                       <th className="table-header-cell">Actions</th>
                     </tr>
                   </thead>
@@ -354,8 +621,31 @@ export default function CustomersPage() {
                         <td className="table-cell-secondary text-right text-red-600 dark:text-red-400 font-semibold">
                           {formatCurrency(customer.unpaid_invoices?.total || 0)}
                         </td>
+                        <td className="table-cell-secondary text-right text-blue-600 dark:text-blue-400 font-semibold">
+                          {formatCurrency(customer.advance_payments?.total || 0)}
+                        </td>
                         <td className="px-4 py-3">
-                          <TableActionButtons showEdit={true} onEdit={() => handleEditCustomer(customer)} size="sm" />
+                          <div className="flex items-center gap-2">
+                            <TableActionButtons showEdit={true} onEdit={() => handleEditCustomer(customer)} size="sm" />
+                            <Button
+                              onClick={() => handleAdvancePayment(customer)}
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2"
+                              title="Post Advance Payment"
+                            >
+                              <CreditCard className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              onClick={() => handleGeneratePDF(customer)}
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2"
+                              title="Generate Statement PDF"
+                            >
+                              <FileText className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}

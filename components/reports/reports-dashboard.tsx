@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DateRangeFilter } from "./date-range-filter"
 import { ExportButton } from "./export-button"
-import { AlertCircle, Search } from "lucide-react"
+import { AlertCircle, Search, FileText } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -538,6 +538,134 @@ function CustomerStatementTable({
   const itemsPerPage = 10
   const { formatCurrency } = useCurrency()
 
+  const handleGenerateCustomerPDF = async (customerId: string, customerName: string) => {
+    try {
+      const res = await fetch(`/api/reports/unpaid-customer-statement?customer_id=${encodeURIComponent(customerId)}`)
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(data.error || "Failed to fetch customer statement")
+        return
+      }
+
+      const statementData = data.message?.data || []
+      const logo = data.message?.logo || ""
+
+      // Generate PDF
+      generateCustomerStatementPDF(customerId, customerName, statementData, logo, formatCurrency)
+    } catch (error) {
+      console.error("[DukaPlus] Error generating PDF:", error)
+      alert("Failed to generate PDF")
+    }
+  }
+
+  const generateCustomerStatementPDF = (
+    customerId: string,
+    customerName: string,
+    statementData: any[],
+    logo: string,
+    formatCurrency: (amount: number) => string,
+  ) => {
+    // Create HTML content for PDF
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Customer Statement - ${customerName}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .logo { max-width: 150px; margin-bottom: 10px; }
+            .customer-info { margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .total-row { font-weight: bold; }
+            .text-right { text-align: right; }
+            .items-table { margin-top: 10px; }
+            .items-table th { background-color: #e8e8e8; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            ${logo ? `<img src="${logo}" alt="Logo" class="logo" />` : ""}
+            <h1>Customer Statement</h1>
+          </div>
+          <div class="customer-info">
+            <p><strong>Customer:</strong> ${customerName}</p>
+            <p><strong>Customer ID:</strong> ${customerId}</p>
+            <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Invoice ID</th>
+                <th>Date</th>
+                <th>Due Date</th>
+                <th>Grand Total</th>
+                <th>Outstanding</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${statementData.map((item) => `
+                <tr>
+                  <td>${item.invoice_id || ""}</td>
+                  <td>${item.date || ""}</td>
+                  <td>${item.due_date || ""}</td>
+                  <td class="text-right">${formatCurrency(item.grand_total || 0)}</td>
+                  <td class="text-right">${formatCurrency(item.outstanding_amount || 0)}</td>
+                  <td>${item.status || ""}</td>
+                </tr>
+                ${item.items && item.items.length > 0 ? `
+                  <tr>
+                    <td colspan="6">
+                      <table class="items-table">
+                        <thead>
+                          <tr>
+                            <th>Item Code</th>
+                            <th>Item Name</th>
+                            <th class="text-right">Qty</th>
+                            <th class="text-right">Rate</th>
+                            <th class="text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${item.items.map((itemRow: any) => `
+                            <tr>
+                              <td>${itemRow.item_code || ""}</td>
+                              <td>${itemRow.item_name || ""}</td>
+                              <td class="text-right">${itemRow.qty || 0}</td>
+                              <td class="text-right">${formatCurrency(itemRow.rate || 0)}</td>
+                              <td class="text-right">${formatCurrency(itemRow.amount || 0)}</td>
+                            </tr>
+                          `).join("")}
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                ` : ""}
+              `).join("")}
+            </tbody>
+          </table>
+          <div style="margin-top: 20px;">
+            <p><strong>Total Outstanding:</strong> ${formatCurrency(statementData.reduce((sum, item) => sum + (item.outstanding_amount || 0), 0))}</p>
+          </div>
+        </body>
+      </html>
+    `
+
+    // Open in new tab and print
+    const printWindow = window.open("", "_blank")
+    if (printWindow) {
+      printWindow.document.write(htmlContent)
+      printWindow.document.close()
+      printWindow.onload = () => {
+        printWindow.print()
+      }
+    }
+  }
+
   const clearFilters = () => {
     setSearchTerm("")
     onDateRangeChange({
@@ -628,6 +756,7 @@ function CustomerStatementTable({
               <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Paid</th>
               <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">Outstanding</th>
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Status</th>
+              <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -657,6 +786,17 @@ function CustomerStatementTable({
                   >
                     {row.outstanding_amount === 0 ? "Paid" : "Pending"}
                   </span>
+                </td>
+                <td className="p-3">
+                  <Button
+                    onClick={() => handleGenerateCustomerPDF(row.customer_id, row.customer_name)}
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-2"
+                    title="Generate Customer Statement PDF"
+                  >
+                    <FileText className="w-4 h-4" />
+                  </Button>
                 </td>
               </tr>
             ))}

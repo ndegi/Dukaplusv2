@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
       mobile_number: customer.mobile_number || customer.mobile_no || customer.phone || customer.mobile || "",
       paid_invoices: customer.paid_invoices || { count: 0, total: 0 },
       unpaid_invoices: customer.unpaid_invoices || { count: 0, total: 0 },
+      advance_payments: customer.advance_payments || { count: 0, total: 0 },
       total_sales: customer.total_sales || 0,
     }))
 
