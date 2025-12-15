@@ -176,13 +176,13 @@ export function ProductFormInline({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    
+
     // Automatically remove spaces from SKU
     let processedValue = value;
     if (name === "sku") {
       processedValue = value.replace(/\s/g, "");
     }
-    
+
     setFormData((prev) => ({
       ...prev,
       [name]:

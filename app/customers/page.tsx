@@ -8,7 +8,7 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Search, ArrowUpDown, ChevronLeft, ChevronRight, DollarSign, FileText, CreditCard } from "lucide-react"
+import { Plus, Search, ArrowUpDown, ChevronLeft, ChevronRight, DollarSign, FileText, CreditCard, List } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { TableActionButtons } from "@/components/ui/table-action-buttons"
@@ -62,9 +62,14 @@ export default function CustomersPage() {
   const [advancePaymentData, setAdvancePaymentData] = useState({
     mode_of_payment: "Cash",
     amount_paid: "",
+    reference_no: "",
+    reference_date: "",
   })
   const [paymentModes, setPaymentModes] = useState<Array<{ mode_of_payment: string }>>([])
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false)
+  const [showAdvanceRefs, setShowAdvanceRefs] = useState(false)
+  const [advanceRefs, setAdvanceRefs] = useState<any[]>([])
+  const [advanceRefsLoading, setAdvanceRefsLoading] = useState(false)
   const itemsPerPage = 10
 
   useEffect(() => {
@@ -185,8 +190,39 @@ export default function CustomersPage() {
     setAdvancePaymentData({
       mode_of_payment: paymentModes[0]?.mode_of_payment || "Cash",
       amount_paid: "",
+      reference_no: "",
+      reference_date: "",
     })
     setShowAdvancePayment(true)
+  }
+
+  const handleViewAdvanceRefs = async (customer: Customer) => {
+    setSelectedCustomerForPayment(customer)
+    setShowAdvanceRefs(true)
+    setAdvanceRefs([])
+    setAdvanceRefsLoading(true)
+    try {
+      const res = await fetch(`/api/customers/advance-payment-entries?customer_id=${encodeURIComponent(customer.customer_id)}`)
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(data.error || "Failed to fetch advance payment references")
+        setAdvanceRefsLoading(false)
+        return
+      }
+
+      const entries = (data.message?.data || []).filter(
+        (entry: any) =>
+          entry.customer_id === customer.customer_id ||
+          entry.customer_name === customer.customer_name,
+      )
+      setAdvanceRefs(entries)
+    } catch (error) {
+      console.error("[DukaPlus] Error fetching advance payment entries:", error)
+      alert("Failed to fetch advance payment references")
+    } finally {
+      setAdvanceRefsLoading(false)
+    }
   }
 
   const handleSubmitAdvancePayment = async (e: React.FormEvent) => {
@@ -202,6 +238,8 @@ export default function CustomersPage() {
           customer_id: selectedCustomerForPayment.customer_id,
           mode_of_payment: advancePaymentData.mode_of_payment,
           amount_paid: parseFloat(advancePaymentData.amount_paid),
+          reference_no: advancePaymentData.reference_no || "",
+          reference_date: advancePaymentData.reference_date,
         }),
       })
 
@@ -210,7 +248,7 @@ export default function CustomersPage() {
       if (res.ok) {
         setShowAdvancePayment(false)
         setSelectedCustomerForPayment(null)
-        setAdvancePaymentData({ mode_of_payment: "Cash", amount_paid: "" })
+        setAdvancePaymentData({ mode_of_payment: "Cash", amount_paid: "", reference_no: "", reference_date: "" })
         fetchCustomers() // Refresh the customer list
         alert(data.message?.message || "Advance payment posted successfully")
       } else {
@@ -521,6 +559,26 @@ export default function CustomersPage() {
                     required
                   />
                 </div>
+                <div>
+                  <label className="form-label">Reference No</label>
+                  <Input
+                    type="text"
+                    placeholder="Enter reference number"
+                    value={advancePaymentData.reference_no || ""}
+                    onChange={(e) => setAdvancePaymentData({ ...advancePaymentData, reference_no: e.target.value })}
+                    className="input-base"
+                  />
+                </div>
+
+                <div>
+                  <label className="form-label">Reference Date</label>
+                  <Input
+                    type="date"
+                    value={advancePaymentData.reference_date || ""}
+                    onChange={(e) => setAdvancePaymentData({ ...advancePaymentData, reference_date: e.target.value })}
+                    className="input-base"
+                  />
+                </div>
               </div>
               <DialogFooter className="gap-2 flex-col sm:flex-row">
                 <Button
@@ -539,6 +597,59 @@ export default function CustomersPage() {
                 </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showAdvanceRefs} onOpenChange={setShowAdvanceRefs}>
+          <DialogContent className="dialog-content sm:max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="dialog-title">Advance Payment References</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  Customer: {selectedCustomerForPayment?.customer_name || "-"}
+                </p>
+              </div>
+              {advanceRefsLoading ? (
+                <div className="p-4 text-center text-foreground">Loading...</div>
+              ) : advanceRefs.length === 0 ? (
+                <div className="p-4 text-center text-foreground">No advance payments found.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="reports-table text-xs sm:text-sm">
+                    <thead className="table-header">
+                      <tr>
+                        <th className="table-header-cell">Ref ID</th>
+                        <th className="table-header-cell">Date</th>
+                        <th className="table-header-cell">Mode</th>
+                        <th className="table-header-cell text-right">Paid Amount</th>
+                        <th className="table-header-cell">Ref No</th>
+                        <th className="table-header-cell">Ref Date</th>
+                        <th className="table-header-cell text-right">Unallocated</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {advanceRefs.map((ref) => (
+                        <tr key={ref.name} className="table-row">
+                          <td className="table-cell font-medium">{ref.name}</td>
+                          <td className="table-cell-secondary">{ref.posting_date}</td>
+                          <td className="table-cell-secondary">{ref.mode_of_payment}</td>
+                          <td className="table-cell-secondary text-right text-blue-600 dark:text-blue-400 font-semibold">
+                            {formatCurrency(ref.paid_amount || 0)}
+                          </td>
+                          <td className="table-cell-secondary">{ref.reference_no || "-"}</td>
+                          <td className="table-cell-secondary">{ref.reference_date || "-"}</td>
+                          <td className="table-cell-secondary text-right text-orange-600 dark:text-orange-400 font-semibold">
+                            {formatCurrency(ref.unallocated_amount || 0)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
 
@@ -635,6 +746,15 @@ export default function CustomersPage() {
                               title="Post Advance Payment"
                             >
                               <CreditCard className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              onClick={() => handleViewAdvanceRefs(customer)}
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2"
+                              title="View Advance Payment References"
+                            >
+                              <List className="w-4 h-4" />
                             </Button>
                             <Button
                               onClick={() => handleGeneratePDF(customer)}
