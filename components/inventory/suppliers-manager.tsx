@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { AlertCircle, Plus, Edit, Trash2, Search } from "lucide-react"
+import { useCurrency } from "@/hooks/use-currency"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { EnhancedPagination } from "@/components/reports/enhanced-pagination"
@@ -13,10 +14,13 @@ interface Supplier {
   mobile_number?: string
   email?: string
   address?: string
+  total_purchase?: number
+  outstanding_amount?: number
 }
 
 export function SuppliersManager() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const { formatCurrency } = useCurrency()
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -153,6 +157,8 @@ export function SuppliersManager() {
                     <th className="table-header-cell text-left uppercase">Supplier Name</th>
                     <th className="table-header-cell text-left uppercase">Mobile Number</th>
                     <th className="table-header-cell text-left uppercase">Email</th>
+                    <th className="table-header-cell text-right uppercase">Total Purchase</th>
+                    <th className="table-header-cell text-right uppercase">Outstanding</th>
                     <th className="table-header-cell text-center uppercase">Actions</th>
                   </tr>
                 </thead>
@@ -162,6 +168,8 @@ export function SuppliersManager() {
                       <td className="table-cell font-medium">{supplier.supplier_name}</td>
                       <td className="table-cell">{supplier.mobile_number || "-"}</td>
                       <td className="table-cell">{supplier.email || "-"}</td>
+                      <td className="table-cell text-right">{formatCurrency(supplier.total_purchase || 0)}</td>
+                      <td className="table-cell text-right">{formatCurrency(supplier.outstanding_amount || 0)}</td>
                       <td className="table-cell text-center">
                         <div className="flex justify-center gap-2">
                           <button
