@@ -1,53 +1,19 @@
 const { app, BrowserWindow, ipcMain } = require("electron")
 const path = require("path")
-const { spawn } = require("child_process")
 const fs = require("fs")
 
+const isDev = !app.isPackaged
 let mainWindow
-let serverProcess = null
 
-function startServer() {
-  console.log("[DukaPlus] Starting embedded server...")
-  
-  const serverPath = path.join(process.resourcesPath, "app", ".next", "standalone", "server.js")
-  
-  if (!fs.existsSync(serverPath)) {
-    console.error("[DukaPlus] Server file not found at:", serverPath)
-    console.error("[DukaPlus] Please rebuild with: npm run dist:win")
-    return false
+const resolveResourcePath = (...segments) => {
+  if (isDev) {
+    return path.join(__dirname, ...segments)
   }
-
-  console.log("[DukaPlus] Server found at:", serverPath)
-
-  serverProcess = spawn("node", [serverPath], {
-    env: {
-      ...process.env,
-      NODE_ENV: "production",
-      PORT: "3000",
-      HOSTNAME: "localhost",
-    },
-    cwd: path.join(process.resourcesPath, "app", ".next", "standalone"),
-  })
-
-  serverProcess.stdout.on("data", (data) => {
-    console.log(`[Server] ${data}`)
-  })
-
-  serverProcess.stderr.on("data", (data) => {
-    console.error(`[Server] ${data}`)
-  })
-
-  serverProcess.on("close", (code) => {
-    console.log(`[Server] Process exited with code ${code}`)
-  })
-
-  return true
+  return path.join(process.resourcesPath, "app", ...segments)
 }
 
 function createWindow() {
-  const iconPath = app.isPackaged
-    ? path.join(process.resourcesPath, "app", "public", "icon.ico")
-    : path.join(__dirname, "public", "icon.ico")
+  const iconPath = resolveResourcePath("public", "icon.ico")
 
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -56,49 +22,42 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"),
+      preload: resolveResourcePath("preload.js"),
     },
   })
 
-  const loadApp = (retries = 3) => {
-    mainWindow.loadURL("http://localhost:3000").catch((err) => {
-      console.error("[DukaPlus] Failed to load app:", err.message)
-      if (retries > 0) {
-        console.log(`[DukaPlus] Retrying... (${retries} attempts left)`)
-        setTimeout(() => loadApp(retries - 1), 2000)
-      }
-    })
-  }
-  
-  loadApp()
+  const targetUrl = isDev
+    ? process.env.ELECTRON_START_URL || "http://localhost:3000"
+    : "https://pos.duka.plus/"; // hosted POS app
 
-  if (app.isPackaged) {
-    mainWindow.webContents.openDevTools()
+  mainWindow.loadURL(targetUrl)
+}
+
+const prepareApp = async () => {
+  try {
+    if (isDev) {
+      console.log("[DukaPlus] Dev mode - expecting external Next.js server.")
+      createWindow()
+      return
+    }
+
+    console.log("[DukaPlus] Production mode - loading hosted POS app...")
+    createWindow()
+  } catch (error) {
+    console.error("[DukaPlus] Failed to initialize application:", error)
+    app.quit()
   }
 }
 
-app.whenReady().then(() => {
-  if (app.isPackaged) {
-    console.log("[DukaPlus] Running in packaged mode - starting embedded server")
-    if (startServer()) {
-      setTimeout(() => {
-        createWindow()
-      }, 3000)
-    } else {
-      console.error("[DukaPlus] Failed to start server")
-      app.quit()
-    }
-  } else {
-    console.log("[DukaPlus] Running in dev mode - connecting to external server")
-    createWindow()
-  }
-})
+app.whenReady().then(prepareApp)
+
+const stopServer = () => {
+  // No embedded server in this configuration – nothing to stop.
+}
 
 app.on("window-all-closed", () => {
-  if (serverProcess) {
-    serverProcess.kill()
-  }
   if (process.platform !== "darwin") {
+    stopServer()
     app.quit()
   }
 })
@@ -109,11 +68,7 @@ app.on("activate", () => {
   }
 })
 
-app.on("will-quit", () => {
-  if (serverProcess) {
-    serverProcess.kill()
-  }
-})
+app.on("will-quit", stopServer)
 
 ipcMain.handle("get-offline-data", async () => {
   return { success: true }

@@ -6,18 +6,18 @@
   "author": "DukaPlus Team",
   "main": "electron-main.js",
   "scripts": {
-    "build": "next build",
     "dev": "next dev",
-    "dist": "electron-builder",
-    "dist:linux": "next build && electron-builder --linux",
-    "dist:mac": "next build && electron-builder --mac",
-    "dist:win": "next build && electron-builder --win",
-    "electron": "electron .",
-    "electron-build": "next build && electron-builder",
-    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "dev:electron": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "build:web": "next build",
+    "build": "npm run build:web",
+    "start": "next start",
     "lint": "eslint .",
-    "pack": "electron-builder --dir",
-    "start": "next start"
+    "electron": "electron .",
+    "dist": "npm run build:web && electron-builder",
+    "dist:win": "npm run build:web && electron-builder --win",
+    "dist:mac": "npm run build:web && electron-builder --mac",
+    "dist:linux": "npm run build:web && electron-builder --linux",
+    "pack": "npm run build:web && electron-builder --dir"
   },
   "overrides": {
     "vaul": {

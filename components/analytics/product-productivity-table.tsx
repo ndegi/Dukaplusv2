@@ -22,7 +22,10 @@ export function ProductProductivityTable({ dateRange, warehouse, isLoading = fal
   const [data, setData] = useState<ProductData[]>([])
   const [error, setError] = useState<string | null>(null)
   const [internalLoading, setInternalLoading] = useState<boolean>(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10)
   const { currency } = useCurrency()
+
   useEffect(() => {
     const fetchProductData = async () => {
       try {
@@ -55,6 +58,16 @@ export function ProductProductivityTable({ dateRange, warehouse, isLoading = fal
     fetchProductData()
   }, [dateRange, warehouse])
 
+  // Calculate pagination
+  const totalPages = Math.ceil(data.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedData = data.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
   return (
     <Card className="card-base table-card p-4 sm:p-6">
       <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mb-4">
@@ -77,7 +90,7 @@ export function ProductProductivityTable({ dateRange, warehouse, isLoading = fal
               </tr>
             </thead>
             <tbody>
-              {data.map((product) => (
+              {paginatedData.map((product) => (
                 <tr key={product.item_code} className="table-row">
                   <td className="table-cell font-medium">{product.item_code}</td>
                   <td className="table-cell-secondary">{product.item_name}</td>
@@ -93,11 +106,11 @@ export function ProductProductivityTable({ dateRange, warehouse, isLoading = fal
           </table>
           {data.length > 10 && (
             <EnhancedPagination
-              currentPage={1}
-              totalPages={Math.ceil(data.length / 10)}
-              onPageChange={() => { }}
-              startIndex={0}
-              endIndex={9}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              startIndex={startIndex}
+              endIndex={Math.min(endIndex, data.length)}
               totalRecords={data.length}
             />
           )}
