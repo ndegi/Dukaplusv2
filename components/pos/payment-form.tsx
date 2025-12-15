@@ -370,10 +370,10 @@ export function PaymentForm({
       const updatedSplits = prev.map((p) =>
         p.id === id
           ? {
-              ...p,
-              [field]: field === "amount" ? Number(value) : value,
-              isPaid: false,
-            }
+            ...p,
+            [field]: field === "amount" ? Number(value) : value,
+            isPaid: false,
+          }
           : p
       );
 
@@ -437,11 +437,11 @@ export function PaymentForm({
           splitPayments.map((p) =>
             p.id === paymentId
               ? {
-                  ...p,
-                  isPaid: true,
-                  reference:
-                    data.checkoutRequestId || data.message?.transaction_id,
-                }
+                ...p,
+                isPaid: true,
+                reference:
+                  data.checkoutRequestId || data.message?.transaction_id,
+              }
               : p
           )
         );
@@ -513,7 +513,7 @@ export function PaymentForm({
           text: data.message?.message || "Failed to send receipt",
         });
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const saveDraft = async () => {
@@ -783,31 +783,31 @@ export function PaymentForm({
 
   const content = (
     <div className="h-full flex flex-col bg-background">
-      <div className="px-6 py-3 border-b border-border bg-slate-50 dark:bg-slate-800/30">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <p className="text-xs text-muted-foreground">Total</p>
-              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                {currency}{" "}
-                {totalAmount.toLocaleString("en-KE", {
-                  minimumFractionDigits: 2,
-                })}
-              </p>
-            </div>
-            <div className="h-8 w-px bg-border" />
-            <div>
-              <p className="text-xs text-muted-foreground">Items</p>
-              <p className="text-lg font-semibold text-foreground">
-                {itemCount}
-              </p>
-            </div>
-            <div className="h-8 w-px bg-border" />
-            <div className="flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 px-3 py-1 rounded-full">
-              <Gift className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+      <div className="px-4 py-1 border-b border-border bg-slate-50 dark:bg-slate-800/30">
+        <div className="flex items-center justify-between gap- flex-wrap">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1 min-w-[260px]">
+            <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/40 px-3 py-2 rounded-lg shadow-sm h-full">
               <div>
-                <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">
-                  +{pointsToEarn} pts
+                <p className="text-lg sm:text-xl font-bold text-orange-600 dark:text-orange-400">
+                  Total: {currency}{" "}
+                  {totalAmount.toLocaleString("en-KE", {
+                    minimumFractionDigits: 2,
+                  })}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/40 px-3 py-2 rounded-lg shadow-sm h-full">
+              <div>
+                <p className="text-lg sm:text-xl font-bold text-orange-600 dark:text-orange-400">
+                  {itemCount} Items
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 px-3 py-2 rounded-lg shadow-sm h-full">
+              <Gift className="w-4 h-4 text-purple-600 dark:text-purple-300" />
+              <div>
+                <p className="text-[10px] leading-none text-purple-700 dark:text-purple-200 font-medium">
+                  Loyalty  +{pointsToEarn} pts
                 </p>
               </div>
             </div>
@@ -1007,13 +1007,12 @@ export function PaymentForm({
                                     type="button"
                                     onClick={() => handleSTKPush(payment.id)}
                                     disabled={isProcessingSTK}
-                                    className={`h-9 px-2.5 text-xs whitespace-nowrap ${
-                                      stkState === "processing"
-                                        ? "bg-yellow-600 hover:bg-yellow-700"
-                                        : stkState === "failure"
+                                    className={`h-9 px-2.5 text-xs whitespace-nowrap ${stkState === "processing"
+                                      ? "bg-yellow-600 hover:bg-yellow-700"
+                                      : stkState === "failure"
                                         ? "bg-red-600 hover:bg-red-700"
                                         : "bg-orange-600 hover:bg-orange-700"
-                                    } text-white`}
+                                      } text-white`}
                                   >
                                     {stkState === "processing" ? (
                                       <>
@@ -1235,12 +1234,12 @@ export function PaymentForm({
               {isProcessing
                 ? "Processing..."
                 : !hasActiveShift && !isInvoicePayment
-                ? "No Shift"
-                : isPaymentComplete
-                ? "Complete"
-                : `Complete (Remaining ${currency} ${Math.abs(
-                    remaining
-                  ).toFixed(2)})`}
+                  ? "No Shift"
+                  : isPaymentComplete
+                    ? "Complete"
+                    : `Complete (Remaining ${currency} ${Math.abs(
+                      remaining
+                    ).toFixed(2)})`}
             </Button>
           </div>
         </div>

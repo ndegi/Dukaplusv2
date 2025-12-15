@@ -43,6 +43,7 @@ interface SalesInvoice {
   sales_id: string;
   date: string;
   time: string;
+  customer_id?: string;
   customer_name: string;
   total_amount: number;
   outstanding_amount: number;
@@ -284,7 +285,15 @@ export default function SalesPage() {
       JSON.stringify({
         sales_id: invoice.sales_id,
         outstanding_amount: invoice.outstanding_amount,
-        customer_name: invoice.customer_name,
+        customer_id:
+          invoice.customer_id ||
+          // some APIs return `customer` instead of `customer_id`
+          (invoice as any).customer_id ||
+          invoice.customer_name ||
+          (invoice as any).customer ||
+          "walk-in",
+        customer_name:
+          invoice.customer_name || (invoice as any).customer || "walk-in",
         mobile_number: invoice.mobile_number,
       })
     );

@@ -60,6 +60,9 @@ export function POSInterface({
   const [invoiceOutstandingAmount, setInvoiceOutstandingAmount] = useState<
     number | null
   >(null);
+  const [pendingInvoiceActive, setPendingInvoiceActive] = useState<
+    boolean | null
+  >(null);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [customerCredit, setCustomerCredit] = useState(0);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
@@ -198,6 +201,14 @@ export function POSInterface({
   useEffect(() => {
     const updateCustomerInfo = async () => {
       if (!selectedId) {
+        // Wait until we know whether a pending invoice is active
+        if (pendingInvoiceActive === null) {
+          return;
+        }
+        // If a pending invoice is active but came without an ID, keep the parsed customer info instead of resetting to walk-in
+        if (pendingInvoiceActive) {
+          return;
+        }
         // When no customer is selected, fetch walk-in customer from API
         try {
           const walkInResponse = await fetch("/api/sales/walk-in-customer");
@@ -271,7 +282,7 @@ export function POSInterface({
     };
 
     updateCustomerInfo();
-  }, [selectedId, customers]);
+  }, [selectedId, customers, pendingInvoiceActive]);
 
   useEffect(() => {
     const handleLoadDraftItems = (event: any) => {
@@ -304,17 +315,36 @@ export function POSInterface({
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      setPendingInvoiceActive(false);
+      return;
+    }
+
     const pendingInvoice = sessionStorage.getItem("pending_invoice_payment");
     if (pendingInvoice) {
       try {
         const invoice = JSON.parse(pendingInvoice);
-        setCustomerName(invoice.customer_name);
+        setSelectedId(
+          invoice.customer_id ||
+            invoice.customerId ||
+            invoice.customer ||
+            invoice.customer_name
+        );
+        setCustomerName(
+          invoice.customer_name || invoice.customer || invoice.customerId || ""
+        );
         setMobileNumber(invoice.mobile_number);
         setPendingInvoiceId(invoice.sales_id);
         setInvoiceOutstandingAmount(invoice.outstanding_amount || 0);
         setShowPayment(true);
+        setPendingInvoiceActive(true);
+      } catch (err) {
+        setPendingInvoiceActive(false);
+      } finally {
         sessionStorage.removeItem("pending_invoice_payment");
-      } catch (err) {}
+      }
+    } else {
+      setPendingInvoiceActive(false);
     }
   }, []);
 
@@ -429,6 +459,7 @@ export function POSInterface({
     setPendingInvoiceId(null);
     setInvoiceOutstandingAmount(null);
     setDraftId(null);
+    setPendingInvoiceActive(false);
   };
 
   const handleBarcodeScan = async (barcode: string) => {
