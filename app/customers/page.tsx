@@ -70,6 +70,10 @@ export default function CustomersPage() {
   const [showAdvanceRefs, setShowAdvanceRefs] = useState(false)
   const [advanceRefs, setAdvanceRefs] = useState<any[]>([])
   const [advanceRefsLoading, setAdvanceRefsLoading] = useState(false)
+  const [advanceRefsSearch, setAdvanceRefsSearch] = useState("")
+  const [advanceRefsMode, setAdvanceRefsMode] = useState("")
+  const [advanceRefsDateFrom, setAdvanceRefsDateFrom] = useState("")
+  const [advanceRefsDateTo, setAdvanceRefsDateTo] = useState("")
   const [showAdvanceOnly, setShowAdvanceOnly] = useState(false)
   const itemsPerPage = 10
 
@@ -608,10 +612,49 @@ export default function CustomersPage() {
               <DialogTitle className="dialog-title">Advance Payment References</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <p className="text-sm text-muted-foreground">
                   Customer: {selectedCustomerForPayment?.customer_name || "-"}
                 </p>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
+                    <Input
+                      placeholder="Search references (ref id, mode, ref no)..."
+                      value={advanceRefsSearch}
+                      onChange={(e) => setAdvanceRefsSearch(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <select
+                    value={advanceRefsMode}
+                    onChange={(e) => setAdvanceRefsMode(e.target.value)}
+                    className="input-base w-full sm:w-40"
+                  >
+                    <option value="">All Modes</option>
+                    {Array.from(new Set(advanceRefs.map((ref) => ref.mode_of_payment))).map((mode) => (
+                      <option key={mode} value={mode}>
+                        {mode}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <Input
+                      type="date"
+                      value={advanceRefsDateFrom}
+                      onChange={(e) => setAdvanceRefsDateFrom(e.target.value)}
+                      className="input-base"
+                      title="From date"
+                    />
+                    <Input
+                      type="date"
+                      value={advanceRefsDateTo}
+                      onChange={(e) => setAdvanceRefsDateTo(e.target.value)}
+                      className="input-base"
+                      title="To date"
+                    />
+                  </div>
+                </div>
               </div>
               {advanceRefsLoading ? (
                 <div className="p-4 text-center text-foreground">Loading...</div>
@@ -632,21 +675,45 @@ export default function CustomersPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {advanceRefs.map((ref) => (
-                        <tr key={ref.name} className="table-row">
-                          <td className="table-cell font-medium">{ref.name}</td>
-                          <td className="table-cell-secondary">{ref.posting_date}</td>
-                          <td className="table-cell-secondary">{ref.mode_of_payment}</td>
-                          <td className="table-cell-secondary text-right text-blue-600 dark:text-blue-400 font-semibold">
-                            {formatCurrency(ref.paid_amount || 0)}
-                          </td>
-                          <td className="table-cell-secondary">{ref.reference_no || "-"}</td>
-                          <td className="table-cell-secondary">{ref.reference_date || "-"}</td>
-                          <td className="table-cell-secondary text-right text-orange-600 dark:text-orange-400 font-semibold">
-                            {formatCurrency(ref.unallocated_amount || 0)}
-                          </td>
-                        </tr>
-                      ))}
+                      {advanceRefs
+                        .filter((ref) => {
+                          const term = advanceRefsSearch.toLowerCase()
+                          const matchesSearch =
+                            term === "" ||
+                            (ref.name || "").toLowerCase().includes(term) ||
+                            (ref.mode_of_payment || "").toLowerCase().includes(term) ||
+                            (ref.reference_no || "").toLowerCase().includes(term)
+
+                          const matchesMode = !advanceRefsMode || ref.mode_of_payment === advanceRefsMode
+
+                          const from = advanceRefsDateFrom ? new Date(advanceRefsDateFrom) : null
+                          const to = advanceRefsDateTo ? new Date(advanceRefsDateTo) : null
+                          const refDate = ref.posting_date ? new Date(ref.posting_date) : null
+
+                          const matchesDate =
+                            !from && !to
+                              ? true
+                              : refDate
+                                ? (!from || refDate >= from) && (!to || refDate <= to)
+                                : false
+
+                          return matchesSearch && matchesMode && matchesDate
+                        })
+                        .map((ref) => (
+                          <tr key={ref.name} className="table-row">
+                            <td className="table-cell font-medium">{ref.name}</td>
+                            <td className="table-cell-secondary">{ref.posting_date}</td>
+                            <td className="table-cell-secondary">{ref.mode_of_payment}</td>
+                            <td className="table-cell-secondary text-right text-blue-600 dark:text-blue-400 font-semibold">
+                              {formatCurrency(ref.paid_amount || 0)}
+                            </td>
+                            <td className="table-cell-secondary">{ref.reference_no || "-"}</td>
+                            <td className="table-cell-secondary">{ref.reference_date || "-"}</td>
+                            <td className="table-cell-secondary text-right text-orange-600 dark:text-orange-400 font-semibold">
+                              {formatCurrency(ref.unallocated_amount || 0)}
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
