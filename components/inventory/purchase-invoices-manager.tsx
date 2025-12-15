@@ -1204,7 +1204,7 @@ export function PurchaseInvoicesManager() {
                             <td colSpan={8} className="px-4 py-2 bg-muted/30">
                               <div className="p-4">
                                 <div className="overflow-x-auto">
-                                <table className="reports-table text-xs min-w-[640px]">
+                                  <table className="reports-table text-xs min-w-[640px]">
                                     <thead className="bg-muted">
                                       <tr>
                                         <th className="table-header-cell text-left">
