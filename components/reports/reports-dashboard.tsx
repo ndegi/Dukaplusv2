@@ -456,6 +456,10 @@ function SalesReportTable({
     (sum, item) => sum + item.grand_total,
     0
   );
+  const totalCOGS = filteredData.reduce(
+    (sum, item) => sum + (item.cost_of_goods_sold || 0),
+    0
+  );
   const profitTotal = filteredData.reduce(
     (sum, item) => sum + (item.grand_total - item.cost_of_goods_sold),
     0
@@ -468,13 +472,21 @@ function SalesReportTable({
 
   return (
     <Card className="bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border-b border-gray-200 dark:border-slate-700">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 border-b border-gray-200 dark:border-slate-700">
         <div className="bg-orange-500/10 dark:bg-orange-500/10 border border-orange-500/20 dark:border-orange-500/20 rounded-lg p-3">
           <p className="text-gray-600 dark:text-gray-400 text-sm">
             Total Revenue
           </p>
           <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
             {formatCurrency(totalSales)}
+          </p>
+        </div>
+        <div className="bg-indigo-500/10 dark:bg-indigo-500/10 border border-indigo-500/20 dark:border-indigo-500/20 rounded-lg p-3">
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            Cost of Goods Sold
+          </p>
+          <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+            {formatCurrency(totalCOGS)}
           </p>
         </div>
         <div className="bg-green-500/10 dark:bg-green-500/10 border border-green-500/20 dark:border-green-500/20 rounded-lg p-3">
