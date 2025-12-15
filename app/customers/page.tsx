@@ -70,6 +70,7 @@ export default function CustomersPage() {
   const [showAdvanceRefs, setShowAdvanceRefs] = useState(false)
   const [advanceRefs, setAdvanceRefs] = useState<any[]>([])
   const [advanceRefsLoading, setAdvanceRefsLoading] = useState(false)
+  const [showAdvanceOnly, setShowAdvanceOnly] = useState(false)
   const itemsPerPage = 10
 
   useEffect(() => {
@@ -388,8 +389,9 @@ export default function CustomersPage() {
   const filteredAndSorted = customers
     .filter(
       (c) =>
-        (c.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
-        (c.mobile_number?.includes(searchQuery) ?? false),
+        ((c.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+          (c.mobile_number?.includes(searchQuery) ?? false)) &&
+        (!showAdvanceOnly || (c.advance_payments?.total || 0) > 0),
     )
     .sort((a, b) => {
       const aVal = a[sortField]
@@ -663,7 +665,16 @@ export default function CustomersPage() {
               className="input-base pl-10"
             />
           </div>
-          {searchQuery && (
+          <label className="inline-flex items-center gap-2 text-sm text-foreground whitespace-nowrap">
+            <input
+              type="checkbox"
+              checked={showAdvanceOnly}
+              onChange={(e) => setShowAdvanceOnly(e.target.checked)}
+              className="h-4 w-4"
+            />
+            Filter Advance
+          </label>
+          {(searchQuery || showAdvanceOnly) && (
             <Button onClick={clearFilters} variant="outline" size="sm">
               Clear Filters
             </Button>
