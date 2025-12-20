@@ -553,6 +553,9 @@ function SalesReportTable({
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">
                 Warehouse
               </th>
+              <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">
+                COG
+              </th>
               <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">
                 Amount
               </th>
@@ -564,6 +567,7 @@ function SalesReportTable({
                   {pm.mode}
                 </th>
               ))}
+
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">
                 Status
               </th>
@@ -586,6 +590,9 @@ function SalesReportTable({
                 </td>
                 <td className="p-3 text-gray-600 dark:text-gray-400">
                   {row.warehouse}
+                </td>
+                <td className="p-3 text-right text-gray-600 dark:text-gray-400">
+                  {formatCurrency(row.cost_of_goods_sold || 0)}
                 </td>
                 <td className="p-3 text-right text-orange-600 dark:text-orange-400 font-semibold">
                   {formatCurrency(row.grand_total)}
