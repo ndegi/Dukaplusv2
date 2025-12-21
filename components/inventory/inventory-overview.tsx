@@ -30,6 +30,7 @@ interface Product {
   track_inventory: number;
   is_purchase_item: number;
   purpose: string;
+  all_selling_prices?: any[];
 }
 
 export function InventoryOverview() {
@@ -209,6 +210,9 @@ export function InventoryOverview() {
                       Price
                     </th>
                     <th className="table-header-cell text-center uppercase">
+                      Selling Prices
+                    </th>
+                    <th className="table-header-cell text-center uppercase">
                       Status
                     </th>
                     <th className="table-header-cell text-center uppercase">
@@ -240,6 +244,41 @@ export function InventoryOverview() {
                       </td>
                       <td className="table-cell-secondary text-center">
                         {currency} {product.price.toFixed(2)}
+                      </td>
+                      <td className="table-cell-secondary text-center">
+                        {product.all_selling_prices &&
+                        product.all_selling_prices.length > 0 ? (
+                          <div className="text-xs">
+                            {product.all_selling_prices
+                              .map((sp: any) => {
+                                // handle different possible shapes from API
+                                const uom =
+                                  sp.unit_of_measure ||
+                                  sp.uom ||
+                                  sp.unit ||
+                                  sp.name ||
+                                  "Unit";
+                                const price =
+                                  sp.unit_selling_price ??
+                                  sp.price ??
+                                  sp.unit_price ??
+                                  sp.unit_selling_price;
+                                const conv =
+                                  sp.conversion_factor ??
+                                  sp.conversion ??
+                                  sp.factor ??
+                                  "";
+                                if (price === undefined || price === null)
+                                  return `${uom}`;
+                                return `${uom}: ${currency} ${Number(
+                                  price
+                                ).toFixed(2)}${conv ? ` (x${conv})` : ""}`;
+                              })
+                              .join(" \u2022 ")}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-muted-foreground">-</div>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-center">
                         <span

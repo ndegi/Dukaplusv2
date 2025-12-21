@@ -100,6 +100,9 @@ export function ProductFormInline({
   const [isPurchaseItem, setIsPurchaseItem] = useState(true);
   const [originalStockQuantity, setOriginalStockQuantity] = useState("");
   const [showPurposeSelector, setShowPurposeSelector] = useState(false);
+  const [sellingPrices, setSellingPrices] = useState<
+    Array<{ uom: string; conversion_factor: number; price: number }>
+  >([]);
 
   useEffect(() => {
     const selectedWarehouse =
@@ -129,6 +132,26 @@ export function ProductFormInline({
         product_status: product.product_status,
       });
       setImagePreview(product.img || "");
+      // initialize selling prices from product if available
+      const rawPrices =
+        product.all_selling_prices || product.selling_prices || [];
+      const normalized = (rawPrices || []).map((sp: any) => ({
+        uom: sp.unit_of_measure || sp.uom || sp.unit || "Each",
+        conversion_factor:
+          Number(sp.conversion_factor ?? sp.conversion ?? sp.factor ?? 1) || 1,
+        price:
+          Number(
+            sp.unit_selling_price ??
+              sp.price ??
+              sp.unit_price ??
+              sp.unit_selling_price
+          ) || 0,
+      }));
+      setSellingPrices(
+        normalized.length > 0
+          ? normalized
+          : [{ uom: "Each", conversion_factor: 1, price: product.price || 0 }]
+      );
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -187,9 +210,9 @@ export function ProductFormInline({
       ...prev,
       [name]:
         name === "stock_quantity" ||
-          name === "price" ||
-          name === "product_cost" ||
-          name === "track_inventory"
+        name === "price" ||
+        name === "product_cost" ||
+        name === "track_inventory"
           ? Number(processedValue)
           : processedValue,
     }));
@@ -259,7 +282,10 @@ export function ProductFormInline({
       return;
     }
 
-    if (isPurchaseItem && (!formData.product_cost || formData.product_cost <= 0)) {
+    if (
+      isPurchaseItem &&
+      (!formData.product_cost || formData.product_cost <= 0)
+    ) {
       setMessage({
         type: "error",
         text: "Cost is required for purchase items and must be greater than 0",
@@ -267,7 +293,12 @@ export function ProductFormInline({
       return;
     }
 
-    if (trackInventory && (formData.stock_quantity === undefined || formData.stock_quantity === null || formData.stock_quantity < 0)) {
+    if (
+      trackInventory &&
+      (formData.stock_quantity === undefined ||
+        formData.stock_quantity === null ||
+        formData.stock_quantity < 0)
+    ) {
       setMessage({
         type: "error",
         text: "Stock quantity is required when tracking inventory",
@@ -287,14 +318,18 @@ export function ProductFormInline({
     setMessage(null);
 
     try {
-      const url = product ? "/api/inventory/products/update" : "/api/inventory/products"
-      const method = "POST"
+      const url = product
+        ? "/api/inventory/products/update"
+        : "/api/inventory/products";
+      const method = "POST";
 
       const preparedPayload = {
         ...formData,
         track_inventory: trackInventory ? 1 : 0,
         is_purchase_item: isPurchaseItem ? 1 : 0,
-        stock_quantity: trackInventory ? Number(formData.stock_quantity) || 0 : 0,
+        stock_quantity: trackInventory
+          ? Number(formData.stock_quantity) || 0
+          : 0,
         product_cost: isPurchaseItem ? Number(formData.product_cost) || 0 : 0,
         sold_by: formData.sold_by || "Each",
         purpose: product
@@ -303,43 +338,53 @@ export function ProductFormInline({
             : "Stock Reconciliation"
           : formData.purpose || "Purchase",
         product_status: productStatus,
-      }
+        // include selling prices in normalized shape expected by API
+        selling_prices: sellingPrices
+          .filter((s) => s.uom && !isNaN(Number(s.price)))
+          .map((s) => ({
+            uom: s.uom,
+            conversion_factor: Number(s.conversion_factor) || 1,
+            price: Number(s.price) || 0,
+          })),
+      };
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(preparedPayload),
-      })
+      });
 
-      const responseText = await response.text()
-      let data: any = {}
+      const responseText = await response.text();
+      let data: any = {};
       try {
-        data = responseText ? JSON.parse(responseText) : {}
+        data = responseText ? JSON.parse(responseText) : {};
       } catch {
-        data = { message: responseText }
+        data = { message: responseText };
       }
 
       if (response.ok) {
         setMessage({
           type: "success",
-          text: data?.message || `Product ${product ? "updated" : "added"} successfully`,
-        })
+          text:
+            data?.message ||
+            `Product ${product ? "updated" : "added"} successfully`,
+        });
         setTimeout(() => {
-          onSave()
-        }, 800)
+          onSave();
+        }, 800);
       } else {
         setMessage({
           type: "error",
           text: data?.message || "Failed to save product",
-        })
+        });
       }
     } catch (error) {
-      console.error("[DukaPlus] Product save error:", error)
+      console.error("[DukaPlus] Product save error:", error);
       setMessage({
         type: "error",
         text: "An error occurred while saving product. Please try again.",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   };
 
@@ -372,6 +417,35 @@ export function ProductFormInline({
     } finally {
       setIsCreatingCategory(false);
     }
+  };
+
+  // Selling prices helpers
+  const updateSellingPrice = (
+    index: number,
+    field: string,
+    value: string | number
+  ) => {
+    setSellingPrices((prev) => {
+      const copy = [...prev];
+      const item = { ...copy[index] };
+      if (field === "uom") item.uom = String(value);
+      if (field === "conversion_factor")
+        item.conversion_factor = Number(value) || 1;
+      if (field === "price") item.price = Number(value) || 0;
+      copy[index] = item;
+      return copy;
+    });
+  };
+
+  const addSellingPrice = () => {
+    setSellingPrices((prev) => [
+      ...prev,
+      { uom: "Each", conversion_factor: 1, price: 0 },
+    ]);
+  };
+
+  const removeSellingPrice = (index: number) => {
+    setSellingPrices((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -665,6 +739,77 @@ export function ProductFormInline({
           </div>
         </div>
 
+        {/* Multiple selling prices (UOM / conversion / price) */}
+        <div className="space-y-2">
+          <label className="form-label">Selling Prices (optional)</label>
+          <div className="space-y-2">
+            {sellingPrices.map((sp, idx) => (
+              <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                <div className="col-span-4">
+                  <Input
+                    type="text"
+                    value={sp.uom}
+                    onChange={(e) =>
+                      updateSellingPrice(idx, "uom", e.target.value)
+                    }
+                    placeholder="UOM (e.g. Each, Box)"
+                    className="input-base"
+                  />
+                </div>
+                <div className="col-span-3">
+                  <Input
+                    type="number"
+                    value={sp.conversion_factor}
+                    onChange={(e) =>
+                      updateSellingPrice(
+                        idx,
+                        "conversion_factor",
+                        e.target.value
+                      )
+                    }
+                    placeholder="Conversion"
+                    className="input-base"
+                    step="1"
+                    min={1}
+                  />
+                </div>
+                <div className="col-span-4">
+                  <Input
+                    type="number"
+                    value={sp.price}
+                    onChange={(e) =>
+                      updateSellingPrice(idx, "price", e.target.value)
+                    }
+                    placeholder={`Price (${currency})`}
+                    className="input-base"
+                    step="0.01"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <button
+                    type="button"
+                    onClick={() => removeSellingPrice(idx)}
+                    className="text-danger p-1"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            <div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addSellingPrice}
+              >
+                + Add price
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -683,7 +828,10 @@ export function ProductFormInline({
                   }));
                   if (!checked) {
                     setShowPurposeSelector(false);
-                    setFormData((prev) => ({ ...prev, purpose: "Stock Reconciliation" }));
+                    setFormData((prev) => ({
+                      ...prev,
+                      purpose: "Stock Reconciliation",
+                    }));
                   }
                 }}
               />
