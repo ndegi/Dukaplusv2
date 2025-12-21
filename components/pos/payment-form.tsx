@@ -370,10 +370,10 @@ export function PaymentForm({
       const updatedSplits = prev.map((p) =>
         p.id === id
           ? {
-            ...p,
-            [field]: field === "amount" ? Number(value) : value,
-            isPaid: false,
-          }
+              ...p,
+              [field]: field === "amount" ? Number(value) : value,
+              isPaid: false,
+            }
           : p
       );
 
@@ -437,11 +437,11 @@ export function PaymentForm({
           splitPayments.map((p) =>
             p.id === paymentId
               ? {
-                ...p,
-                isPaid: true,
-                reference:
-                  data.checkoutRequestId || data.message?.transaction_id,
-              }
+                  ...p,
+                  isPaid: true,
+                  reference:
+                    data.checkoutRequestId || data.message?.transaction_id,
+                }
               : p
           )
         );
@@ -513,7 +513,7 @@ export function PaymentForm({
           text: data.message?.message || "Failed to send receipt",
         });
       }
-    } catch (error) { }
+    } catch (error) {}
   };
 
   const saveDraft = async () => {
@@ -807,7 +807,7 @@ export function PaymentForm({
               <Gift className="w-4 h-4 text-purple-600 dark:text-purple-300" />
               <div>
                 <p className="text-[10px] leading-none text-purple-700 dark:text-purple-200 font-medium">
-                  Loyalty  +{pointsToEarn} pts
+                  Loyalty +{pointsToEarn} pts
                 </p>
               </div>
             </div>
@@ -1007,12 +1007,13 @@ export function PaymentForm({
                                     type="button"
                                     onClick={() => handleSTKPush(payment.id)}
                                     disabled={isProcessingSTK}
-                                    className={`h-9 px-2.5 text-xs whitespace-nowrap ${stkState === "processing"
-                                      ? "bg-yellow-600 hover:bg-yellow-700"
-                                      : stkState === "failure"
+                                    className={`h-9 px-2.5 text-xs whitespace-nowrap ${
+                                      stkState === "processing"
+                                        ? "bg-yellow-600 hover:bg-yellow-700"
+                                        : stkState === "failure"
                                         ? "bg-red-600 hover:bg-red-700"
                                         : "bg-orange-600 hover:bg-orange-700"
-                                      } text-white`}
+                                    } text-white`}
                                   >
                                     {stkState === "processing" ? (
                                       <>
@@ -1234,12 +1235,12 @@ export function PaymentForm({
               {isProcessing
                 ? "Processing..."
                 : !hasActiveShift && !isInvoicePayment
-                  ? "No Shift"
-                  : isPaymentComplete
-                    ? "Complete"
-                    : `Complete (Remaining ${currency} ${Math.abs(
-                      remaining
-                    ).toFixed(2)})`}
+                ? "No Shift"
+                : isPaymentComplete
+                ? "Complete"
+                : `Complete (Remaining ${currency} ${Math.abs(
+                    remaining
+                  ).toFixed(2)})`}
             </Button>
           </div>
         </div>
