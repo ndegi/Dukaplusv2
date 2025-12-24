@@ -22,7 +22,7 @@ export async function GET() {
     })
 
     if (!response.ok) {
-      console.error("[DukaPlus] Currency API error:", response.status, response.statusText)
+      console.error("[DukaPlus] Currency API error:", response.status, response)
       throw new Error(`Failed to fetch currency: ${response.statusText}`)
     }
 
