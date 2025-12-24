@@ -13,7 +13,7 @@ export async function GET() {
 
     const credentials = JSON.parse(credentialsCookie.value)
 
-    const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.rest.get_default_currency`, {
+    const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.rest.get_default_currency?warehouse=${credentials.warehouse}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

@@ -142,9 +142,9 @@ export function ProductFormInline({
         price:
           Number(
             sp.unit_selling_price ??
-            sp.price ??
-            sp.unit_price ??
-            sp.unit_selling_price
+              sp.price ??
+              sp.unit_price ??
+              sp.unit_selling_price
           ) || 0,
       }));
       setSellingPrices(
@@ -210,9 +210,9 @@ export function ProductFormInline({
       ...prev,
       [name]:
         name === "stock_quantity" ||
-          name === "price" ||
-          name === "product_cost" ||
-          name === "track_inventory"
+        name === "price" ||
+        name === "product_cost" ||
+        name === "track_inventory"
           ? Number(processedValue)
           : processedValue,
     }));
@@ -749,7 +749,9 @@ export function ProductFormInline({
                   <label className="form-label text-xs">UOM</label>
                   <select
                     value={sp.uom}
-                    onChange={(e) => updateSellingPrice(idx, "uom", e.target.value)}
+                    onChange={(e) =>
+                      updateSellingPrice(idx, "uom", e.target.value)
+                    }
                     className="input-base w-full"
                   >
                     <option value="Each">Each</option>
@@ -763,7 +765,13 @@ export function ProductFormInline({
                   <Input
                     type="number"
                     value={sp.conversion_factor}
-                    onChange={(e) => updateSellingPrice(idx, "conversion_factor", e.target.value)}
+                    onChange={(e) =>
+                      updateSellingPrice(
+                        idx,
+                        "conversion_factor",
+                        e.target.value
+                      )
+                    }
                     placeholder="Conversion"
                     className="input-base"
                     step="1"
@@ -771,11 +779,15 @@ export function ProductFormInline({
                   />
                 </div>
                 <div className="col-span-4">
-                  <label className="form-label text-xs">Price ({currency})</label>
+                  <label className="form-label text-xs">
+                    Price ({currency})
+                  </label>
                   <Input
                     type="number"
                     value={sp.price}
-                    onChange={(e) => updateSellingPrice(idx, "price", e.target.value)}
+                    onChange={(e) =>
+                      updateSellingPrice(idx, "price", e.target.value)
+                    }
                     placeholder={`Price (${currency})`}
                     className="input-base"
                     step="0.01"
