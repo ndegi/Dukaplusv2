@@ -25,9 +25,9 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         if (data.message?.currency) {
           setCurrency(data.message.currency)
         }
+        console.log("Currency fetched in context:", data.message?.currency)
       } catch (error) {
         console.error("Failed to fetch currency:", error)
-        // Keep default KES
       } finally {
         setIsLoading(false)
       }

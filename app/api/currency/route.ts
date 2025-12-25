@@ -4,20 +4,24 @@ import { cookies } from "next/headers"
 export async function GET() {
   try {
     const cookieStore = await cookies()
-    const credentialsCookie = cookieStore.get("tenant_credentials")
+    const credentialsCookie = cookieStore.get("tenant_credentials")?.value
+    const warehouseId = cookieStore.get("warehouse_id")?.value
 
     if (!credentialsCookie) {
-      console.log("[DukaPlus] No credentials cookie found")
-      return NextResponse.json({ message: { currency: "KES" } }, { status: 200 })
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    const credentials = JSON.parse(credentialsCookie.value)
+    if (!warehouseId) {
+      return NextResponse.json({ error: "Missing currency" }, { status: 400 })
+    }
 
-    const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.rest.get_default_currency?warehouse=${credentials.warehouse}`, {
+    const credentials = JSON.parse(credentialsCookie)
+    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
+    const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.rest.get_default_currency?warehouse=${warehouseId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `token ${credentials.apiKey}:${credentials.apiSecret}`,
+        Authorization: authHeader,
       },
     })
 
