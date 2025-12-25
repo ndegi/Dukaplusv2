@@ -1,23 +1,31 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies()
     const credentialsCookie = cookieStore.get("tenant_credentials")?.value
-    const warehouseId = cookieStore.get("warehouse_id")?.value
 
     if (!credentialsCookie) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ message: "Unauthorized - no credentials cookie" }, { status: 401 })
     }
 
-    if (!warehouseId) {
-      return NextResponse.json({ error: "Missing currency" }, { status: 400 })
+    let credentials
+    try {
+      credentials = JSON.parse(credentialsCookie)
+    } catch (parseError) {
+      return NextResponse.json({ message: "Invalid credentials format" }, { status: 401 })
     }
 
-    const credentials = JSON.parse(credentialsCookie)
+    if (!credentials.username || !credentials.apiKey || !credentials.baseUrl) {
+      return NextResponse.json({ message: "Incomplete credentials" }, { status: 401 })
+    }
+
+    const warehouse_id = request.nextUrl.searchParams.get("warehouse_id") || "Emidan Farm - DP"
+
     const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
-    const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.rest.get_default_currency?warehouse=${warehouseId}`, {
+    const response = await fetch(
+      `${credentials.baseUrl}/api/method/dukaplus.services.rest.get_default_currency?warehouse_id=${encodeURIComponent(warehouse_id)}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
