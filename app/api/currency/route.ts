@@ -18,15 +18,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (!credentials.username || !credentials.apiKey || !credentials.baseUrl) {
-      return NextResponse.json({ message: "Incomplete credentials" }, { status: 401 })
+      return NextResponse.json({ message: "Incomplete credentials" }, { status: 401 });
     }
 
-    const warehouse_id = request.nextUrl.searchParams.get("warehouse_id") || "Emidan Farm - DP"
+    const warehouse_id = request.nextUrl.searchParams.get("warehouse_id") || "";
 
-    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`
+    const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`;
     const response = await fetch(
       `${credentials.baseUrl}/api/method/dukaplus.services.rest.get_default_currency?warehouse_id=${encodeURIComponent(warehouse_id)}`, {
-      method: "GET",
+      method: "[GET]",
       headers: {
         "Content-Type": "application/json",
         Authorization: authHeader,
