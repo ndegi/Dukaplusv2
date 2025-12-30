@@ -448,15 +448,6 @@ export function ProductFormInline({
     setSellingPrices((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Derive available conversion factors from product's selling prices
-  const availableConversionFactors = Array.from(
-    new Set([
-      ...(product?.all_selling_prices || product?.selling_prices || []).map(
-        (sp: any) => Number(sp.conversion_factor ?? sp.conversion ?? sp.factor ?? 1) || 1
-      ),
-      1, // Always include 1 as a baseline
-    ])
-  ).sort((a, b) => a - b);
 
   return (
     <div className="space-y-4">
@@ -772,7 +763,8 @@ export function ProductFormInline({
                 </div>
                 <div className="col-span-3">
                   <label className="form-label text-xs">Conversion</label>
-                  <select
+                  <Input
+                    type="number"
                     value={sp.conversion_factor}
                     onChange={(e) =>
                       updateSellingPrice(
@@ -782,11 +774,7 @@ export function ProductFormInline({
                       )
                     }
                     className="input-base w-full"
-                  >
-                    {Array.from(new Set([...availableConversionFactors, Number(sp.conversion_factor)])).sort((a, b) => a - b).map((v) => (
-                      <option key={v} value={v}>{v}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div className="col-span-4">
                   <label className="form-label text-xs">
