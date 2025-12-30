@@ -76,7 +76,7 @@ export function ProductFormInline({
     product_cost: 0,
     track_inventory: 1,
     stock_quantity: 0,
-    sold_by: "Each",
+    // sold_by: "Each", // Field removed
     warehouse_id: "",
     is_purchase_item: 1,
     barcode: "",
@@ -123,7 +123,7 @@ export function ProductFormInline({
         product_cost: product.cost || 0,
         track_inventory: 1,
         stock_quantity: product.quantity,
-        sold_by: "Each",
+        // sold_by: "Each", // Field removed
         warehouse_id: selectedWarehouse,
         is_purchase_item: 1,
         barcode: product.barcode || "",
@@ -331,7 +331,7 @@ export function ProductFormInline({
           ? Number(formData.stock_quantity) || 0
           : 0,
         product_cost: isPurchaseItem ? Number(formData.product_cost) || 0 : 0,
-        sold_by: formData.sold_by || "Each",
+        sold_by: "Each", // Field removed from UI, defaulting to "Each"
         purpose: product
           ? showPurposeSelector
             ? formData.purpose || "Stock Reconciliation"
@@ -347,6 +347,7 @@ export function ProductFormInline({
             price: Number(s.price) || 0,
           })),
       };
+      console.log("[DukaPlus] Payload to API:", preparedPayload);
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -858,6 +859,8 @@ export function ProductFormInline({
             )}
           </div>
 
+          {/* Field removed: Sold By */}
+          {/* 
           <div>
             <label className="form-label">Sold By</label>
             <select
@@ -870,7 +873,8 @@ export function ProductFormInline({
               <option value="Each">Each</option>
               <option value="Weight">Weight</option>
             </select>
-          </div>
+          </div> 
+          */}
         </div>
 
         {showPurposeSelector && (
