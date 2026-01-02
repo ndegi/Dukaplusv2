@@ -743,7 +743,7 @@ export function ProductFormInline({
 
         {/* Multiple selling prices (UOM / conversion / price) */}
         <div className="space-y-2">
-          <label className="form-label">Selling Prices (optional)</label>
+          <label className="form-label">Selling Prices ({currency})</label>
           <div className="space-y-2">
             {sellingPrices.map((sp, idx) => (
               <div key={idx} className="grid grid-cols-12 gap-2 items-center">
@@ -854,6 +854,7 @@ export function ProductFormInline({
                 onChange={handleChange}
                 placeholder="Stock quantity"
                 className="input-base"
+                min="0"
                 required
               />
             )}
