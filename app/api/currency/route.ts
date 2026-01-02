@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Invalid credentials format" }, { status: 401 })
     }
 
-    if (!credentials.username || !credentials.apiKey || !credentials.baseUrl) {
+    if (!credentials.username || !credentials.apiKey || !credentials.apiSecret || !credentials.baseUrl) {
       return NextResponse.json({ message: "Incomplete credentials" }, { status: 401 });
     }
 
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const authHeader = `token ${credentials.apiKey}:${credentials.apiSecret}`;
     const response = await fetch(
       `${credentials.baseUrl}/api/method/dukaplus.services.rest.get_default_currency?warehouse_id=${encodeURIComponent(warehouse_id)}`, {
-      method: "[GET]",
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: authHeader,

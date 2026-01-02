@@ -20,7 +20,8 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function fetchCurrency() {
       try {
-        const response = await fetch("/api/currency");
+        const warehouseId = typeof window !== "undefined" ? sessionStorage.getItem("selected_warehouse") || "" : "";
+        const response = await fetch(`/api/currency?warehouse_id=${encodeURIComponent(warehouseId)}`);
         const data = await response.json();
         if (data.message?.currency) {
           setCurrency(data.message.currency);
