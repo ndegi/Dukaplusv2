@@ -40,6 +40,7 @@ interface ItemWiseCustomerStatement {
   warehouse: string
   item_code: string
   item_name: string
+  uom: string
   quantity: number
   selling_price: number
   amount: number
@@ -273,6 +274,7 @@ function generateItemWiseStatementExport(
       "Warehouse",
       "Item",
       "Item Code",
+      "UOM",
       "Quantity",
       "Selling Price",
       "Amount",
@@ -283,6 +285,7 @@ function generateItemWiseStatementExport(
       item.warehouse,
       item.item_name,
       item.item_code,
+      item.uom,
       (item.quantity ?? 0).toFixed(2),
       (item.selling_price ?? 0).toFixed(2),
       (item.amount ?? 0).toFixed(2),

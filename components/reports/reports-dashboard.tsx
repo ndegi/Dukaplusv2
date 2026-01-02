@@ -52,6 +52,7 @@ interface ItemWiseCustomerStatement {
   warehouse: string;
   item_code: string;
   item_name: string;
+  uom: string;
   quantity: number;
   selling_price: number;
   amount: number;
@@ -607,11 +608,10 @@ function SalesReportTable({
                 ))}
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      row.status === "Paid"
-                        ? "bg-green-500/20 text-green-600 dark:text-green-400"
-                        : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                    }`}
+                    className={`px-2 py-1 rounded text-xs font-semibold ${row.status === "Paid"
+                      ? "bg-green-500/20 text-green-600 dark:text-green-400"
+                      : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                      }`}
                   >
                     {row.status}
                   </span>
@@ -736,23 +736,22 @@ function CustomerStatementTable({
             </thead>
             <tbody>
               ${statementData
-                .map(
-                  (item) => `
+        .map(
+          (item) => `
                 <tr>
                   <td>${item.invoice_id || ""}</td>
                   <td>${item.date || ""}</td>
                   <td>${item.due_date || ""}</td>
                   <td class="text-right">${formatCurrency(
-                    item.grand_total || 0
-                  )}</td>
+            item.grand_total || 0
+          )}</td>
                   <td class="text-right">${formatCurrency(
-                    item.outstanding_amount || 0
-                  )}</td>
+            item.outstanding_amount || 0
+          )}</td>
                   <td>${item.status || ""}</td>
                 </tr>
-                ${
-                  item.items && item.items.length > 0
-                    ? `
+                ${item.items && item.items.length > 0
+              ? `
                   <tr>
                     <td colspan="6">
                       <table class="items-table">
@@ -767,41 +766,41 @@ function CustomerStatementTable({
                         </thead>
                         <tbody>
                           ${item.items
-                            .map(
-                              (itemRow: any) => `
+                .map(
+                  (itemRow: any) => `
                             <tr>
                               <td>${itemRow.item_code || ""}</td>
                               <td>${itemRow.item_name || ""}</td>
                               <td class="text-right">${itemRow.qty || 0}</td>
                               <td class="text-right">${formatCurrency(
-                                itemRow.rate || 0
-                              )}</td>
+                    itemRow.rate || 0
+                  )}</td>
                               <td class="text-right">${formatCurrency(
-                                itemRow.amount || 0
-                              )}</td>
+                    itemRow.amount || 0
+                  )}</td>
                             </tr>
                           `
-                            )
-                            .join("")}
+                )
+                .join("")}
                         </tbody>
                       </table>
                     </td>
                   </tr>
                 `
-                    : ""
-                }
+              : ""
+            }
               `
-                )
-                .join("")}
+        )
+        .join("")}
             </tbody>
           </table>
           <div style="margin-top: 20px;">
             <p><strong>Total Outstanding:</strong> ${formatCurrency(
-              statementData.reduce(
-                (sum, item) => sum + (item.outstanding_amount || 0),
-                0
-              )
-            )}</p>
+          statementData.reduce(
+            (sum, item) => sum + (item.outstanding_amount || 0),
+            0
+          )
+        )}</p>
           </div>
         </body>
       </html>
@@ -983,11 +982,10 @@ function CustomerStatementTable({
                 </td>
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      row.outstanding_amount === 0
-                        ? "bg-green-500/20 text-green-600 dark:text-green-400"
-                        : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                    }`}
+                    className={`px-2 py-1 rounded text-xs font-semibold ${row.outstanding_amount === 0
+                      ? "bg-green-500/20 text-green-600 dark:text-green-400"
+                      : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                      }`}
                   >
                     {row.outstanding_amount === 0 ? "Paid" : "Pending"}
                   </span>
@@ -1175,6 +1173,9 @@ function ItemWiseCustomerStatementTable({
               <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">
                 Item Code
               </th>
+              <th className="text-left p-3 text-gray-700 dark:text-gray-300 font-semibold">
+                UOM
+              </th>
               <th className="text-right p-3 text-gray-700 dark:text-gray-300 font-semibold">
                 Quantity
               </th>
@@ -1206,6 +1207,9 @@ function ItemWiseCustomerStatementTable({
                 </td>
                 <td className="p-3 text-gray-600 dark:text-gray-400 font-mono text-xs">
                   {row.item_code}
+                </td>
+                <td className="p-3 text-gray-600 dark:text-gray-400">
+                  {row.uom}
                 </td>
                 <td className="p-3 text-right text-blue-600 dark:text-blue-400 font-semibold">
                   {Number(row.quantity ?? 0).toLocaleString("en-KE", {
