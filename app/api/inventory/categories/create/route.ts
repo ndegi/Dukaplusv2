@@ -5,16 +5,31 @@ export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies()
     const credentialsCookie = cookieStore.get("tenant_credentials")?.value
-    const warehouseId = cookieStore.get("selected_warehouse")?.value
 
     if (!credentialsCookie) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const credentials = JSON.parse(credentialsCookie)
+    let credentials
+    try {
+      credentials = JSON.parse(credentialsCookie)
+    } catch (parseError) {
+      return NextResponse.json({ error: "Invalid credentials format" }, { status: 401 })
+    }
+
+    if (!credentials.username || !credentials.apiKey || !credentials.apiSecret || !credentials.baseUrl) {
+      return NextResponse.json({ error: "Incomplete credentials" }, { status: 401 });
+    }
 
     const body = await request.json()
-    const { product_category } = body
+    const { product_category, warehouse_id: bodyWarehouseId } = body
+    const warehouseId = bodyWarehouseId || cookieStore.get("selected_warehouse")?.value
+
+    if (!warehouseId) {
+      return NextResponse.json({ error: "Warehouse ID is required" }, { status: 400 })
+    }
+
+    console.log(`[DukaPlus] Creating category "${product_category}" for warehouse: ${warehouseId}`)
 
     const response = await fetch(`${credentials.baseUrl}/api/method/dukaplus.services.rest.create_product_category`, {
       method: "POST",
@@ -24,16 +39,23 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         product_category,
-        warehouse_id: warehouseId || "Emidan Farm - DP",
+        warehouse_id: warehouseId,
       }),
     })
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      return NextResponse.json({ error: errorData.message || "Failed to create category" }, { status: response.status })
+    const responseText = await response.text()
+    let data: any = {}
+    try {
+      data = responseText ? JSON.parse(responseText) : {}
+    } catch {
+      data = { message: responseText }
     }
 
-    const data = await response.json()
+    if (!response.ok) {
+      console.error("[DukaPlus] Category creation error:", response.status, responseText)
+      return NextResponse.json({ error: data.message || "Failed to create category" }, { status: response.status })
+    }
+
     return NextResponse.json(data)
   } catch (error) {
     console.error("Create category error:", error)

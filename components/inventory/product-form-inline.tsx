@@ -363,19 +363,25 @@ export function ProductFormInline({
       }
 
       if (response.ok) {
+        const successMsg = typeof data?.message === 'object'
+          ? (data.message.message || JSON.stringify(data.message))
+          : (data?.message || `Product ${product ? "updated" : "added"} successfully`);
+
         setMessage({
           type: "success",
-          text:
-            data?.message ||
-            `Product ${product ? "updated" : "added"} successfully`,
+          text: successMsg,
         });
         setTimeout(() => {
           onSave();
         }, 800);
       } else {
+        const errorMsg = typeof data?.message === 'object'
+          ? (data.message.message || JSON.stringify(data.message))
+          : (data?.message || "Failed to save product");
+
         setMessage({
           type: "error",
-          text: data?.message || "Failed to save product",
+          text: errorMsg,
         });
       }
     } catch (error) {
@@ -395,20 +401,43 @@ export function ProductFormInline({
       const response = await fetch("/api/inventory/categories/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_category: categoryName }),
+        body: JSON.stringify({
+          product_category: categoryName,
+          warehouse_id: formData.warehouse_id,
+        }),
       });
+
+      const responseText = await response.text();
+      let data: any = {};
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        data = { message: responseText };
+      }
 
       if (response.ok) {
         setCategories((prev) => [...prev, categoryName]);
         setFormData((prev) => ({ ...prev, product_category: categoryName }));
         setCategoryOpen(false);
         setCategorySearch("");
+
+        const successMsg = typeof data?.message === 'object'
+          ? (data.message.message || JSON.stringify(data.message))
+          : (data?.message || `Category "${categoryName}" created successfully`);
+
+        setMessage({
+          type: "success",
+          text: successMsg,
+        });
         return true;
       } else {
-        const data = await response.json();
+        const errorMsg = typeof data?.message === 'object'
+          ? (data.message.message || JSON.stringify(data.message))
+          : (data?.error || data?.message || "Failed to create category");
+
         setMessage({
           type: "error",
-          text: data.error || "Failed to create category",
+          text: errorMsg,
         });
         return false;
       }
